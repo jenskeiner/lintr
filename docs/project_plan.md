@@ -144,7 +144,7 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.5.3: Rule Manager implementation. Singleton. Uses entry points to auto-discover rules and rule sets.
   - [x] 1.5.4: Configuration file parsing.
 - [] 1.6: Create initial rules.
-  - [] 1.6.1: Create a rule that checks if a default branch exists.
+  - [x] 1.6.1: Create a rule that checks if a default branch exists.
   - [] 1.6.2: Create a rule that checks if the default branch is named "develop".
   - [] 1.6.3: Create a rule that checks if contributors are required to sign off on web-based commits.
 - [] 1.7: Create a default rule set (e.g., for Python library projects).
@@ -198,10 +198,16 @@ We can record here that this dependency should not be used in the future and lis
 4. For plugin systems (like rules and rule sets), separate the discovery mechanism (Rule Manager) from the implementation (concrete rules). This allows for better extensibility and testing.
 
 ### Configuration
-5. When using `pydantic_settings` with environment variables:
+1. When using `pydantic_settings` with environment variables:
    - Use `json_schema_extra={"env": [...]}` instead of `env=...` to specify environment variable names (deprecated in Pydantic V2).
    - Set `env_vars_override_env_file=True` to ensure environment variables take precedence over `.env` file.
    - Use `env_nested_delimiter="__"` to support nested configuration via environment variables.
+
+### GitHub API Interaction
+1. When writing rules that interact with the GitHub API:
+   - Always handle `GithubException` to provide meaningful error messages.
+   - Be careful with mock objects in tests, they may behave differently from real API responses.
+   - Use type checks to ensure API responses match expected types.
 
 ## Future Scope (only for context, not a goal of current implementation)
 - Support for organization-wide rules.
