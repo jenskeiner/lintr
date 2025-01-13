@@ -142,7 +142,7 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.5.1: GitHub API integration.
   - [x] 1.5.2: Rules and rule-set base classes implementation. No concrete rules yet.
   - [x] 1.5.3: Rule Manager implementation. Singleton. Uses entry points to auto-discover rules and rule sets.
-  - [] 1.5.4: Configuration file parsing.
+  - [x] 1.5.4: Configuration file parsing.
 - [] 1.6: Create initial rules.
   - [] 1.6.1: Create a rule that checks if a default branch exists.
   - [] 1.6.2: Create a rule that checks if the default branch is named "develop".
@@ -196,6 +196,12 @@ We can record here that this dependency should not be used in the future and lis
 2. When implementing singletons in Python, include a way to reset the singleton state in tests. This can be done via a pytest fixture with `autouse=True` to ensure clean state between tests.
 3. When mocking entry points in tests, use `unittest.mock.MagicMock` instead of dynamic type creation. MagicMock provides better control over method behavior and makes test failures more debuggable.
 4. For plugin systems (like rules and rule sets), separate the discovery mechanism (Rule Manager) from the implementation (concrete rules). This allows for better extensibility and testing.
+
+### Configuration
+5. When using `pydantic_settings` with environment variables:
+   - Use `json_schema_extra={"env": [...]}` instead of `env=...` to specify environment variable names (deprecated in Pydantic V2).
+   - Set `env_vars_override_env_file=True` to ensure environment variables take precedence over `.env` file.
+   - Use `env_nested_delimiter="__"` to support nested configuration via environment variables.
 
 ## Future Scope (only for context, not a goal of current implementation)
 - Support for organization-wide rules.
