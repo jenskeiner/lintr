@@ -1,0 +1,36 @@
+[project]
+name = "repolint"
+version = "0.1.0"
+description = "A Python-based command-line application to lint and enforce consistent settings across GitHub repositories"
+authors = []
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = [
+    "PyGithub>=2.1.1",
+    "pydantic>=2.5.3",
+    "pydantic-settings>=2.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.3",
+    "pytest-cov>=4.1.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+addopts = "--cov=repolint --cov-report=term-missing --cov-report=html"
+testpaths = ["tests"]
+
+[project.scripts]
+repolint = "repolint.cli:main"
+
+[project.entry-points."repolint.rules"]
+# No default rules defined yet, users can add their own
+
+[project.entry-points."repolint.rule_sets"]
+# No default rule sets defined yet, users can add their own
