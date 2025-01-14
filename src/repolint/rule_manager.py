@@ -103,3 +103,14 @@ class RuleManager:
         if rule_class:
             return rule_class(rule_id, description)
         return None
+
+    def get_all_rules(self) -> Dict[str, Rule]:
+        """Get all available rules with their descriptions.
+        
+        Returns:
+            Dictionary mapping rule IDs to rule instances with descriptions.
+        """
+        rules = {}
+        for rule_id, rule_class in self._rules.items():
+            rules[rule_id] = rule_class(rule_id, "")  # Description will be set by the rule class
+        return rules

@@ -3,6 +3,19 @@
 import pytest
 
 from repolint.cli import main
+from repolint.rules.base import Rule, RuleCheckResult, RuleResult
+from repolint.rules.context import RuleContext
+
+
+class TestRule(Rule):
+    """Test rule implementation for testing."""
+    
+    def __init__(self, rule_id: str, description: str):
+        super().__init__(rule_id, description)
+    
+    def check(self, context: RuleContext) -> RuleCheckResult:
+        """Always returns PASSED."""
+        return RuleCheckResult(RuleResult.PASSED, "Test passed")
 
 
 def test_cli_version(capsys):
@@ -37,25 +50,75 @@ def test_cli_lint_with_options(capsys):
     assert "dry-run mode is enabled" in captured.out.lower()
 
 
-def test_cli_list_no_options(capsys):
+def test_cli_list_no_options(capsys, monkeypatch):
     """Test list command without options."""
+    # Mock rule manager to return empty rules
+    def mock_get_all_rules():
+        return {}
+    
+    monkeypatch.setattr("repolint.rule_manager.RuleManager.get_all_rules", mock_get_all_rules)
+    
     assert main(["list"]) == 0
     captured = capsys.readouterr()
-    assert "please specify" in captured.out.lower()
+    assert "Please specify --rules and/or --rule-sets" in captured.out
 
 
-def test_cli_list_rules(capsys):
-    """Test list command with --rules option."""
+def test_cli_list_rules(capsys, monkeypatch):
+    """Test list command with --rules option comprehensively."""
+    # Mock rule manager to return test rules
+    test_rules = {
+        "R001": TestRule("R001", "Check branch protection"),
+        "R002": TestRule("R002", "Check repository visibility"),
+    }
+    
+    def mock_get_all_rules():
+        return test_rules
+    
+    monkeypatch.setattr("repolint.rule_manager.RuleManager.get_all_rules", mock_get_all_rules)
+    
+    # Run command
+    result = main(["list", "--rules"])
+    
+    # Verify exit code
+    assert result == 0
+    
+    # Verify output format
+    captured = capsys.readouterr()
+    output_lines = captured.out.splitlines()
+    
+    # Check header
+    assert output_lines[0] == "Available rules:"
+    
+    # Check each rule is listed with proper format
+    for rule_id, rule in test_rules.items():
+        rule_line = f"  {rule_id}: {rule.description}"
+        assert rule_line in output_lines[1:]
+
+
+def test_cli_list_rules_empty(capsys, monkeypatch):
+    """Test list command with --rules option when no rules are available."""
+    def mock_get_all_rules():
+        return {}
+    
+    monkeypatch.setattr("repolint.rule_manager.RuleManager.get_all_rules", mock_get_all_rules)
+    
     assert main(["list", "--rules"]) == 0
     captured = capsys.readouterr()
-    assert "available rules:" in captured.out.lower()
+    assert "Available rules:" in captured.out
+    assert "No rules implemented yet" in captured.out
 
 
-def test_cli_list_rule_sets(capsys):
+def test_cli_list_rule_sets(capsys, monkeypatch):
     """Test list command with --rule-sets option."""
+    def mock_get_all_rules():
+        return {}
+    
+    monkeypatch.setattr("repolint.rule_manager.RuleManager.get_all_rules", mock_get_all_rules)
+    
     assert main(["list", "--rule-sets"]) == 0
     captured = capsys.readouterr()
-    assert "available rule-sets:" in captured.out.lower()
+    assert "Available rule-sets:" in captured.out
+    assert "No rule-sets implemented yet" in captured.out
 
 
 def test_cli_init_basic(capsys):

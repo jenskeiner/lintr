@@ -141,17 +141,22 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.3.3: Ensure test dependencies are in `pyproject.toml`.
   - [x] 1.3.4: Run `pytest` to verify test setup.
 - [x] 1.4: Implement basic CLI with placeholder commands.
-- [] 1.5: Develop core functionality:
+- [x] 1.5: Develop core functionality:
   - [x] 1.5.1: GitHub API integration.
   - [x] 1.5.2: Rules and rule-set base classes implementation. No concrete rules yet.
   - [x] 1.5.3: Rule Manager implementation. Singleton. Uses entry points to auto-discover rules and rule sets.
   - [x] 1.5.4: Configuration file parsing.
-- [] 1.6: Create initial rules.
-  - [x] 1.6.1: Create a rule that checks if a default branch exists.
-  - [] 1.6.2: Create a rule that checks if the default branch is named "develop".
-  - [] 1.6.3: Create a rule that checks if contributors are required to sign off on web-based commits.
-- [] 1.7: Create a default rule set (e.g., for Python library projects).
-- [] 1.8: Output results of linting operations.
+- [] 1.6 Add true end-to-end tests for real CLI operations.
+  - [] 1.6.1: Add parameterizable fixture to mock configuration.
+  - [] 1.6.2: Add parameterizable fixture to mock GitHub API responses.
+  - [x] 1.6.3: Improve test to verify listing of rules (`repolint --list rules`) to verify output comprehensively.
+  - [] 1.6.4: Improve test to verify listing of rule-sets (`repolint --list rule-sets`) to verify output comprehensively.
+- [] 1.7: Create initial rules.
+  - [x] 1.7.1: Create a rule that checks if a default branch exists.
+  - [] 1.7.2: Create a rule that checks if the default branch is named "develop".
+  - [] 1.7.3: Create a rule that checks if contributors are required to sign off on web-based commits.
+- [] 1.8: Create a default rule set (e.g., for Python library projects).
+- [] 1.9: Output results of linting operations.
 
 ### Phase 2: Autofix and Dry-Run Modes
 - [] 2.1: Implement autofix logic for auto-fixable rules.
@@ -217,6 +222,16 @@ We can record here that this dependency should not be used in the future and lis
    - Always handle `GithubException` to provide meaningful error messages.
    - Be careful with mock objects in tests, they may behave differently from real API responses.
    - Use type checks to ensure API responses match expected types.
+
+### Development Environment
+1. Always run pytest from within the project's virtual environment. Running it directly may fail even if pytest is installed globally.
+2. When using `monkeypatch` in pytest, ensure that the path to the mocked attribute matches the actual import path in the code.
+3. When mocking a class method, ensure the method exists in the class before attempting to mock it.
+
+### Testing Best Practices
+1. When testing abstract base classes, create concrete test implementations that satisfy the abstract methods.
+2. Test both success and error cases, including empty states (e.g., no rules available).
+3. Use descriptive test names and docstrings to clearly indicate what each test verifies.
 
 ## Future Scope (only for context, not a goal of current implementation)
 - Support for organization-wide rules.
