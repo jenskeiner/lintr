@@ -171,3 +171,38 @@ def test_cli_init_basic(capsys):
     assert main(["init"]) == 0
     captured = capsys.readouterr()
     assert ".repolint.yml" in captured.out
+
+
+def test_cli_lint_with_config(capsys, mock_config):
+    """Test lint command with custom configuration."""
+    config = {
+        "github": {"token": "test-token"},
+        "repository_filter": {
+            "include_patterns": ["test-repo-*"],
+            "exclude_patterns": ["test-repo-excluded"]
+        },
+        "rule_sets": [
+            {
+                "name": "test-ruleset",
+                "rules": ["R001"]
+            }
+        ]
+    }
+    config_path = mock_config(config)
+    
+    result = main(["lint", "--config", str(config_path)])
+    assert result == 0
+
+    captured = capsys.readouterr()
+    assert "Would lint repositories using config from" in captured.out
+    assert str(config_path) in captured.out
+
+
+def test_cli_lint_with_default_config(capsys, mock_config_file):
+    """Test lint command with default test configuration."""
+    result = main(["lint", "--config", str(mock_config_file)])
+    assert result == 0
+
+    captured = capsys.readouterr()
+    assert "Would lint repositories using config from" in captured.out
+    assert str(mock_config_file) in captured.out

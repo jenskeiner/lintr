@@ -147,8 +147,8 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.5.3: Rule Manager implementation. Singleton. Uses entry points to auto-discover rules and rule sets.
   - [x] 1.5.4: Configuration file parsing.
 - [] 1.6 Add true end-to-end tests for real CLI operations.
-  - [] 1.6.1: Add parameterizable fixture to mock configuration.
-  - [] 1.6.2: Add parameterizable fixture to mock GitHub API responses.
+  - [x] 1.6.1: Add parameterizable fixture to mock configuration for e2e CLI tests.
+  - [] 1.6.2: Add parameterizable fixture to mock GitHub API responses for e2e CLI tests.
   - [x] 1.6.3: Improve test to verify listing of rules (`repolint --list rules`) to verify output comprehensively.
   - [x] 1.6.4: Improve test to verify listing of rule-sets (`repolint --list rule-sets`) to verify output comprehensively.
 - [] 1.7: Create initial rules.
@@ -239,6 +239,14 @@ We can record here that this dependency should not be used in the future and lis
 1. Keep test helper classes (like `TestRule` and `TestRuleSet`) together with the tests that use them.
 2. Use singleton pattern consistently - get the instance once and reuse it instead of creating new instances.
 3. Organize related functionality together (e.g., rule and rule-set operations in the same manager class).
+
+### Test
+1. When mocking configuration in tests:
+   - Use temporary files instead of in-memory objects to test actual file loading behavior
+   - Clean up temporary files after tests to prevent test pollution
+   - Place shared fixtures in `conftest.py` to make them available across test modules
+   - Provide both flexible (parameterizable) and convenient (default) fixtures to suit different test needs
+   - Use type-safe configuration through pydantic validation in fixtures
 
 ## Future Scope (only for context, not a goal of current implementation)
 - Support for organization-wide rules.
