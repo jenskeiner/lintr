@@ -74,6 +74,9 @@ This plan outlines the goals and phases for building Repolint.
 - Concrete rules are subclasses of the abstract base class.
 - Each rule has a short, unique identifier (similar to flake8, e.g. `R001`).
 - Rules are discoverable at runtime. Adding a new rule class to the code base make sit available to the Rule Manager.
+- Rules receive a context object when running checks, which encapsulates all information needed for the check.
+  - Initially, the context only contains the GitHub repository object.
+  - The context can be expanded in the future to provide more information.
 
 ### Rule Sets
 
@@ -196,6 +199,12 @@ We can record here that this dependency should not be used in the future and lis
 2. When implementing singletons in Python, include a way to reset the singleton state in tests. This can be done via a pytest fixture with `autouse=True` to ensure clean state between tests.
 3. When mocking entry points in tests, use `unittest.mock.MagicMock` instead of dynamic type creation. MagicMock provides better control over method behavior and makes test failures more debuggable.
 4. For plugin systems (like rules and rule sets), separate the discovery mechanism (Rule Manager) from the implementation (concrete rules). This allows for better extensibility and testing.
+
+### Rule Design
+1. When designing rules:
+   - Use a context object to pass information to rules instead of raw objects.
+   - This makes it easier to add new information in the future without breaking the API.
+   - The context object serves as a clear contract between the rule system and individual rules.
 
 ### Configuration
 1. When using `pydantic_settings` with environment variables:

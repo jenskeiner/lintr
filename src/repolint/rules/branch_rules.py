@@ -4,6 +4,7 @@ from github.Repository import Repository
 from github.GithubException import GithubException
 
 from repolint.rules.base import Rule, RuleCheckResult, RuleResult
+from repolint.rules.context import RuleContext
 
 
 class DefaultBranchExistsRule(Rule):
@@ -16,17 +17,17 @@ class DefaultBranchExistsRule(Rule):
             description="Repository must have a default branch"
         )
 
-    def check(self, repo: Repository) -> RuleCheckResult:
+    def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if the repository has a default branch.
         
         Args:
-            repo: GitHub repository to check.
+            context: Context object containing all information needed for the check.
             
         Returns:
             Result of the check with details.
         """
         try:
-            default_branch = repo.default_branch
+            default_branch = context.repository.default_branch
             if not isinstance(default_branch, (str, type(None))):
                 # Handle the case where default_branch is a MagicMock in tests
                 raise GithubException(404, "Not found")

@@ -7,6 +7,8 @@ from typing import Dict, List, Optional, Set
 
 from github.Repository import Repository
 
+from repolint.rules.context import RuleContext
+
 
 class RuleResult(Enum):
     """Result of a rule check."""
@@ -38,11 +40,11 @@ class Rule(ABC):
         self.description = description
 
     @abstractmethod
-    def check(self, repo: Repository) -> RuleCheckResult:
+    def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if the repository complies with this rule.
         
         Args:
-            repo: GitHub repository to check.
+            context: Context object containing all information needed for the check.
             
         Returns:
             Result of the check with details.
@@ -111,7 +113,8 @@ class RuleSet:
         Returns:
             Dictionary mapping rule IDs to their check results.
         """
+        context = RuleContext(repository=repo)
         results = {}
         for rule in self.get_all_rules():
-            results[rule.rule_id] = rule.check(repo)
+            results[rule.rule_id] = rule.check(context)
         return results
