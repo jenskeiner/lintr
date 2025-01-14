@@ -148,7 +148,7 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.5.4: Configuration file parsing.
 - [] 1.6 Add true end-to-end tests for real CLI operations.
   - [x] 1.6.1: Add parameterizable fixture to mock configuration for e2e CLI tests.
-  - [] 1.6.2: Add parameterizable fixture to mock GitHub API responses for e2e CLI tests.
+  - [x] 1.6.2: Add parameterizable fixture to mock GitHub API responses for e2e CLI tests.
   - [x] 1.6.3: Improve test to verify listing of rules (`repolint --list rules`) to verify output comprehensively.
   - [x] 1.6.4: Improve test to verify listing of rule-sets (`repolint --list rule-sets`) to verify output comprehensively.
 - [] 1.7: Create initial rules.

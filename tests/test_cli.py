@@ -206,3 +206,62 @@ def test_cli_lint_with_default_config(capsys, mock_config_file):
     captured = capsys.readouterr()
     assert "Would lint repositories using config from" in captured.out
     assert str(mock_config_file) in captured.out
+
+
+def test_cli_lint_with_mock_github(capsys, mock_config, mock_github):
+    """Test lint command with mocked GitHub API responses."""
+    # Define mock repository data
+    mock_repos = [
+        {
+            "name": "test-repo-1",
+            "private": False,
+            "archived": False
+        },
+        {
+            "name": "test-repo-2",
+            "private": True,
+            "archived": True
+        }
+    ]
+    
+    # Define mock settings for each repository
+    mock_settings = {
+        "test-repo-1": {
+            "default_branch": "main",
+            "has_issues": True,
+            "allow_squash_merge": True
+        },
+        "test-repo-2": {
+            "default_branch": "master",
+            "has_issues": False,
+            "allow_squash_merge": False
+        }
+    }
+    
+    # Create test configuration
+    config = {
+        "github": {"token": "test-token"},
+        "repository_filter": {
+            "include_patterns": ["test-repo-*"],
+            "exclude_patterns": []
+        },
+        "rule_sets": [
+            {
+                "name": "test-ruleset",
+                "rules": ["R001"]
+            }
+        ]
+    }
+    config_path = mock_config(config)
+    
+    # Set up GitHub mock
+    mock_github(mock_repos, mock_settings)
+    
+    # Run lint command
+    result = main(["lint", "--config", str(config_path)])
+    assert result == 0
+    
+    # Verify output
+    captured = capsys.readouterr()
+    assert "Would lint repositories using config from" in captured.out
+    assert str(config_path) in captured.out
