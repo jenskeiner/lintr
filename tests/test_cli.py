@@ -3,7 +3,7 @@
 import pytest
 
 from repolint.cli import main
-from repolint.rules.base import Rule, RuleCheckResult, RuleResult
+from repolint.rules.base import Rule, RuleSet, RuleCheckResult, RuleResult
 from repolint.rules.context import RuleContext
 
 
@@ -16,6 +16,15 @@ class TestRule(Rule):
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Always returns PASSED."""
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
+
+
+class TestRuleSet(RuleSet):
+    """Test rule set implementation for testing."""
+    
+    def __init__(self, rule_set_id: str, description: str):
+        super().__init__(rule_set_id, description)
+        self.add_rule(TestRule("R001", "Test rule 1"))
+        self.add_rule(TestRule("R002", "Test rule 2"))
 
 
 def test_cli_version(capsys):
@@ -52,11 +61,15 @@ def test_cli_lint_with_options(capsys):
 
 def test_cli_list_no_options(capsys, monkeypatch):
     """Test list command without options."""
-    # Mock rule manager to return empty rules
-    def mock_get_all_rules():
+    # Mock rule manager instance methods
+    def mock_get_all_rules(self):
+        return {}
+    
+    def mock_get_all_rule_sets(self):
         return {}
     
     monkeypatch.setattr("repolint.rule_manager.RuleManager.get_all_rules", mock_get_all_rules)
+    monkeypatch.setattr("repolint.rule_manager.RuleManager.get_all_rule_sets", mock_get_all_rule_sets)
     
     assert main(["list"]) == 0
     captured = capsys.readouterr()
@@ -71,7 +84,7 @@ def test_cli_list_rules(capsys, monkeypatch):
         "R002": TestRule("R002", "Check repository visibility"),
     }
     
-    def mock_get_all_rules():
+    def mock_get_all_rules(self):
         return test_rules
     
     monkeypatch.setattr("repolint.rule_manager.RuleManager.get_all_rules", mock_get_all_rules)
@@ -97,7 +110,7 @@ def test_cli_list_rules(capsys, monkeypatch):
 
 def test_cli_list_rules_empty(capsys, monkeypatch):
     """Test list command with --rules option when no rules are available."""
-    def mock_get_all_rules():
+    def mock_get_all_rules(self):
         return {}
     
     monkeypatch.setattr("repolint.rule_manager.RuleManager.get_all_rules", mock_get_all_rules)
@@ -110,10 +123,42 @@ def test_cli_list_rules_empty(capsys, monkeypatch):
 
 def test_cli_list_rule_sets(capsys, monkeypatch):
     """Test list command with --rule-sets option."""
-    def mock_get_all_rules():
+    # Mock rule manager to return test rule sets
+    test_rule_sets = {
+        "RS001": TestRuleSet("RS001", "Basic repository checks"),
+        "RS002": TestRuleSet("RS002", "Security checks"),
+    }
+    
+    def mock_get_all_rule_sets(self):
+        return test_rule_sets
+    
+    monkeypatch.setattr("repolint.rule_manager.RuleManager.get_all_rule_sets", mock_get_all_rule_sets)
+    
+    # Run command
+    result = main(["list", "--rule-sets"])
+    
+    # Verify exit code
+    assert result == 0
+    
+    # Verify output format
+    captured = capsys.readouterr()
+    output_lines = captured.out.splitlines()
+    
+    # Check header
+    assert output_lines[0] == "Available rule-sets:"
+    
+    # Check each rule set is listed with proper format
+    for rule_set_id, rule_set in test_rule_sets.items():
+        rule_set_line = f"  {rule_set_id}: {rule_set.description}"
+        assert rule_set_line in output_lines[1:]
+
+
+def test_cli_list_rule_sets_empty(capsys, monkeypatch):
+    """Test list command with --rule-sets option when no rule sets are available."""
+    def mock_get_all_rule_sets(self):
         return {}
     
-    monkeypatch.setattr("repolint.rule_manager.RuleManager.get_all_rules", mock_get_all_rules)
+    monkeypatch.setattr("repolint.rule_manager.RuleManager.get_all_rule_sets", mock_get_all_rule_sets)
     
     assert main(["list", "--rule-sets"]) == 0
     captured = capsys.readouterr()

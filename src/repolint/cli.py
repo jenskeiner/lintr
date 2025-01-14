@@ -85,9 +85,12 @@ def handle_list(args: argparse.Namespace) -> None:
     """Handle the list command."""
     from repolint.rule_manager import RuleManager
     
+    # Get singleton instance
+    manager = RuleManager()
+    
     if args.rules:
         print("Available rules:")
-        rules = RuleManager.get_all_rules()
+        rules = manager.get_all_rules()
         if not rules:
             print("  No rules implemented yet")
         else:
@@ -96,7 +99,12 @@ def handle_list(args: argparse.Namespace) -> None:
     
     if args.rule_sets:
         print("Available rule-sets:")
-        print("  - No rule-sets implemented yet")
+        rule_sets = manager.get_all_rule_sets()
+        if not rule_sets:
+            print("  No rule-sets implemented yet")
+        else:
+            for rule_set_id, rule_set in sorted(rule_sets.items()):
+                print(f"  {rule_set_id}: {rule_set.description}")
     
     if not (args.rules or args.rule_sets):
         print("Please specify --rules and/or --rule-sets")

@@ -114,3 +114,11 @@ class RuleManager:
         for rule_id, rule_class in self._rules.items():
             rules[rule_id] = rule_class(rule_id, "")  # Description will be set by the rule class
         return rules
+
+    def get_all_rule_sets(self) -> Dict[str, RuleSet]:
+        """Get all available rule sets.
+        
+        Returns:
+            Dictionary mapping rule set IDs to rule set instances.
+        """
+        return self._rule_sets.copy()

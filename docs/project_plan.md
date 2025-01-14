@@ -150,7 +150,7 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [] 1.6.1: Add parameterizable fixture to mock configuration.
   - [] 1.6.2: Add parameterizable fixture to mock GitHub API responses.
   - [x] 1.6.3: Improve test to verify listing of rules (`repolint --list rules`) to verify output comprehensively.
-  - [] 1.6.4: Improve test to verify listing of rule-sets (`repolint --list rule-sets`) to verify output comprehensively.
+  - [x] 1.6.4: Improve test to verify listing of rule-sets (`repolint --list rule-sets`) to verify output comprehensively.
 - [] 1.7: Create initial rules.
   - [x] 1.7.1: Create a rule that checks if a default branch exists.
   - [] 1.7.2: Create a rule that checks if the default branch is named "develop".
@@ -227,11 +227,18 @@ We can record here that this dependency should not be used in the future and lis
 1. Always run pytest from within the project's virtual environment. Running it directly may fail even if pytest is installed globally.
 2. When using `monkeypatch` in pytest, ensure that the path to the mocked attribute matches the actual import path in the code.
 3. When mocking a class method, ensure the method exists in the class before attempting to mock it.
+4. When mocking instance methods, remember to include `self` as the first parameter in the mock function.
+5. When testing singleton classes, be aware that instance methods need to be mocked differently than static methods.
 
 ### Testing Best Practices
 1. When testing abstract base classes, create concrete test implementations that satisfy the abstract methods.
 2. Test both success and error cases, including empty states (e.g., no rules available).
 3. Use descriptive test names and docstrings to clearly indicate what each test verifies.
+
+### Code Organization
+1. Keep test helper classes (like `TestRule` and `TestRuleSet`) together with the tests that use them.
+2. Use singleton pattern consistently - get the instance once and reuse it instead of creating new instances.
+3. Organize related functionality together (e.g., rule and rule-set operations in the same manager class).
 
 ## Future Scope (only for context, not a goal of current implementation)
 - Support for organization-wide rules.
