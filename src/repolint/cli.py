@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from repolint import __version__
-from repolint.config import RepolintConfig
+from repolint.config import create_config_class
 import yaml
 
 # Path to the default configuration template
@@ -91,7 +91,8 @@ def handle_lint(args: argparse.Namespace) -> None:
             sys.exit(1)
             
         # Load and validate configuration from all sources
-        config = RepolintConfig(config_file=args.config)
+        RepolintConfig = create_config_class(config_path)
+        config = RepolintConfig()
         
         # Validate GitHub token
         if not config.github_token:
@@ -109,7 +110,29 @@ def handle_lint(args: argparse.Namespace) -> None:
         if args.dry_run:
             print("Dry-run mode is enabled - no changes will be made")
         
-        # TODO: Connect to GitHub and enumerate repositories (step 1.9.2)
+        # Connect to GitHub and enumerate repositories
+        from repolint.github import GitHubClient, GitHubConfig
+        
+        # Create GitHub client with configuration
+        github_config = GitHubConfig(
+            token=config.github_token,
+            include_private=True,  # TODO: Make configurable
+            include_archived=False,  # TODO: Make configurable
+        )
+        client = GitHubClient(github_config)
+        
+        # Get repositories
+        print("\nEnumerating repositories...")
+        try:
+            repos = client.get_repositories()
+            print(f"Found {len(repos)} repositories")
+            
+            # TODO: Apply repository filters from config
+            # TODO: Apply rule sets and check repositories
+            
+        except Exception as e:
+            print(f"Error accessing GitHub: {e}")
+            sys.exit(1)
         
     except Exception as e:
         print(f"Error loading configuration: {e}")

@@ -160,7 +160,7 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [] 1.8.3: Create a rule that checks if contributors are required to sign off on web-based commits.
 - [x] 1.9: Implement the `lint` command to run linting operations.
   - [x] 1.9.1: Parse and validate the configuration.
-  - [] 1.9.2: Connect to GitHub and enumerate repositories.
+  - [x] 1.9.2: Connect to GitHub and enumerate repositories.
 - [] 1.8: Create a default rule set (e.g., for Python library projects).
 - [] 1.9: Output results of linting operations.
 
@@ -198,6 +198,11 @@ We can record here that this dependency should not be used in the future and lis
 1. When using PyGithub, prefer passing the token directly to the `Github` constructor rather than using `Auth.Token`. This simplifies testing and avoids potential compatibility issues.
 2. When mocking GitHub API responses in tests, mock at the module level (e.g., `repolint.github.Github`) rather than the package level (`github.Github`) to avoid issues with internal assertions.
 3. For repository list operations, handle both user and organization repositories consistently, applying filtering after fetching the repositories.
+4. When implementing repository enumeration:
+   - Keep the GitHub-specific code in a dedicated module (`github.py`) to maintain separation of concerns
+   - Use proper configuration classes (e.g., `GitHubConfig`) to handle GitHub-specific settings
+   - Add clear error messages for common issues like invalid tokens or API rate limits
+   - Consider making repository filtering options (private, archived) configurable through the main configuration
 
 ### Rule Implementation
 1. Use Python's ABC (Abstract Base Class) to enforce a consistent interface for all rules. This ensures that all rules implement the required methods (`check`, `can_fix`, and `fix`).
@@ -259,10 +264,16 @@ We can record here that this dependency should not be used in the future and lis
 ### Test
 1. When mocking configuration in tests:
    - Use temporary files instead of in-memory objects to test actual file loading behavior
-   - Clean up temporary files after tests to prevent test pollution
-   - Place shared fixtures in `conftest.py` to make them available across test modules
-   - Provide both flexible (parameterizable) and convenient (default) fixtures to suit different test needs
-   - Use type-safe configuration through pydantic validation in fixtures
+   - Keep configuration fixtures in conftest.py for reusability
+2. When mocking GitHub API responses in tests:
+   - Use a consolidated mock in conftest.py that supports both simple and advanced use cases
+   - Provide default mock data that matches real GitHub API responses
+   - Allow for both simple mocking (fixed responses) and advanced mocking (verifying calls)
+   - Mock at the module level (e.g., `repolint.github.Github`) rather than the package level (`github.Github`)
+3. Organize test fixtures hierarchically:
+   - Put shared fixtures in conftest.py
+   - Keep test-specific fixtures in their respective test files
+   - Use fixture composition to build more complex fixtures from simpler ones
 
 ### CLI Implementation
 1. When implementing a Python CLI tool, create both a dedicated CLI module and a simple `__main__.py` entry point. The CLI module should contain all the actual implementation, while `__main__.py` just imports and calls the main function. This separation allows the tool to be run both as `python -m package` and as a direct script.
