@@ -141,6 +141,8 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.3.3: Ensure test dependencies are in `pyproject.toml`.
   - [x] 1.3.4: Run `pytest` to verify test setup.
 - [x] 1.4: Implement basic CLI with placeholder commands.
+  - [x] 1.4.1: Create a `__main__.py` file so the module can be run as a script.
+  - [x] 1.4.2: Add an actual script named `repolint` to the package to run the CLI.
 - [x] 1.5: Develop core functionality:
   - [x] 1.5.1: GitHub API integration.
   - [x] 1.5.2: Rules and rule-set base classes implementation. No concrete rules yet.
@@ -247,6 +249,9 @@ We can record here that this dependency should not be used in the future and lis
    - Place shared fixtures in `conftest.py` to make them available across test modules
    - Provide both flexible (parameterizable) and convenient (default) fixtures to suit different test needs
    - Use type-safe configuration through pydantic validation in fixtures
+
+### CLI Implementation
+1. When implementing a Python CLI tool, create both a dedicated CLI module and a simple `__main__.py` entry point. The CLI module should contain all the actual implementation, while `__main__.py` just imports and calls the main function. This separation allows the tool to be run both as `python -m package` and as a direct script.
 
 ## Future Scope (only for context, not a goal of current implementation)
 - Support for organization-wide rules.
