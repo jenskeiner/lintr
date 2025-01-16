@@ -1,10 +1,16 @@
 """Command-line interface for Repolint."""
 
 import argparse
+import os
+import shutil
 import sys
+from pathlib import Path
 from typing import List, Optional
 
 from repolint import __version__
+
+# Path to the default configuration template
+DEFAULT_CONFIG_TEMPLATE = Path(__file__).parent / "templates" / "default_config.yml"
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -112,7 +118,28 @@ def handle_list(args: argparse.Namespace) -> None:
 
 def handle_init(args: argparse.Namespace) -> None:
     """Handle the init command."""
-    print(f"Would create new configuration file at {args.output}")
+    output_path = Path(args.output)
+    
+    if output_path.exists():
+        print(f"Error: File {output_path} already exists. Use a different path or remove the existing file.")
+        sys.exit(1)
+    
+    try:
+        # Create parent directories if they don't exist
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Copy the default configuration template
+        shutil.copy2(DEFAULT_CONFIG_TEMPLATE, output_path)
+        
+        print(f"Created new configuration file at {output_path}")
+        print("\nNext steps:")
+        print("1. Edit the configuration file to set your GitHub token")
+        print("2. Configure the repositories you want to check")
+        print("3. Adjust rule sets and settings as needed")
+        print("\nRun 'repolint list --rules' to see available rules")
+    except Exception as e:
+        print(f"Error creating configuration file: {e}")
+        sys.exit(1)
 
 
 def main(args: Optional[List[str]] = None) -> int:

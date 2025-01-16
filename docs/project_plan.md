@@ -143,6 +143,7 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
 - [x] 1.4: Implement basic CLI with placeholder commands.
   - [x] 1.4.1: Create a `__main__.py` file so the module can be run as a script.
   - [x] 1.4.2: Add an actual script named `repolint` to the package to run the CLI.
+  - [x] 1.4.3: Implement the `init` command properly to initialize a configuration file.
 - [x] 1.5: Develop core functionality:
   - [x] 1.5.1: GitHub API integration.
   - [x] 1.5.2: Rules and rule-set base classes implementation. No concrete rules yet.
@@ -218,6 +219,11 @@ We can record here that this dependency should not be used in the future and lis
    - Use `json_schema_extra={"env": [...]}` instead of `env=...` to specify environment variable names (deprecated in Pydantic V2).
    - Set `env_vars_override_env_file=True` to ensure environment variables take precedence over `.env` file.
    - Use `env_nested_delimiter="__"` to support nested configuration via environment variables.
+2. When implementing configuration file handling:
+   - Provide a well-documented default configuration template with examples and comments
+   - Include clear next steps for users after initialization
+   - Handle file paths safely using pathlib
+   - Give helpful error messages for common issues like existing files
 
 ### GitHub API Interaction
 1. When writing rules that interact with the GitHub API:
