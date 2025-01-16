@@ -143,21 +143,24 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
 - [x] 1.4: Implement basic CLI with placeholder commands.
   - [x] 1.4.1: Create a `__main__.py` file so the module can be run as a script.
   - [x] 1.4.2: Add an actual script named `repolint` to the package to run the CLI.
-  - [x] 1.4.3: Implement the `init` command properly to initialize a configuration file.
-- [x] 1.5: Develop core functionality:
-  - [x] 1.5.1: GitHub API integration.
-  - [x] 1.5.2: Rules and rule-set base classes implementation. No concrete rules yet.
-  - [x] 1.5.3: Rule Manager implementation. Singleton. Uses entry points to auto-discover rules and rule sets.
-  - [x] 1.5.4: Configuration file parsing.
-- [] 1.6 Add true end-to-end tests for real CLI operations.
-  - [x] 1.6.1: Add parameterizable fixture to mock configuration for e2e CLI tests.
-  - [x] 1.6.2: Add parameterizable fixture to mock GitHub API responses for e2e CLI tests.
-  - [x] 1.6.3: Improve test to verify listing of rules (`repolint --list rules`) to verify output comprehensively.
-  - [x] 1.6.4: Improve test to verify listing of rule-sets (`repolint --list rule-sets`) to verify output comprehensively.
-- [] 1.7: Create initial rules.
-  - [x] 1.7.1: Create a rule that checks if a default branch exists.
-  - [] 1.7.2: Create a rule that checks if the default branch is named "develop".
-  - [] 1.7.3: Create a rule that checks if contributors are required to sign off on web-based commits.
+- [x] 1.5: Implement the `init` command properly to initialize a configuration file.
+- [x] 1.6: Develop core functionality:
+  - [x] 1.6.1: GitHub API integration.
+  - [x] 1.6.2: Rules and rule-set base classes implementation. No concrete rules yet.
+  - [x] 1.6.3: Rule Manager implementation. Singleton. Uses entry points to auto-discover rules and rule sets.
+  - [x] 1.6.4: Configuration file parsing.
+- [x] 1.7 Add true end-to-end tests for real CLI operations.
+  - [x] 1.7.1: Add parameterizable fixture to mock configuration for e2e CLI tests.
+  - [x] 1.7.2: Add parameterizable fixture to mock GitHub API responses for e2e CLI tests.
+  - [x] 1.7.3: Improve test to verify listing of rules (`repolint --list rules`) to verify output comprehensively.
+  - [x] 1.7.4: Improve test to verify listing of rule-sets (`repolint --list rule-sets`) to verify output comprehensively.
+- [] 1.8: Create initial rules.
+  - [x] 1.8.1: Create a rule that checks if a default branch exists.
+  - [] 1.8.2: Create a rule that checks if the default branch is named "develop".
+  - [] 1.8.3: Create a rule that checks if contributors are required to sign off on web-based commits.
+- [x] 1.9: Implement the `lint` command to run linting operations.
+  - [x] 1.9.1: Parse and validate the configuration.
+  - [] 1.9.2: Connect to GitHub and enumerate repositories.
 - [] 1.8: Create a default rule set (e.g., for Python library projects).
 - [] 1.9: Output results of linting operations.
 
@@ -224,6 +227,11 @@ We can record here that this dependency should not be used in the future and lis
    - Include clear next steps for users after initialization
    - Handle file paths safely using pathlib
    - Give helpful error messages for common issues like existing files
+3. When implementing configuration handling:
+   - Use Pydantic's `BaseSettings` for configuration that can come from multiple sources (env vars, files)
+   - Ensure configuration file templates exactly match the Pydantic model structure
+   - Provide clear error messages that guide users to fix configuration issues
+   - Support both file-based and environment variable configuration for sensitive values like tokens
 
 ### GitHub API Interaction
 1. When writing rules that interact with the GitHub API:

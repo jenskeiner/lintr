@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import List, Optional
 
 from repolint import __version__
+from repolint.config import RepolintConfig
+import yaml
 
 # Path to the default configuration template
 DEFAULT_CONFIG_TEMPLATE = Path(__file__).parent / "templates" / "default_config.yml"
@@ -80,11 +82,38 @@ def create_parser() -> argparse.ArgumentParser:
 
 def handle_lint(args: argparse.Namespace) -> None:
     """Handle the lint command."""
-    print(f"Would lint repositories using config from {args.config}")
-    if args.fix:
-        print("Auto-fix is enabled")
-    if args.dry_run:
-        print("Dry-run mode is enabled")
+    try:
+        # Check if config file exists
+        config_path = Path(args.config)
+        if not config_path.exists():
+            print(f"Error: Configuration file not found: {args.config}")
+            print(f"Run 'repolint init' to create a new configuration file")
+            sys.exit(1)
+            
+        # Load and validate configuration from all sources
+        config = RepolintConfig(config_file=args.config)
+        
+        # Validate GitHub token
+        if not config.github_token:
+            print("Error: GitHub token not configured.")
+            print("Either:")
+            print("  1. Set it in your configuration file")
+            print("  2. Set the GITHUB_TOKEN environment variable")
+            print("  3. Set the REPOLINT_GITHUB_TOKEN environment variable")
+            sys.exit(1)
+        
+        # Show what we're about to do
+        print(f"Using configuration from {args.config}")
+        if args.fix:
+            print("Auto-fix is enabled - will attempt to fix issues automatically")
+        if args.dry_run:
+            print("Dry-run mode is enabled - no changes will be made")
+        
+        # TODO: Connect to GitHub and enumerate repositories (step 1.9.2)
+        
+    except Exception as e:
+        print(f"Error loading configuration: {e}")
+        sys.exit(1)
 
 
 def handle_list(args: argparse.Namespace) -> None:

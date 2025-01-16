@@ -2,55 +2,43 @@
 # This file configures how repolint checks your GitHub repositories
 
 # GitHub configuration
-github:
-  # Personal access token for GitHub API access
-  # You can also set this via GITHUB_TOKEN environment variable
-  token: null  # Set your token here or use environment variable
-  
-  # List of repositories to check
-  # Can be specific repositories or use wildcards
-  repositories:
+github_token: null  # Set your token here or use GITHUB_TOKEN environment variable
+
+# Repository filtering
+repository_filter:
+  include_patterns:
     - "owner/*"  # All repositories for an owner
     # - "owner/specific-repo"  # A specific repository
+  exclude_patterns:
+    - "owner/legacy-repo"  # Skip checking this repository
 
-# Rule sets to apply
-# Each rule set contains a collection of rules that check specific aspects
+# Default rule set to use if not overridden per repository
+default_rule_set: "repository-basics"
+
+# Repository-specific rule set overrides
+repository_rule_sets:
+  "owner/special-repo": "python-library"  # Use python-library rules for this repo
+
+# Rule set definitions
 rule_sets:
   # Basic repository hygiene checks
-  - name: repository-basics
+  repository-basics:
+    name: "repository-basics"
     rules:
-      - has_readme
-      - has_license
-      - has_contributing
-      - has_code_of_conduct
+      - "has_readme"
+      - "has_license"
+      - "has_contributing"
+      - "has_code_of_conduct"
+    rule_sets: []  # No nested rule sets
   
-  # Branch protection rules
-  - name: branch-protection
+  # Python library specific rules
+  python-library:
+    name: "python-library"
     rules:
-      - main_branch_protected
-      - requires_pull_request
-      - requires_review
-  
-  # Repository settings
-  - name: repository-settings
-    rules:
-      - issues_enabled
-      - wiki_enabled
-      - has_description
-
-# Global rule configuration
-# Override default settings for specific rules
-rule_config:
-  requires_review:
-    min_reviewers: 1  # Minimum number of reviewers required
-  
-  requires_pull_request:
-    enforce_admins: true  # Apply to repository administrators
-
-# Exclusions
-# Repositories or rules to exclude from checks
-exclude:
-  repositories:
-    - "owner/legacy-repo"  # Skip checking this repository
-  rules:
-    - "repository-settings/wiki_enabled"  # Skip this specific rule
+      - "has_readme"
+      - "has_license"
+      - "has_contributing"
+      - "has_setup_py"
+      - "has_requirements"
+    rule_sets: 
+      - "repository-basics"  # Include all basic checks too
