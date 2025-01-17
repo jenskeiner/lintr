@@ -110,10 +110,10 @@ def handle_lint(args: argparse.Namespace) -> None:
         if args.dry_run:
             print("Dry-run mode is enabled - no changes will be made")
         
-        # Connect to GitHub and enumerate repositories
-        from repolint.github import GitHubClient, GitHubConfig
-        
         # Create GitHub client with configuration
+        from repolint.github import GitHubClient, GitHubConfig
+        from repolint.linter import Linter
+        
         github_config = GitHubConfig(
             token=config.github_token,
             include_private=True,  # TODO: Make configurable
@@ -127,8 +127,11 @@ def handle_lint(args: argparse.Namespace) -> None:
             repos = client.get_repositories()
             print(f"Found {len(repos)} repositories")
             
-            # TODO: Apply repository filters from config
-            # TODO: Apply rule sets and check repositories
+            # Create linter and process repositories
+            linter = Linter(config, dry_run=args.dry_run)
+            results = linter.lint_repositories(repos)
+            
+            # TODO: Display results
             
         except Exception as e:
             print(f"Error accessing GitHub: {e}")

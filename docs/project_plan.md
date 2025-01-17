@@ -162,7 +162,7 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.9.1: Parse and validate the configuration.
   - [x] 1.9.2: Connect to GitHub and enumerate repositories.
   - [x] 1.9.3: Apply inclusion and exclusion patterns to determine final list of repositories.
-  - [] 1.9.4: Iterate over repositories. In the loop body, set up the context to pass to linting rules, but don't actually call them yet.
+  - [x] 1.9.4: Iterate over repositories. In the loop body, set up the context to pass to linting rules, but don't actually call them yet.
   - [] 1.9.5: Determine which rule set to use for each repository in the loop body.
   - [] 1.9.6: Iterate over all rules in the rule set for each repository in the loop body. Consider using a generator pattern to recursively enumerate all rules in a rule set.
 - [] 1.10: Create a default rule set (e.g., for Python library projects).
@@ -264,6 +264,11 @@ We can record here that this dependency should not be used in the future and lis
 1. Keep test helper classes (like `TestRule` and `TestRuleSet`) together with the tests that use them.
 2. Use singleton pattern consistently - get the instance once and reuse it instead of creating new instances.
 3. Organize related functionality together (e.g., rule and rule-set operations in the same manager class).
+4. When implementing complex operations like linting, create a dedicated class to handle the core functionality. This:
+   - Keeps the CLI code focused on user interaction and command handling
+   - Makes the core functionality easier to test in isolation
+   - Allows for better separation of concerns
+   - Makes it easier to extend or modify the functionality in the future
 
 ### Test
 1. When mocking configuration in tests:
