@@ -5,3 +5,5 @@ Consult the [full GitHub REST API spec](docs/api.github.com.yaml) regarding any 
 After making any changes, make sure to update the [project plan](docs/project_plan.md) with the changes.
 
 After making any change, make sure to update the "Lessons Learned" section in the [project plan](docs/project_plan.md). For example, if the user has corrected your approach to a problem, make sure to record the necessary details to be able to pick the correct approach in the future.
+
+ALWAYS ACTIVATE THE EXISTING PYTHON VIRTUAL ENVIRONMENT BEFORE RUNNING AUTOMATED TESTS.

@@ -1,10 +1,17 @@
 """GitHub API integration for Repolint."""
 
 from typing import Dict, List, Optional
+from fnmatch import fnmatch
 
 from github import Github
 from github.Repository import Repository
 from pydantic import BaseModel
+
+
+class RepositoryFilter(BaseModel):
+    """Repository filter configuration."""
+    include_patterns: Optional[List[str]] = None
+    exclude_patterns: Optional[List[str]] = None
 
 
 class GitHubConfig(BaseModel):
@@ -13,6 +20,7 @@ class GitHubConfig(BaseModel):
     org_name: Optional[str] = None
     include_private: bool = True
     include_archived: bool = False
+    repository_filter: RepositoryFilter = RepositoryFilter()
 
 
 class GitHubClient:
@@ -46,6 +54,22 @@ class GitHubClient:
             if (self._config.include_private or not repo.private) and
                (self._config.include_archived or not repo.archived)
         ]
+
+        # Apply inclusion patterns if specified
+        if self._config.repository_filter.include_patterns:
+            filtered_repos = [
+                repo for repo in filtered_repos
+                if any(fnmatch(repo.name, pattern)
+                      for pattern in self._config.repository_filter.include_patterns)
+            ]
+
+        # Apply exclusion patterns if specified
+        if self._config.repository_filter.exclude_patterns:
+            filtered_repos = [
+                repo for repo in filtered_repos
+                if not any(fnmatch(repo.name, pattern)
+                          for pattern in self._config.repository_filter.exclude_patterns)
+            ]
 
         return filtered_repos
 

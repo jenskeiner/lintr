@@ -161,6 +161,10 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
 - [x] 1.9: Implement the `lint` command to run linting operations.
   - [x] 1.9.1: Parse and validate the configuration.
   - [x] 1.9.2: Connect to GitHub and enumerate repositories.
+  - [x] 1.9.3: Apply inclusion and exclusion patterns to determine final list of repositories.
+  - [] 1.9.4: Iterate over repositories. In the loop body, set up the context to pass to linting rules, but don't actually call them yet.
+  - [] 1.9.5: Determine which rule set to use for each repository in the loop body.
+  - [] 1.9.6: Iterate over all rules in the rule set for each repository in the loop body. Consider using a generator pattern to recursively enumerate all rules in a rule set.
 - [] 1.10: Create a default rule set (e.g., for Python library projects).
 - [] 1.11: Output results of linting operations.
 
@@ -276,6 +280,15 @@ We can record here that this dependency should not be used in the future and lis
 
 ### CLI Implementation
 1. When implementing a Python CLI tool, create both a dedicated CLI module and a simple `__main__.py` entry point. The CLI module should contain all the actual implementation, while `__main__.py` just imports and calls the main function. This separation allows the tool to be run both as `python -m package` and as a direct script.
+
+### Pattern Matching
+1. Use Python's built-in `fnmatch` module for glob pattern matching instead of implementing custom pattern matching logic. It's well-tested, efficient, and supports all common glob patterns like `*`, `?`, and `[seq]`.
+2. When implementing filtering with both inclusion and exclusion patterns, apply inclusion patterns first, then exclusion patterns. This is more efficient as it reduces the number of items that need to be checked against exclusion patterns.
+3. Always write test cases that cover different pattern combinations:
+   - Only inclusion patterns
+   - Only exclusion patterns
+   - Both inclusion and exclusion patterns
+   - Edge cases like empty pattern lists
 
 ## Future Scope (only for context, not a goal of current implementation)
 - Support for organization-wide rules.
