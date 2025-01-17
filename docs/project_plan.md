@@ -226,6 +226,23 @@ We can record here that this dependency should not be used in the future and lis
    - This makes it easier to add new information in the future without breaking the API.
    - The context object serves as a clear contract between the rule system and individual rules.
 
+### Design
+1. When designing rule execution:
+   - Keep the rule iteration logic separate from rule set management
+   - Rule sets should focus on organizing and providing access to rules
+   - The linter class should handle rule execution and error handling
+   - This separation makes the code more maintainable and testable
+2. When working with collections of items:
+   - Use generators (yield) instead of building lists when possible
+   - This improves memory efficiency by avoiding intermediate lists
+   - Makes the code more composable and easier to work with streams of data
+   - Especially useful when dealing with potentially large collections
+3. When dealing with hierarchical rule sets:
+   - Ensure uniqueness by using rule IDs as keys
+   - Keep the first occurrence of a rule when duplicates exist
+   - Sort rules by ID for consistent ordering
+   - This makes rule execution deterministic and easier to reason about
+
 ### Configuration
 1. When using `pydantic_settings` with environment variables:
    - Use `json_schema_extra={"env": [...]}` instead of `env=...` to specify environment variable names (deprecated in Pydantic V2).

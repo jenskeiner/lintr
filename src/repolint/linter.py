@@ -7,7 +7,7 @@ from github.Repository import Repository
 from repolint.config import BaseRepolintConfig
 from repolint.rule_manager import RuleManager
 from repolint.rules import RuleSet
-from repolint.rules.base import RuleCheckResult
+from repolint.rules.base import Rule, RuleCheckResult, RuleResult
 from repolint.rules.context import RuleContext
 
 
@@ -63,6 +63,33 @@ class Linter:
         
         return None
 
+    def check_repository(self, repository: Repository, rule_set: RuleSet) -> Dict[str, RuleCheckResult]:
+        """Check a repository against all rules in a rule set.
+        
+        Args:
+            repository: GitHub repository to check.
+            rule_set: Rule set to use for checking.
+            
+        Returns:
+            Dictionary mapping rule IDs to their check results.
+        """
+        context = self.create_context(repository)
+        results = {}
+        
+        # Execute each rule from the rule set
+        for rule in rule_set.rules():
+            try:
+                results[rule.rule_id] = rule.check(context)
+            except Exception as e:
+                print(f"Error executing rule {rule.rule_id} on repository {repository.name}: {e}")
+                results[rule.rule_id] = RuleCheckResult(
+                    result=RuleResult.FAILED,
+                    message=f"Rule execution failed: {str(e)}",
+                    fix_available=False
+                )
+                
+        return results
+
     def lint_repositories(self, repositories: List[Repository]) -> Dict[str, Dict[str, RuleCheckResult]]:
         """Lint a list of repositories.
         
@@ -76,9 +103,6 @@ class Linter:
         results = {}
         
         for repo in repositories:
-            # Create context for this repository
-            context = self.create_context(repo)
-            
             # Get rule set for this repository
             rule_set_info = self.get_rule_set_for_repository(repo)
             if not rule_set_info:
@@ -93,7 +117,7 @@ class Linter:
             
             # Run all rules in the rule set
             try:
-                results[repo.name] = rule_set.check_repository(repo)
+                results[repo.name] = self.check_repository(repo, rule_set)
             except Exception as e:
                 print(f"Error checking repository {repo.name}: {e}")
                 results[repo.name] = {

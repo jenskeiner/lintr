@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Set
+from typing import Dict, Iterator, Optional, Set
 
 from github.Repository import Repository
 
@@ -93,28 +93,28 @@ class RuleSet:
             raise ValueError(f"Rule set with ID {rule_set.rule_set_id} already exists")
         self._rule_sets[rule_set.rule_set_id] = rule_set
 
-    def get_all_rules(self) -> Set[Rule]:
+    def rules(self) -> Iterator[Rule]:
         """Get all rules in this rule set, including those from nested rule sets.
         
-        Returns:
-            Set of all unique rules.
-        """
-        rules = set(self._rules.values())
-        for rule_set in self._rule_sets.values():
-            rules.update(rule_set.get_all_rules())
-        return rules
-
-    def check_repository(self, repo: Repository) -> Dict[str, RuleCheckResult]:
-        """Check a repository against all rules in this rule set.
+        The rules are returned in order by their rule_id and duplicates are removed.
+        If multiple rules have the same ID, only the first one encountered is included.
         
-        Args:
-            repo: GitHub repository to check.
-            
-        Returns:
-            Dictionary mapping rule IDs to their check results.
+        Yields:
+            Rules in this rule set and all nested rule sets, ordered by rule_id.
         """
-        context = RuleContext(repository=repo)
-        results = {}
-        for rule in self.get_all_rules():
-            results[rule.rule_id] = rule.check(context)
-        return results
+        # Collect all rules in a dictionary to ensure uniqueness
+        all_rules: Dict[str, Rule] = {}
+        
+        # Add rules from this rule set
+        all_rules.update(self._rules)
+        
+        # Add rules from nested rule sets
+        for rule_set in self._rule_sets.values():
+            for rule in rule_set.rules():
+                # Only add the rule if we haven't seen its ID before
+                if rule.rule_id not in all_rules:
+                    all_rules[rule.rule_id] = rule
+        
+        # Yield rules in order by rule_id
+        for rule_id in sorted(all_rules.keys()):
+            yield all_rules[rule_id]
