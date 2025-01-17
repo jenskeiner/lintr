@@ -7,7 +7,19 @@ import pytest
 from repolint.config import BaseRepolintConfig
 from repolint.linter import Linter
 from repolint.rules import RuleSet
+from repolint.rules.base import Rule, RuleCheckResult, RuleResult
 from repolint.rules.context import RuleContext
+
+
+class MockRule(Rule):
+    """Mock rule for testing."""
+    def check(self, context: RuleContext) -> RuleCheckResult:
+        """Return a mock check result."""
+        return RuleCheckResult(
+            result=RuleResult.PASSED,
+            message="Mock rule passed",
+            fix_available=False
+        )
 
 
 @pytest.fixture
@@ -129,8 +141,18 @@ def test_lint_repositories_with_missing_rule_set(mock_repo, mock_config, mock_ru
     mock_rule_manager.get_rule_set.assert_called_once_with("default")
 
 
-def test_lint_repositories(mock_repo, mock_config, mock_rule_set, mock_rule_manager):
-    """Test linting repositories."""
+def test_lint_repositories_success(mock_repo, mock_config, mock_rule_set, mock_rule_manager):
+    """Test successful repository linting."""
+    # Create a mock rule and add it to the rule set
+    mock_rule = MockRule("R001", "Test rule")
+    mock_rule_set.check_repository.return_value = {
+        "R001": RuleCheckResult(
+            result=RuleResult.PASSED,
+            message="Mock rule passed",
+            fix_available=False
+        )
+    }
+
     # Setup mock rule manager
     mock_rule_manager.get_rule_set.return_value = mock_rule_set
 
@@ -139,6 +161,30 @@ def test_lint_repositories(mock_repo, mock_config, mock_rule_set, mock_rule_mana
     results = linter.lint_repositories([mock_repo])
 
     # Verify results
-    assert isinstance(results, dict)
     assert "test-repo" in results
-    assert results["test-repo"] == {}
+    repo_results = results["test-repo"]
+    assert "R001" in repo_results
+    assert repo_results["R001"].result == RuleResult.PASSED
+    assert repo_results["R001"].message == "Mock rule passed"
+    assert not repo_results["R001"].fix_available
+    mock_rule_set.check_repository.assert_called_once_with(mock_repo)
+
+
+def test_lint_repositories_rule_error(mock_repo, mock_config, mock_rule_set, mock_rule_manager):
+    """Test handling of rule execution errors."""
+    # Setup mock rule set to raise an exception
+    mock_rule_set.check_repository.side_effect = Exception("Rule execution failed")
+
+    # Setup mock rule manager
+    mock_rule_manager.get_rule_set.return_value = mock_rule_set
+
+    # Create linter and lint repositories
+    linter = Linter(mock_config)
+    results = linter.lint_repositories([mock_repo])
+
+    # Verify error is reported in results
+    assert "test-repo" in results
+    assert "error" in results["test-repo"]
+    assert "Failed to check repository" in results["test-repo"]["error"]
+    assert "Rule execution failed" in results["test-repo"]["error"]
+    mock_rule_set.check_repository.assert_called_once_with(mock_repo)

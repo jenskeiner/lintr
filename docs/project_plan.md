@@ -164,7 +164,7 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.9.3: Apply inclusion and exclusion patterns to determine final list of repositories.
   - [x] 1.9.4: Iterate over repositories. In the loop body, set up the context to pass to linting rules, but don't actually call them yet.
   - [x] 1.9.5: Determine which rule set to use for each repository in the loop body.
-  - [] 1.9.6: Iterate over all rules in the rule set for each repository in the loop body. Consider using a generator pattern to recursively enumerate all rules in a rule set.
+  - [x] 1.9.6: Iterate over all rules in the rule set for each repository in the loop body. Consider using a generator pattern to recursively enumerate all rules in a rule set.
 - [] 1.10: Create a default rule set (e.g., for Python library projects).
 - [] 1.11: Output results of linting operations.
 
@@ -287,6 +287,11 @@ We can record here that this dependency should not be used in the future and lis
    - Use pytest fixtures to ensure consistent mocking across test functions
    - Mock at the point where the singleton is imported, not where it's instantiated
    - Reset singleton state between tests if necessary
+5. When testing rule execution:
+   - Create mock rules that inherit from the base Rule class for testing
+   - Test both successful and error cases for rule execution
+   - Verify that rule results are correctly propagated through the system
+   - Ensure error handling captures and reports rule execution failures appropriately
 
 ### CLI Implementation
 1. When implementing a Python CLI tool, create both a dedicated CLI module and a simple `__main__.py` entry point. The CLI module should contain all the actual implementation, while `__main__.py` just imports and calls the main function. This separation allows the tool to be run both as `python -m package` and as a direct script.

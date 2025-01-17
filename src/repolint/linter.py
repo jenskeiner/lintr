@@ -7,6 +7,7 @@ from github.Repository import Repository
 from repolint.config import BaseRepolintConfig
 from repolint.rule_manager import RuleManager
 from repolint.rules import RuleSet
+from repolint.rules.base import RuleCheckResult
 from repolint.rules.context import RuleContext
 
 
@@ -62,7 +63,7 @@ class Linter:
         
         return None
 
-    def lint_repositories(self, repositories: List[Repository]) -> Dict[str, Dict]:
+    def lint_repositories(self, repositories: List[Repository]) -> Dict[str, Dict[str, RuleCheckResult]]:
         """Lint a list of repositories.
         
         Args:
@@ -90,7 +91,13 @@ class Linter:
             rule_set_id, rule_set = rule_set_info
             print(f"Using rule set '{rule_set_id}' for repository {repo.name}")
             
-            # TODO: Run rule set checks in next step
-            results[repo.name] = {}
+            # Run all rules in the rule set
+            try:
+                results[repo.name] = rule_set.check_repository(repo)
+            except Exception as e:
+                print(f"Error checking repository {repo.name}: {e}")
+                results[repo.name] = {
+                    "error": f"Failed to check repository: {str(e)}"
+                }
             
         return results
