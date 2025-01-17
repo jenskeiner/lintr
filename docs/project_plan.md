@@ -161,8 +161,8 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
 - [x] 1.9: Implement the `lint` command to run linting operations.
   - [x] 1.9.1: Parse and validate the configuration.
   - [x] 1.9.2: Connect to GitHub and enumerate repositories.
-- [] 1.8: Create a default rule set (e.g., for Python library projects).
-- [] 1.9: Output results of linting operations.
+- [] 1.10: Create a default rule set (e.g., for Python library projects).
+- [] 1.11: Output results of linting operations.
 
 ### Phase 2: Autofix and Dry-Run Modes
 - [] 2.1: Implement autofix logic for auto-fixable rules.
@@ -270,10 +270,9 @@ We can record here that this dependency should not be used in the future and lis
    - Provide default mock data that matches real GitHub API responses
    - Allow for both simple mocking (fixed responses) and advanced mocking (verifying calls)
    - Mock at the module level (e.g., `repolint.github.Github`) rather than the package level (`github.Github`)
-3. Organize test fixtures hierarchically:
-   - Put shared fixtures in conftest.py
-   - Keep test-specific fixtures in their respective test files
-   - Use fixture composition to build more complex fixtures from simpler ones
+3. When creating test helper classes:
+   - Place them in a dedicated fixtures module to avoid pytest collection issues
+   - This is especially important for classes that have constructors and inherit from production classes
 
 ### CLI Implementation
 1. When implementing a Python CLI tool, create both a dedicated CLI module and a simple `__main__.py` entry point. The CLI module should contain all the actual implementation, while `__main__.py` just imports and calls the main function. This separation allows the tool to be run both as `python -m package` and as a direct script.
