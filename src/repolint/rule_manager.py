@@ -26,36 +26,38 @@ class RuleManager:
             self._factory = RuleSetFactory()
             self._discover_rules()
             self._discover_rule_sets()
+            
             RuleManager._initialized = True
 
     def _discover_rules(self) -> None:
-        """Auto-discover all rules via entry points."""
-        for entry_point in importlib.metadata.entry_points(group='repolint.rules'):
+        """Discover all available rules from entry points."""
+        # In Python 3.13, entry_points() returns a dict-like object
+        entry_points = importlib.metadata.entry_points()
+        rule_entry_points = entry_points.select(group='repolint.rules')
+        
+        for entry_point in rule_entry_points:
             try:
                 rule_class = entry_point.load()
-                if (isinstance(rule_class, type) and 
-                    issubclass(rule_class, Rule) and 
-                    rule_class != Rule):
-                    # Create an instance to get the rule_id
-                    rule_instance = rule_class("TEMP", "Temporary instance for ID extraction")
-                    self._rules[rule_instance.rule_id] = rule_class
-                    # Register with factory
-                    self._factory.register_rule_class(rule_instance.rule_id, rule_class)
+                self._rules[entry_point.name] = rule_class
+                self._factory.register_rule_class(entry_point.name, rule_class)
             except Exception as e:
-                # Log error but continue discovering other rules
-                print(f"Error loading rule {entry_point.name}: {e}")
+                # Log warning about invalid entry point
+                print(f"Warning: Failed to load rule {entry_point.name}: {e}")
 
     def _discover_rule_sets(self) -> None:
-        """Auto-discover all rule sets via entry points and configuration."""
-        # First discover rule sets from entry points
-        for entry_point in importlib.metadata.entry_points(group='repolint.rule_sets'):
+        """Discover all available rule sets from entry points."""
+        # In Python 3.13, entry_points() returns a dict-like object
+        entry_points = importlib.metadata.entry_points()
+        rule_set_entry_points = entry_points.select(group='repolint.rule_sets')
+        
+        for entry_point in rule_set_entry_points:
             try:
-                rule_set = entry_point.load()
-                if isinstance(rule_set, RuleSet):
-                    self._rule_sets[rule_set.rule_set_id] = rule_set
+                factory_func = entry_point.load()
+                rule_set = factory_func()  # Call the factory function
+                self._rule_sets[rule_set.rule_set_id] = rule_set
             except Exception as e:
-                # Log error but continue discovering other rule sets
-                print(f"Error loading rule set {entry_point.name}: {e}")
+                # Log warning about invalid entry point
+                print(f"Warning: Failed to load rule set {entry_point.name}: {e}")
 
     def load_rule_sets_from_config(self, config: BaseRepolintConfig) -> None:
         """Load rule sets from configuration.

@@ -2,7 +2,9 @@
 name = "repolint"
 version = "0.1.0"
 description = "A Python-based command-line application to lint and enforce consistent settings across GitHub repositories"
-authors = []
+authors = [
+    { name = "Jens Keiner", email = "jens.keiner@gmail.com" }
+]
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
@@ -12,6 +14,16 @@ dependencies = [
     "pydantic-settings>=2.1.0",
     "PyYAML>=6.0.1",
 ]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -20,8 +32,11 @@ dev = [
 ]
 
 [build-system]
-requires = ["setuptools>=68.0.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.21.1"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+packages = ["src/repolint"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=repolint --cov-report=term-missing --cov-report=html"
@@ -31,7 +46,7 @@ testpaths = ["tests"]
 repolint = "repolint.cli:main"
 
 [project.entry-points."repolint.rules"]
-# No default rules defined yet, users can add their own
+default_branch_exists = "repolint.rules.branch_rules:DefaultBranchExistsRule"
 
 [project.entry-points."repolint.rule_sets"]
-# No default rule sets defined yet, users can add their own
+default = "repolint.rules.default_rule_set:get_default_rule_set"

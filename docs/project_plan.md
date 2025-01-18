@@ -160,7 +160,7 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [] 1.8.3: Create a rule that checks if contributors are required to sign off on web-based commits.
 - [] 1.9: Create initial rule sets.
   - [x] 1.9.1: Review rule set discovery logic and ensure rule sets can be created programmatically as well as through configuration.
-  - [] 1.9.2: Create a minimalistic default rule set.
+  - [x] 1.9.2: Create a minimalistic default rule set.
 - [x] 1.10: Implement the `lint` command to run linting operations.
   - [x] 1.10.1: Parse and validate the configuration.
   - [x] 1.10.2: Connect to GitHub and enumerate repositories.
