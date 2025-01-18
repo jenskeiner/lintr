@@ -158,15 +158,18 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.8.1: Create a rule that checks if a default branch exists.
   - [] 1.8.2: Create a rule that checks if the default branch is named "develop".
   - [] 1.8.3: Create a rule that checks if contributors are required to sign off on web-based commits.
-- [x] 1.9: Implement the `lint` command to run linting operations.
-  - [x] 1.9.1: Parse and validate the configuration.
-  - [x] 1.9.2: Connect to GitHub and enumerate repositories.
-  - [x] 1.9.3: Apply inclusion and exclusion patterns to determine final list of repositories.
-  - [x] 1.9.4: Iterate over repositories. In the loop body, set up the context to pass to linting rules, but don't actually call them yet.
-  - [x] 1.9.5: Determine which rule set to use for each repository in the loop body.
-  - [x] 1.9.6: Iterate over all rules in the rule set for each repository in the loop body. Consider using a generator pattern to recursively enumerate all rules in a rule set.
-- [] 1.10: Create a default rule set (e.g., for Python library projects).
-- [] 1.11: Output results of linting operations.
+- [] 1.9: Create initial rule sets.
+  - [x] 1.9.1: Review rule set discovery logic and ensure rule sets can be created programmatically as well as through configuration.
+  - [] 1.9.2: Create a minimalistic default rule set.
+- [x] 1.10: Implement the `lint` command to run linting operations.
+  - [x] 1.10.1: Parse and validate the configuration.
+  - [x] 1.10.2: Connect to GitHub and enumerate repositories.
+  - [x] 1.10.3: Apply inclusion and exclusion patterns to determine final list of repositories.
+  - [x] 1.10.4: Iterate over repositories. In the loop body, set up the context to pass to linting rules, but don't actually call them yet.
+  - [x] 1.10.5: Determine which rule set to use for each repository in the loop body.
+  - [x] 1.10.6: Iterate over all rules in the rule set for each repository in the loop body. Consider using a generator pattern to recursively enumerate all rules in a rule set.
+- [] 1.11: Create a default rule set (e.g., for Python library projects).
+- [] 1.12: Output results of linting operations.
 
 ### Phase 2: Autofix and Dry-Run Modes
 - [] 2.1: Implement autofix logic for auto-fixable rules.
@@ -321,6 +324,14 @@ We can record here that this dependency should not be used in the future and lis
    - Only exclusion patterns
    - Both inclusion and exclusion patterns
    - Edge cases like empty pattern lists
+
+### Rule Set Discovery and Creation
+1. When implementing rule set discovery and creation:
+   - Handle rule sets in multiple passes to ensure dependencies are properly resolved
+   - Create rule sets with direct rules first, then create empty rule sets for nested-only sets
+   - Add nested rule sets last to ensure all dependencies exist
+   - Clean up rule sets that have no rules and no valid nested sets
+   - Provide clear error messages when rule sets cannot be created or nested sets are not found
 
 ## Future Scope (only for context, not a goal of current implementation)
 - Support for organization-wide rules.

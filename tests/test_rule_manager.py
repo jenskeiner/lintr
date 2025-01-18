@@ -116,3 +116,107 @@ def test_invalid_entry_point():
         
         # Verify no rules were loaded
         assert len(manager.get_all_rule_ids()) == 0
+
+
+def test_rule_manager_create_rule_set():
+    """Test creating a rule set with the rule manager."""
+    manager = RuleManager()
+    
+    # Register a rule class
+    manager._rules["TEST001"] = DummyRule
+    manager._factory.register_rule_class("TEST001", DummyRule)
+    
+    # Create a rule set with a single rule
+    rule_set = manager.create_rule_set(
+        rule_set_id="RS001",
+        description="Test rule set",
+        rule_ids=["TEST001"],
+    )
+    
+    assert isinstance(rule_set, RuleSet)
+    assert rule_set.rule_set_id == "RS001"
+    assert rule_set.description == "Test rule set"
+    assert len(list(rule_set.rules())) == 1
+    
+    # Verify that the rule set is registered
+    assert manager.get_rule_set("RS001") is rule_set
+    
+    # Create a nested rule set
+    nested_set = manager.create_rule_set(
+        rule_set_id="RS002",
+        description="Nested rule set",
+        nested_rule_set_ids=["RS001"],
+    )
+    
+    assert isinstance(nested_set, RuleSet)
+    assert len(list(nested_set.rules())) == 1  # Inherits rule from RS001
+    
+    # Verify that creating a rule set with an unknown rule ID raises an error
+    with pytest.raises(ValueError):
+        manager.create_rule_set(
+            rule_set_id="RS003",
+            description="Invalid rule set",
+            rule_ids=["INVALID"],
+        )
+    
+    # Verify that creating a rule set with an unknown nested rule set ID raises an error
+    with pytest.raises(ValueError):
+        manager.create_rule_set(
+            rule_set_id="RS003",
+            description="Invalid rule set",
+            nested_rule_set_ids=["INVALID"],
+        )
+
+
+def test_rule_manager_load_rule_sets_from_config():
+    """Test loading rule sets from configuration."""
+    manager = RuleManager()
+    
+    # Register a rule class
+    manager._rules["TEST001"] = DummyRule
+    manager._factory.register_rule_class("TEST001", DummyRule)
+    
+    # Create a config with rule sets
+    from repolint.config import BaseRepolintConfig, RuleSetConfig
+    config = BaseRepolintConfig(
+        github_token="dummy",
+        rule_sets={
+            "RS001": RuleSetConfig(
+                name="Test rule set 1",
+                rules=["TEST001"],
+            ),
+            "RS002": RuleSetConfig(
+                name="Test rule set 2",
+                rule_sets=["RS001"],  # Nested rule set
+            ),
+            "RS003": RuleSetConfig(
+                name="Test rule set 3",
+                rules=["INVALID"],  # Invalid rule ID
+            ),
+            "RS004": RuleSetConfig(
+                name="Test rule set 4",
+                rule_sets=["INVALID"],  # Invalid nested rule set
+            ),
+        },
+    )
+    
+    # Load rule sets from config
+    manager.load_rule_sets_from_config(config)
+    
+    # Verify that valid rule sets were created
+    rs001 = manager.get_rule_set("RS001")
+    assert rs001 is not None
+    assert rs001.rule_set_id == "RS001"
+    assert rs001.description == "Test rule set 1"
+    assert len(list(rs001.rules())) == 1
+    
+    # Verify that nested rule set was created
+    rs002 = manager.get_rule_set("RS002")
+    assert rs002 is not None
+    assert rs002.rule_set_id == "RS002"
+    assert rs002.description == "Test rule set 2"
+    assert len(list(rs002.rules())) == 1  # Inherits rule from RS001
+    
+    # Verify that invalid rule sets were skipped
+    assert manager.get_rule_set("RS003") is None
+    assert manager.get_rule_set("RS004") is None

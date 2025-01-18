@@ -1,14 +1,15 @@
-"""Core linting functionality for Repolint."""
+"""Core linting functionality."""
 
 from typing import Dict, List, Optional, Tuple
 
 from github.Repository import Repository
 
 from repolint.config import BaseRepolintConfig
+from repolint.github import create_github_client
 from repolint.rule_manager import RuleManager
-from repolint.rules import RuleSet
-from repolint.rules.base import Rule, RuleCheckResult, RuleResult
+from repolint.rules import RuleCheckResult, RuleSet
 from repolint.rules.context import RuleContext
+from repolint.rules import Rule, RuleResult
 
 
 class Linter:
@@ -24,6 +25,9 @@ class Linter:
         self._config = config
         self._dry_run = dry_run
         self._rule_manager = RuleManager()
+        
+        # Load rule sets from configuration
+        self._rule_manager.load_rule_sets_from_config(config)
 
     def create_context(self, repository: Repository) -> RuleContext:
         """Create a rule context for a repository.
