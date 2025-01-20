@@ -168,8 +168,12 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.10.4: Iterate over repositories. In the loop body, set up the context to pass to linting rules, but don't actually call them yet.
   - [x] 1.10.5: Determine which rule set to use for each repository in the loop body.
   - [x] 1.10.6: Iterate over all rules in the rule set for each repository in the loop body. Consider using a generator pattern to recursively enumerate all rules in a rule set.
-- [] 1.11: Create a default rule set (e.g., for Python library projects).
-- [] 1.12: Output results of linting operations.
+- [x] 1.11: Beautify the linting output.
+  - [x] 1.11.1: For each repository, list the repository name followed by the rule set applied for the repo in parenthesis.
+  - [x] 1.11.2: For each repository, start the line with a hyphen to indicate an itemized list.
+  - [x] 1.11.3: For each repository, print out the result of each rule that gets applied as an itemized list. Indent accordingly. 
+- [] 1.12: Create a default rule set (e.g., for Python library projects).
+- [] 1.13: Output results of linting operations.
 
 ### Phase 2: Autofix and Dry-Run Modes
 - [] 2.1: Implement autofix logic for auto-fixable rules.
@@ -332,6 +336,15 @@ We can record here that this dependency should not be used in the future and lis
    - Add nested rule sets last to ensure all dependencies exist
    - Clean up rule sets that have no rules and no valid nested sets
    - Provide clear error messages when rule sets cannot be created or nested sets are not found
+
+### Output Formatting
+- Keep output formatting simple and consistent. Instead of verbose labels like "rule set: default", just use the identifier in parentheses "(default)". This makes the output cleaner and easier to scan.
+- Use Unicode symbols (✓, ✗, -, ⚡) to provide visual status indicators. These are more intuitive than text labels and make the output easier to scan quickly.
+- Maintain a clear visual hierarchy through consistent indentation:
+  - Repository names at the root level
+  - Rule results indented with 2 spaces
+  - Fix descriptions indented with 4 spaces
+- When showing errors or problems, keep the error messages concise and prefix them with "Error:" for easy identification.
 
 ## Future Scope (only for context, not a goal of current implementation)
 - Support for organization-wide rules.

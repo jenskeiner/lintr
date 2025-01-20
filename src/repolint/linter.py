@@ -109,20 +109,29 @@ class Linter:
             # Get rule set for this repository
             rule_set_info = self.get_rule_set_for_repository(repo)
             if not rule_set_info:
-                print(f"Warning: No rule set found for repository {repo.name}")
+                print(f"- {repo.name} (no rule set)")
                 results[repo.name] = {
                     "error": f"No rule set found (tried: {self._config.repository_rule_sets.get(repo.name, self._config.default_rule_set)})"
                 }
                 continue
                 
             rule_set_id, rule_set = rule_set_info
-            print(f"Using rule set '{rule_set_id}' for repository {repo.name}")
+            print(f"- {repo.name} ({rule_set_id})")
             
             # Run all rules in the rule set
             try:
-                results[repo.name] = self.check_repository(repo, rule_set)
+                rule_results = self.check_repository(repo, rule_set)
+                results[repo.name] = rule_results
+                
+                # Print rule results
+                for rule_id, result in rule_results.items():
+                    status_symbol = "✓" if result.result == RuleResult.PASSED else "✗" if result.result == RuleResult.FAILED else "-"
+                    print(f"  {status_symbol} {rule_id}: {result.message}")
+                    if result.fix_available:
+                        print(f"    ⚡ {result.fix_description}")
+                
             except Exception as e:
-                print(f"Error checking repository {repo.name}: {e}")
+                print(f"  Error: {str(e)}")
                 results[repo.name] = {
                     "error": f"Failed to check repository: {str(e)}"
                 }
