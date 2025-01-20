@@ -5,11 +5,10 @@ from typing import Dict, List, Optional, Tuple
 from github.Repository import Repository
 
 from repolint.config import BaseRepolintConfig
-from repolint.github import create_github_client
 from repolint.rule_manager import RuleManager
 from repolint.rules import RuleCheckResult, RuleSet
 from repolint.rules.context import RuleContext
-from repolint.rules import Rule, RuleResult
+from repolint.rules import RuleResult
 
 
 class Linter:

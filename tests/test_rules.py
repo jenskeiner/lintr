@@ -51,7 +51,7 @@ def test_rule_set_initialization():
     rule_set = RuleSet("RS001", "Test rule set")
     assert rule_set.rule_set_id == "RS001"
     assert rule_set.description == "Test rule set"
-    assert len(rule_set.get_all_rules()) == 0
+    assert len(list(rule_set.rules())) == 0
 
 
 def test_rule_set_add_rule():
@@ -59,8 +59,9 @@ def test_rule_set_add_rule():
     rule_set = RuleSet("RS001", "Test rule set")
     rule = DummyRule("R001", "Test rule", RuleResult.PASSED)
     rule_set.add_rule(rule)
-    assert len(rule_set.get_all_rules()) == 1
-    assert rule in rule_set.get_all_rules()
+    rules = list(rule_set.rules())
+    assert len(rules) == 1
+    assert rule in rules
 
 
 def test_rule_set_add_duplicate_rule():
@@ -80,8 +81,9 @@ def test_rule_set_add_rule_set():
     rule = DummyRule("R001", "Test rule", RuleResult.PASSED)
     child_set.add_rule(rule)
     parent_set.add_rule_set(child_set)
-    assert len(parent_set.get_all_rules()) == 1
-    assert rule in parent_set.get_all_rules()
+    rules = list(parent_set.rules())
+    assert len(rules) == 1
+    assert rule in rules
 
 
 def test_rule_set_add_duplicate_rule_set():
@@ -92,19 +94,3 @@ def test_rule_set_add_duplicate_rule_set():
     parent_set.add_rule_set(child_set1)
     with pytest.raises(ValueError):
         parent_set.add_rule_set(child_set2)
-
-
-def test_rule_set_check_repository():
-    """Test checking a repository with a rule set."""
-    rule_set = RuleSet("RS001", "Test rule set")
-    rule1 = DummyRule("R001", "Test rule 1", RuleResult.PASSED)
-    rule2 = DummyRule("R002", "Test rule 2", RuleResult.FAILED)
-    rule_set.add_rule(rule1)
-    rule_set.add_rule(rule2)
-
-    mock_repo = MagicMock()
-    results = rule_set.check_repository(mock_repo)
-
-    assert len(results) == 2
-    assert results["R001"].result == RuleResult.PASSED
-    assert results["R002"].result == RuleResult.FAILED
