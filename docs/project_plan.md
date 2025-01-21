@@ -158,6 +158,7 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.8.1: Create a rule that checks if a default branch exists.
   - [] 1.8.2: Create a rule that checks if the default branch is named "develop".
   - [] 1.8.3: Create a rule that checks if contributors are required to sign off on web-based commits.
+  - [x] 1.8.4: Create a rule that checks if the setting "Whether to require contributors to sign off on web-based commits" is enabled (web_commit_signoff_required).
 - [] 1.9: Create initial rule sets.
   - [x] 1.9.1: Review rule set discovery logic and ensure rule sets can be created programmatically as well as through configuration.
   - [x] 1.9.2: Create a minimalistic default rule set.
@@ -171,7 +172,8 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
 - [x] 1.11: Beautify the linting output.
   - [x] 1.11.1: For each repository, list the repository name followed by the rule set applied for the repo in parenthesis.
   - [x] 1.11.2: For each repository, start the line with a hyphen to indicate an itemized list.
-  - [x] 1.11.3: For each repository, print out the result of each rule that gets applied as an itemized list. Indent accordingly. 
+  - [x] 1.11.3: For each repository, print out the result of each rule that gets applied as an itemized list. Indent accordingly.
+  - [x] 1.11.4: Colorize the output where appropriate. E.g. printing a check mark should be green, a cross should be red, etc.
 - [] 1.12: Create a default rule set (e.g., for Python library projects).
 - [] 1.13: Output results of linting operations.
 
@@ -345,6 +347,22 @@ We can record here that this dependency should not be used in the future and lis
   - Rule results indented with 2 spaces
   - Fix descriptions indented with 4 spaces
 - When showing errors or problems, keep the error messages concise and prefix them with "Error:" for easy identification.
+
+### Testing
+1. When using `pydantic_settings` with environment variables:
+   - Use `json_schema_extra={"env": [...]}` instead of `env=...` to specify environment variable names (deprecated in Pydantic V2).
+   - Set `env_vars_override_env_file=True` to ensure environment variables take precedence over `.env` file.
+   - Use `env_nested_delimiter="__"` to support nested configuration via environment variables.
+
+2. When mocking properties in Python unit tests:
+   - Use `PropertyMock` from `unittest.mock` to mock properties correctly.
+   - Set the mock on the type of the object using `type(obj).property_name = PropertyMock(...)` instead of directly on the instance.
+   - This ensures that property behavior (like raising exceptions) works correctly in tests.
+
+3. When implementing default rule sets:
+   - Use an empty rule set as the default to provide a clean slate for repositories without specific rules configured.
+   - This makes it easier for users to opt-in to rules rather than having to opt-out of unwanted rules.
+   - The empty rule set should still be a proper rule set class to maintain consistent behavior with other rule sets.
 
 ## Future Scope (only for context, not a goal of current implementation)
 - Support for organization-wide rules.

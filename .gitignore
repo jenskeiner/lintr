@@ -172,3 +172,5 @@ cython_debug/
 
 # Configuration file.
 .repolint.yml
+
+docs/api.github.com/

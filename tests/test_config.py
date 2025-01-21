@@ -191,7 +191,7 @@ def test_repolint_config_defaults():
     RepolintConfig = create_config_class()
     config = RepolintConfig()
 
-    assert config.default_rule_set == "default"  # Default value
+    assert config.default_rule_set == "empty"  # Default value
     assert isinstance(config.repository_filter, RepositoryFilter)
     assert config.repository_filter.include_patterns == []
     assert config.repository_filter.exclude_patterns == []

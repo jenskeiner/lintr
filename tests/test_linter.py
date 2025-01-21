@@ -3,12 +3,19 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from colorama import Fore, Style
 
 from repolint.config import BaseRepolintConfig
 from repolint.linter import Linter
-from repolint.rules import RuleSet
-from repolint.rules.base import Rule, RuleCheckResult, RuleResult
-from repolint.rules.context import RuleContext
+from repolint.rules import Rule, RuleCheckResult, RuleResult, RuleSet
+from repolint.rules.base import RuleContext
+
+
+def strip_color_codes(text: str) -> str:
+    """Strip ANSI color codes from text."""
+    for color in [Fore.GREEN, Fore.RED, Fore.YELLOW, Fore.BLUE, Fore.WHITE, Style.RESET_ALL]:
+        text = text.replace(str(color), "")
+    return text
 
 
 class MockRule(Rule):
@@ -94,7 +101,7 @@ def mock_repo():
 def mock_config():
     """Create a mock configuration."""
     config = MagicMock(spec=BaseRepolintConfig)
-    config.default_rule_set = "default"
+    config.default_rule_set = "empty"
     config.repository_filter = None
     config.rule_sets = {}
     config.repository_rule_sets = {}
@@ -167,6 +174,7 @@ def test_create_context(mock_repo, mock_config):
     context = linter.create_context(mock_repo)
     assert isinstance(context, RuleContext)
     assert context.repository == mock_repo
+    assert not context.dry_run
 
 
 def test_get_rule_set_for_repository_default(mock_repo, mock_config, mock_rule_set, mock_rule_manager):
@@ -181,9 +189,9 @@ def test_get_rule_set_for_repository_default(mock_repo, mock_config, mock_rule_s
     # Verify correct rule set is returned
     assert rule_set_info is not None
     rule_set_id, rule_set = rule_set_info
-    assert rule_set_id == "default"
+    assert rule_set_id == "empty"
     assert rule_set == mock_rule_set
-    mock_rule_manager.get_rule_set.assert_called_once_with("default")
+    mock_rule_manager.get_rule_set.assert_called_once_with("empty")
 
 
 def test_get_rule_set_for_repository_specific(mock_repo, mock_config, mock_rule_set, mock_rule_manager):
@@ -218,7 +226,7 @@ def test_get_rule_set_for_repository_not_found(mock_repo, mock_config, mock_rule
 
     # Verify no rule set is returned
     assert rule_set_info is None
-    mock_rule_manager.get_rule_set.assert_called_once_with("default")
+    mock_rule_manager.get_rule_set.assert_called_once_with("empty")
 
 
 def test_check_repository_success(mock_repo, mock_config, mock_rule_set):
@@ -263,7 +271,7 @@ def test_lint_repositories_with_missing_rule_set(mock_repo, mock_config, mock_ru
     assert "test-repo" in results
     assert "error" in results["test-repo"]
     assert "No rule set found" in results["test-repo"]["error"]
-    mock_rule_manager.get_rule_set.assert_called_once_with("default")
+    mock_rule_manager.get_rule_set.assert_called_once_with("empty")
 
 
 def test_lint_repositories_success(mock_repo, mock_config, mock_rule_set, mock_rule_manager):
@@ -291,7 +299,7 @@ def test_lint_repositories_output_formatting(mock_repo, mock_config, capsys):
     failing_rule = DummyRule("R002", "Failing rule", RuleResult.FAILED)
     skipped_rule = DummyRule("R003", "Skipped rule", RuleResult.SKIPPED)
     fixable_rule = DummyRule("R004", "Fixable rule", RuleResult.FAILED)
-    
+
     # Create a rule set with all types of rules
     rule_set = RuleSet("test", "Test rule set")
     rule_set.add_rule(passing_rule)
@@ -305,17 +313,17 @@ def test_lint_repositories_output_formatting(mock_repo, mock_config, capsys):
     # Setup mock rule manager to return our rule set
     mock_rule_manager = MagicMock()
     mock_rule_manager.get_rule_set.return_value = rule_set
-    
+
     # Create linter with mocked rule manager
     linter = Linter(mock_config)
     linter._rule_manager = mock_rule_manager
-    
+
     # Run linting
     linter.lint_repositories([mock_repo])
     
-    # Capture output
+    # Capture output and strip color codes
     captured = capsys.readouterr()
-    output_lines = captured.out.splitlines()
+    output_lines = [strip_color_codes(line) for line in captured.out.splitlines()]
     
     # Verify output format
     assert output_lines[0] == f"- {mock_repo.name} (test)"
@@ -330,7 +338,7 @@ def test_lint_repositories_output_formatting_with_fix(mock_repo, mock_config, ca
     # Create a rule set with a fixable rule
     rule_set = RuleSet("test", "Test rule set")
     rule_set.add_rule(FixableDummyRule("R001", "Fixable rule"))
-    
+
     # Configure mock config to use our test rule set
     mock_config.default_rule_set = "test"
     
@@ -341,13 +349,13 @@ def test_lint_repositories_output_formatting_with_fix(mock_repo, mock_config, ca
     # Create linter with mocked rule manager
     linter = Linter(mock_config)
     linter._rule_manager = mock_rule_manager
-    
+
     # Run linting
     linter.lint_repositories([mock_repo])
     
-    # Capture output
+    # Capture output and strip color codes
     captured = capsys.readouterr()
-    output_lines = captured.out.splitlines()
+    output_lines = [strip_color_codes(line) for line in captured.out.splitlines()]
     
     # Verify output format
     assert output_lines[0] == f"- {mock_repo.name} (test)"
@@ -359,11 +367,11 @@ def test_lint_repositories_output_formatting_with_fix(mock_repo, mock_config, ca
 def test_lint_repositories_custom_error_message(mock_repo, mock_config, capsys):
     """Test output formatting of lint results with a custom error message."""
     error_message = "Custom error occurred while checking rule"
-    
+
     # Create a rule set with an error-raising rule
     rule_set = RuleSet("test", "Test rule set")
     rule_set.add_rule(ErrorDummyRule("R001", "Error rule", error_message))
-    
+
     # Configure mock config to use our test rule set
     mock_config.default_rule_set = "test"
     
@@ -384,10 +392,10 @@ def test_lint_repositories_custom_error_message(mock_repo, mock_config, capsys):
     assert result.result == RuleResult.FAILED
     assert error_message in result.message
     assert not result.fix_available
-    
+
     # Verify error output format
     captured = capsys.readouterr()
-    output_lines = captured.out.splitlines()
+    output_lines = [strip_color_codes(line) for line in captured.out.splitlines()]
     assert output_lines[0] == f"- {mock_repo.name} (test)"
     assert "Error executing rule R001" in output_lines[1]
     assert error_message in output_lines[1]
@@ -404,19 +412,19 @@ def test_lint_repositories_no_rule_set_found(mock_repo, mock_config, capsys):
     # Setup mock rule manager to return no rule set
     mock_rule_manager = MagicMock()
     mock_rule_manager.get_rule_set.return_value = None
-    
+
     # Create linter with mocked rule manager
     linter = Linter(mock_config)
     linter._rule_manager = mock_rule_manager
     
     # Run linting
     results = linter.lint_repositories([mock_repo])
-    
+
     # Verify error is correctly captured in results
     assert "error" in results[mock_repo.name]
     assert "No rule set found" in results[mock_repo.name]["error"]
     
     # Verify error output format
     captured = capsys.readouterr()
-    output_lines = captured.out.splitlines()
+    output_lines = [strip_color_codes(line) for line in captured.out.splitlines()]
     assert output_lines[0] == f"- {mock_repo.name} (no rule set)"

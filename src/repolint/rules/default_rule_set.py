@@ -1,7 +1,10 @@
 """Default rule set for Repolint."""
 
 from repolint.rules.base import RuleSet
-from repolint.rules.branch_rules import DefaultBranchExistsRule
+from repolint.rules.branch_rules import (
+    DefaultBranchExistsRule,
+    WebCommitSignoffRequiredRule
+)
 
 
 def get_default_rule_set() -> RuleSet:
@@ -21,5 +24,6 @@ def get_default_rule_set() -> RuleSet:
     
     # Add basic repository checks
     rule_set.add_rule(DefaultBranchExistsRule())
+    rule_set.add_rule(WebCommitSignoffRequiredRule())
     
     return rule_set

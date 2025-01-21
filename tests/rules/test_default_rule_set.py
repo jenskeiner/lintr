@@ -1,7 +1,10 @@
 """Tests for the default rule set."""
 
 from repolint.rules.default_rule_set import get_default_rule_set
-from repolint.rules.branch_rules import DefaultBranchExistsRule
+from repolint.rules.branch_rules import (
+    DefaultBranchExistsRule,
+    WebCommitSignoffRequiredRule
+)
 
 
 def test_get_default_rule_set():
@@ -13,5 +16,6 @@ def test_get_default_rule_set():
     
     # Verify that the rule set contains all expected rules
     rules = list(rule_set.rules())
-    assert len(rules) == 1
+    assert len(rules) == 2
     assert isinstance(rules[0], DefaultBranchExistsRule)
+    assert isinstance(rules[1], WebCommitSignoffRequiredRule)

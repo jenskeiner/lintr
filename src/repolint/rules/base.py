@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Iterator, Optional, Set
+from typing import Dict, Iterator, Optional, Set, Tuple
 
 from github.Repository import Repository
 
@@ -48,6 +48,22 @@ class Rule(ABC):
             
         Returns:
             Result of the check with details.
+        """
+        pass
+
+    def fix(self, context: RuleContext) -> Tuple[bool, str]:
+        """Apply the fix for this rule.
+        
+        This method should only be called if check() returned a RuleCheckResult
+        with fix_available=True.
+        
+        Args:
+            context: Context object containing all information needed for the fix.
+            
+        Returns:
+            A tuple of (success, message) where success is a boolean indicating if
+            the fix was successful, and message provides details about what was done
+            or why the fix failed.
         """
         pass
 

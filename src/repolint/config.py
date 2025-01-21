@@ -30,7 +30,7 @@ class BaseRepolintConfig(BaseSettings):
     """Base configuration for repolint."""
 
     github_token: str = Field()
-    default_rule_set: str = Field(default="default")
+    default_rule_set: str = Field(default="empty")
     repository_filter: RepositoryFilter = Field(
         default_factory=RepositoryFilter,
     )

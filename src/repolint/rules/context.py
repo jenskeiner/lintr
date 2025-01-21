@@ -10,7 +10,9 @@ class RuleContext:
     """Context object passed to rules during execution.
     
     This class encapsulates all the information available to a rule when it runs.
-    Currently, it only contains the GitHub repository object, but can be expanded
-    in the future to provide more context.
+    Currently, it contains:
+    - repository: The GitHub repository object
+    - dry_run: Whether to make actual changes or just simulate them
     """
     repository: Repository
+    dry_run: bool = False
