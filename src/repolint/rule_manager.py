@@ -175,12 +175,18 @@ class RuleManager:
             description: Description for the new rule instance.
             
         Returns:
-            New rule instance if the rule ID exists, None otherwise.
+            Created rule instance.
+            
+        Raises:
+            ValueError: If the rule ID is not found.
         """
-        rule_class = self.get_rule_class(rule_id)
-        if rule_class:
-            return rule_class(rule_id, description)
-        return None
+        rule_class = self._rules.get(rule_id)
+        if not rule_class:
+            raise ValueError(f"Rule {rule_id} not found")
+        
+        rule = rule_class(rule_id, description)
+        
+        return rule
 
     def create_rule_set(
         self,

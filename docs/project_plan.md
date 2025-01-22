@@ -77,6 +77,13 @@ This plan outlines the goals and phases for building Repolint.
 - Rules receive a context object when running checks, which encapsulates all information needed for the check.
   - Initially, the context only contains the GitHub repository object.
   - The context can be expanded in the future to provide more information.
+- Mutually exclusive
+  - Rules can be mutually exclusive with others. The relationship is bi-directional.
+  - Mutually exclusive rules can be present in the same rule set.
+  - Precedence rules determine which rules in a set are actually active:
+    - Rules in sub-rule sets have lower precedence than rules in parent rule sets.
+    - Tie-braker for rules at the same level is order in list (from lowest to highest).
+    
 
 ### Rule Sets
 
@@ -177,8 +184,11 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.11.2: For each repository, start the line with a hyphen to indicate an itemized list.
   - [x] 1.11.3: For each repository, print out the result of each rule that gets applied as an itemized list. Indent accordingly.
   - [x] 1.11.4: Colorize the output where appropriate. E.g. printing a check mark should be green, a cross should be red, etc.
-- [] 1.12: Create a default rule set (e.g., for Python library projects).
-- [] 1.13: Output results of linting operations.
+- [] 1.12: Mutually exclusive rules and precedence.
+  - [x] 1.12.1: Implement the concept of mutually exclusive rules. A rule may point to other rules that it is mutually exclusive with. The relationship is bi-directional.
+  - [] 1.12.2: Implement rule precedence in rule sets. Add new effective_rules() method to rule sets. Should return the rules that are actually active.
+- [] 1.13: Create a default rule set (e.g., for Python library projects).
+- [] 1.14: Output results of linting operations.
 
 ### Phase 2: Autofix and Dry-Run Modes
 - [] 2.1: Implement autofix logic for auto-fixable rules.

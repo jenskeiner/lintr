@@ -94,8 +94,9 @@ def test_rule_manager_create_rule():
         mock_entry_points.return_value.select.return_value = []
         
         manager = RuleManager()
-        rule = manager.create_rule("TEST001", "Test rule")
-        assert rule is None  # No rules registered yet
+        # No rules registered yet
+        with pytest.raises(ValueError):
+            _ = manager.create_rule("TEST001", "Test rule")
         
         # Register a rule class
         manager._rules["TEST001"] = TestRule

@@ -29,6 +29,9 @@ class RuleCheckResult:
 class Rule(ABC):
     """Base class for all rules."""
 
+    # Class-level set of rule IDs that this rule is mutually exclusive with
+    mutually_exclusive_with: Set[str] = set()
+
     def __init__(self, rule_id: str, description: str):
         """Initialize a rule.
         
