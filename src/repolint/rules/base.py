@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Iterator, Optional, Set, Tuple
+from typing import Dict, Iterator, List, Optional, Set, Tuple, Union
 
 from github.Repository import Repository
 
@@ -83,8 +83,8 @@ class RuleSet:
         """
         self.rule_set_id = rule_set_id
         self.description = description
-        self._rules: Dict[str, Rule] = {}
-        self._rule_sets: Dict[str, 'RuleSet'] = {}
+        # Store both rules and rule sets in a single list, maintaining order
+        self._items: List[Union[Rule, 'RuleSet']] = []
 
     def add_rule(self, rule: Rule) -> None:
         """Add a rule to this rule set.
@@ -95,9 +95,11 @@ class RuleSet:
         Raises:
             ValueError: If a rule with the same ID already exists.
         """
-        if rule.rule_id in self._rules:
-            raise ValueError(f"Rule with ID {rule.rule_id} already exists")
-        self._rules[rule.rule_id] = rule
+        # Check for duplicates
+        if any(isinstance(item, Rule) and item.rule_id == rule.rule_id 
+               for item in self._items):
+            raise ValueError(f"Rule {rule.rule_id} already exists in rule set")
+        self._items.append(rule)
 
     def add_rule_set(self, rule_set: 'RuleSet') -> None:
         """Add another rule set to this rule set.
@@ -108,32 +110,35 @@ class RuleSet:
         Raises:
             ValueError: If a rule set with the same ID already exists.
         """
-        if rule_set.rule_set_id in self._rule_sets:
-            raise ValueError(f"Rule set with ID {rule_set.rule_set_id} already exists")
-        self._rule_sets[rule_set.rule_set_id] = rule_set
+        # Check for duplicates
+        if any(isinstance(item, RuleSet) and item.rule_set_id == rule_set.rule_set_id 
+               for item in self._items):
+            raise ValueError(f"Rule set {rule_set.rule_set_id} already exists")
+        self._items.append(rule_set)
 
     def rules(self) -> Iterator[Rule]:
         """Get all rules in this rule set, including those from nested rule sets.
         
-        The rules are returned in order by their rule_id and duplicates are removed.
-        If multiple rules have the same ID, only the first one encountered is included.
+        Rules are returned in the order they were added, with nested rule set rules 
+        being inserted at the point where the rule set was added.
         
         Yields:
-            Rules in this rule set and all nested rule sets, ordered by rule_id.
+            Rules in this rule set and all nested rule sets in order of addition.
         """
-        # Collect all rules in a dictionary to ensure uniqueness
-        all_rules: Dict[str, Rule] = {}
+        rules = []
+        for item in self._items:
+            if isinstance(item, Rule):
+                rules.append(item)
+            else:  # RuleSet
+                rules.extend(item.rules())
+
+        def remove_dupes(rules):
+            seen = set()
+            for rule in reversed(rules):
+                if rule.rule_id not in seen:
+                    seen.add(rule.rule_id)
+                    yield rule
         
-        # Add rules from this rule set
-        all_rules.update(self._rules)
-        
-        # Add rules from nested rule sets
-        for rule_set in self._rule_sets.values():
-            for rule in rule_set.rules():
-                # Only add the rule if we haven't seen its ID before
-                if rule.rule_id not in all_rules:
-                    all_rules[rule.rule_id] = rule
-        
-        # Yield rules in order by rule_id
-        for rule_id in sorted(all_rules.keys()):
-            yield all_rules[rule_id]
+        rules = reversed(list(remove_dupes(rules)))
+
+        yield from rules

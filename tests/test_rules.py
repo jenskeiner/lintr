@@ -200,3 +200,28 @@ def test_rule_class_mutually_exclusive_one_directional():
     assert "R004" in rule1.mutually_exclusive_with
     # Rule2 doesn't explicitly mark Rule1 as mutually exclusive
     assert "R003" not in rule2.mutually_exclusive_with
+
+
+def test_rule_set_preserves_order():
+    """Test that rules and rule sets are returned in the order they were added."""
+    # Create test rules with non-alphabetical IDs to ensure order is not by ID
+    rule1 = DummyRule("R002", "Test Rule 2", RuleResult.PASSED)
+    rule2 = DummyRule("R001", "Test Rule 1", RuleResult.PASSED)
+    rule3 = DummyRule("R003", "Test Rule 3", RuleResult.PASSED)
+
+    # Create test rule sets
+    parent_set = RuleSet("RS001", "Parent Rule Set")
+    child_set = RuleSet("RS002", "Child Rule Set")
+
+    # Add rules in specific order
+    parent_set.add_rule(rule1)  # R002
+    parent_set.add_rule_set(child_set)
+    child_set.add_rule(rule2)  # R001
+    parent_set.add_rule(rule3)  # R003
+
+    # Get all rules and verify order
+    rules = list(parent_set.rules())
+    assert len(rules) == 3
+    assert rules[0].rule_id == "R002"  # First in parent set
+    assert rules[1].rule_id == "R001"  # First in child set
+    assert rules[2].rule_id == "R003"  # Last in parent set

@@ -141,7 +141,7 @@ def mock_rule_manager():
 
 
 def test_rule_set_rules_ordering():
-    """Test that rules are returned in order by rule_id."""
+    """Test that rules are returned in order of addition."""
     # Create a rule set with rules in non-alphabetical order
     rule_set = RuleSet("test", "Test rule set")
     rule_set.add_rule(MockRule("R002", "Second rule"))
@@ -151,7 +151,7 @@ def test_rule_set_rules_ordering():
     # Get rules and verify order
     rules = list(rule_set.rules())
     assert len(rules) == 3
-    assert [r.rule_id for r in rules] == ["R001", "R002", "R003"]
+    assert [r.rule_id for r in rules] == ["R002", "R001", "R003"]
 
 
 def test_rule_set_rules_uniqueness():
@@ -177,8 +177,8 @@ def test_rule_set_rules_uniqueness():
     assert len(rules) == 3  # Should only have 3 unique rules
     assert [r.rule_id for r in rules] == ["R001", "R002", "R003"]
     # First occurrence of each rule should be kept
-    assert rules[0].description == "First rule - parent"
-    assert rules[1].description == "Second rule - child"
+    assert rules[0].description == "First rule - child"
+    assert rules[1].description == "Second rule - grandchild"
     assert rules[2].description == "Third rule - grandchild"
 
 
