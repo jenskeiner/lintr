@@ -171,6 +171,7 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.10.6: Iterate over all rules in the rule set for each repository in the loop body. Consider using a generator pattern to recursively enumerate all rules in a rule set.
   - [x] 1.10.7: For each rule check on a repository, execute the fix step immediately after, if the --fix CLI option has been passed. Ensure proper terminal output to inform the user.
   - [x] 1.10.8: Add a --non-interactive CLI option. By default, when not given, applying fixes is interactive, i.e. the user should be prompted before executing each fix. When given, applying fixes should not be interactive.
+  - [x] 1.10.9: Add CLI option --include-organisations. By default, when not given, linting only considers user repositories. When given, linting considers all repositories, including organisation repositories.
 - [x] 1.11: Beautify the linting output.
   - [x] 1.11.1: For each repository, list the repository name followed by the rule set applied for the repo in parenthesis.
   - [x] 1.11.2: For each repository, start the line with a hyphen to indicate an itemized list.
@@ -218,6 +219,12 @@ We can record here that this dependency should not be used in the future and lis
    - Use proper configuration classes (e.g., `GitHubConfig`) to handle GitHub-specific settings
    - Add clear error messages for common issues like invalid tokens or API rate limits
    - Consider making repository filtering options (private, archived) configurable through the main configuration
+5. When handling GitHub organization repositories:
+   - Maintain a clear separation between organization-specific mode (single org via `org_name`) and user mode with optional organization inclusion
+   - Use `get_user().get_orgs()` to enumerate all organizations a user has access to
+   - Consider performance implications when including organization repositories, as it requires additional API calls
+   - Test both the positive case (organizations included) and negative case (organizations excluded) with proper mock resets
+   - When fetching user repositories with `get_repos()`, always specify `affiliation="owner"` to get only user-owned repositories, as the default behavior includes all accessible repositories including organization ones
 
 ### Rule Implementation
 1. Use Python's ABC (Abstract Base Class) to enforce a consistent interface for all rules. This ensures that all rules implement the required methods (`check`, `can_fix`, and `fix`).

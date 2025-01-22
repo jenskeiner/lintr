@@ -50,6 +50,11 @@ def create_parser() -> argparse.ArgumentParser:
         help="Apply fixes without prompting for confirmation"
     )
     lint_parser.add_argument(
+        "--include-organisations",
+        action="store_true",
+        help="Include organisation repositories in addition to user repositories"
+    )
+    lint_parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Show what would be done without making changes"
@@ -124,7 +129,7 @@ def handle_lint(args: argparse.Namespace) -> None:
         github_config = GitHubConfig(
             token=config.github_token,
             include_private=True,  # TODO: Make configurable
-            include_archived=False,  # TODO: Make configurable
+            include_organisations=getattr(args, 'include_organisations', False)
         )
         client = GitHubClient(github_config)
         

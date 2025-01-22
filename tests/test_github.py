@@ -57,7 +57,7 @@ def test_get_user_repositories(github_config, mock_repo):
 
         assert len(repos) == 1
         assert repos[0].name == "test-repo"
-        mock_user.get_repos.assert_called_once()
+        mock_user.get_repos.assert_called_once_with(affiliation="owner")
         mock_github_class.assert_called_once()
 
 
@@ -219,3 +219,47 @@ def test_repository_filtering_with_both_patterns(github_config, mock_repo):
         assert "test-demo" in repo_names
         assert "test-api" not in repo_names
         assert "demo-app" not in repo_names
+
+
+def test_include_organisation_repositories(github_config, mock_repo):
+    """Test including organisation repositories."""
+    with patch('repolint.github.Github') as mock_github_class:
+        # Test with include_organisations=True
+        mock_org = MagicMock()
+        mock_org.get_repos.return_value = [mock_repo]
+        
+        mock_user = MagicMock()
+        mock_user.get_repos.return_value = [mock_repo]
+        mock_user.get_orgs.return_value = [mock_org]
+        
+        mock_github = MagicMock()
+        mock_github.get_user.return_value = mock_user
+        mock_github_class.return_value = mock_github
+
+        config = GitHubConfig(token="test-token", include_organisations=True)
+        client = GitHubClient(config)
+        repos = client.get_repositories()
+
+        # Should get both user and org repos
+        assert len(repos) == 2
+        mock_user.get_repos.assert_called_once_with(affiliation="owner")
+        mock_user.get_orgs.assert_called_once()
+        mock_org.get_repos.assert_called_once()
+
+        # Reset mocks for next test
+        mock_github_class.reset_mock()
+        mock_github = MagicMock()
+        mock_user = MagicMock()
+        mock_user.get_repos.return_value = [mock_repo]
+        mock_github.get_user.return_value = mock_user
+        mock_github_class.return_value = mock_github
+
+        # Test with include_organisations=False
+        config = GitHubConfig(token="test-token", include_organisations=False)
+        client = GitHubClient(config)
+        repos = client.get_repositories()
+
+        # Should only get user repos
+        assert len(repos) == 1
+        mock_user.get_repos.assert_called_once_with(affiliation="owner")
+        mock_user.get_orgs.assert_not_called()

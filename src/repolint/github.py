@@ -20,6 +20,7 @@ class GitHubConfig(BaseModel):
     org_name: Optional[str] = None
     include_private: bool = True
     include_archived: bool = False
+    include_organisations: bool = False
     repository_filter: RepositoryFilter = RepositoryFilter()
 
 
@@ -41,21 +42,32 @@ class GitHubClient:
         Returns:
             List of GitHub repositories.
         """
+        repositories = []
+
         if self._config.org_name:
+            # If org_name is specified, only get that organization's repositories
             org = self._client.get_organization(self._config.org_name)
-            repos = org.get_repos()
+            repositories.extend(org.get_repos())
         else:
             # Get authenticated user's repositories
-            repos = self._client.get_user().get_repos()
+            user = self._client.get_user()
+            
+            # Get user's own repositories (affiliation="owner")
+            repositories.extend(user.get_repos(affiliation="owner"))
+
+            # If requested, also include organization repositories
+            if self._config.include_organisations:
+                for org in user.get_orgs():
+                    repositories.extend(org.get_repos())
 
         # Filter repositories based on configuration
         filtered_repos = [
-            repo for repo in repos
+            repo for repo in repositories
             if (self._config.include_private or not repo.private) and
                (self._config.include_archived or not repo.archived)
         ]
 
-        # Apply inclusion patterns if specified
+        # Apply repository filters if configured
         if self._config.repository_filter.include_patterns:
             filtered_repos = [
                 repo for repo in filtered_repos
