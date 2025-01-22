@@ -134,7 +134,7 @@ project-root/
 
 ## Current project Status
 
-We are at Phase 1 of the project. The GitHub API integration has been implemented, and the base classes for rules and rule sets are in place.
+We are at Phase 2 of the project.
 
 ### Phase 1: Initial Setup and Core Features
 - [x] 1.1: Initialize Git repository.
@@ -193,22 +193,18 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
 - [x] 1.13: Create a minimal default rule set.
 - [x] 1.14: Output results of linting operations.
 
-### Phase 2: Autofix and Dry-Run Modes
-- [] 2.1: Implement autofix logic for auto-fixable rules.
-- [] 2.2: Add dry-run mode to preview changes.
-- [] 2.3: Enhance output formatting.
+### Phase 2: Testing, Documentation, Rule Build-Out
+- [] 2.1: Analyze and improve test coverage.
+  - [x] 2.1.1: Identify test coverage gaps and note them down in a new file `docs/coverage.md`. Each gap must be uniquely identifiable so we can refer to it in tasks below.
+- [] 2.2: Add end-to-end tests for CLI operations.
+- [] 2.3: Create usage and developer documentation.
 
-### Phase 3: Testing and Documentation
-- [] 3.1: Write unit tests for core modules.
-- [] 3.2: Add end-to-end tests for CLI operations.
-- [] 3.3: Create usage and developer documentation.
-
-### Phase 4: Predefined Rule-Sets and Enhancements
+### Phase 3: Predefined Rule-Sets and Enhancements
 - [] 4.1: Add more pre-defined rule-sets for other project types.
 - [] 4.2: Support for recursive rule-sets.
 - [] 4.3: Optimize performance for large organizations.
 
-### Phase 5: Release and Distribution
+### Phase 4: Release and Distribution
 - [] 5.1: Finalize project documentation.
 - [] 5.2: Publish the package to PyPI.
 - [] 5.3: Promote and gather user feedback.
