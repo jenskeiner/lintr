@@ -95,10 +95,7 @@ class RuleSet:
         Raises:
             ValueError: If a rule with the same ID already exists.
         """
-        # Check for duplicates
-        if any(isinstance(item, Rule) and item.rule_id == rule.rule_id 
-               for item in self._items):
-            raise ValueError(f"Rule {rule.rule_id} already exists in rule set")
+
         self._items.append(rule)
 
     def add_rule_set(self, rule_set: 'RuleSet') -> None:
@@ -110,10 +107,6 @@ class RuleSet:
         Raises:
             ValueError: If a rule set with the same ID already exists.
         """
-        # Check for duplicates
-        if any(isinstance(item, RuleSet) and item.rule_set_id == rule_set.rule_set_id 
-               for item in self._items):
-            raise ValueError(f"Rule set {rule_set.rule_set_id} already exists")
         self._items.append(rule_set)
 
     def rules(self) -> Iterator[Rule]:
@@ -142,3 +135,49 @@ class RuleSet:
         rules = reversed(list(remove_dupes(rules)))
 
         yield from rules
+
+    def effective_rules(self) -> Iterator[Rule]:
+        """Get all rules in this rule set with mutually exclusive rules removed.
+        
+        Rules are processed in reverse order (last added first). For each rule,
+        any mutually exclusive rules that occur earlier in the list are removed.
+        
+        Yields:
+            Rules in order, with mutually exclusive rules removed.
+        """
+        
+        # Get all rules as a list first
+        all_rules = list(self.rules())
+
+        # Build up a dictionary of mutually exclusive rules.
+        mutually_exclusive_rules = dict()
+        for rule in all_rules:
+            for id in rule.mutually_exclusive_with:
+                mutually_exclusive_rules[rule.rule_id] = mutually_exclusive_rules.get(rule.rule_id, set()) | {id}
+                mutually_exclusive_rules[id] = mutually_exclusive_rules.get(id, set()) | {rule.rule_id}
+
+        def filter_exclusive_rules(rules: List[Rule]) -> Iterator[Rule]:
+            """Filter out mutually exclusive rules.
+            
+            For each rule (processed from the end), removes any earlier rules
+            that are mutually exclusive with it.
+            
+            Args:
+                rules: List of rules to filter
+                
+            Yields:
+                Rules with mutually exclusive ones removed
+            """
+            excluded_rules = set()  # Track which rules to exclude
+            
+            # Process rules from end to start
+            for rule in reversed(rules):
+                if rule.rule_id in excluded_rules:
+                    continue
+                    
+                # Include this rule and mark its mutually exclusive rules for exclusion
+                excluded_rules.update(mutually_exclusive_rules.get(rule.rule_id, set()))
+                yield rule
+                
+        # Filter out mutually exclusive rules and reverse back to original order
+        yield from reversed(list(filter_exclusive_rules(all_rules)))

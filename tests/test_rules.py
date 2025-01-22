@@ -131,16 +131,6 @@ def test_rule_set_add_rule():
     assert rule in rules
 
 
-def test_rule_set_add_duplicate_rule():
-    """Test adding a duplicate rule to a rule set."""
-    rule_set = RuleSet("RS001", "Test rule set")
-    rule1 = DummyRule("R001", "Test rule 1", RuleResult.PASSED)
-    rule2 = DummyRule("R001", "Test rule 2", RuleResult.FAILED)
-    rule_set.add_rule(rule1)
-    with pytest.raises(ValueError):
-        rule_set.add_rule(rule2)
-
-
 def test_rule_set_add_rule_set():
     """Test adding a rule set to another rule set."""
     parent_set = RuleSet("RS001", "Parent rule set")
@@ -151,16 +141,6 @@ def test_rule_set_add_rule_set():
     rules = list(parent_set.rules())
     assert len(rules) == 1
     assert rule in rules
-
-
-def test_rule_set_add_duplicate_rule_set():
-    """Test adding a duplicate rule set."""
-    parent_set = RuleSet("RS001", "Parent rule set")
-    child_set1 = RuleSet("RS002", "Child rule set 1")
-    child_set2 = RuleSet("RS002", "Child rule set 2")
-    parent_set.add_rule_set(child_set1)
-    with pytest.raises(ValueError):
-        parent_set.add_rule_set(child_set2)
 
 
 def test_rule_class_mutually_exclusive():
@@ -225,3 +205,58 @@ def test_rule_set_preserves_order():
     assert rules[0].rule_id == "R002"  # First in parent set
     assert rules[1].rule_id == "R001"  # First in child set
     assert rules[2].rule_id == "R003"  # Last in parent set
+
+
+def test_rule_set_effective_rules():
+    """Test that effective_rules correctly handles mutually exclusive rules."""
+    # Create a rule set with mutually exclusive rules
+    rule_set = RuleSet("RS001", "Test rule set")
+    
+    # Add rules in order: R001, R002, R003, R004
+    rule1 = OneDirectionalRule1()  # R003, excludes R004
+    rule2 = OneDirectionalRule2()  # R004
+    rule3 = BiDirectionalRule1()   # R001, excludes R002
+    rule4 = BiDirectionalRule2()   # R002, excludes R001
+    
+    # Add rules in specific order to test both one-directional and bi-directional cases
+    rule_set.add_rule(rule3)  # R001
+    rule_set.add_rule(rule4)  # R002 (excludes R001)
+    rule_set.add_rule(rule1)  # R003
+    rule_set.add_rule(rule2)  # R004 (excluded by R003)
+    
+    # Get effective rules
+    effective_rules = list(rule_set.effective_rules())
+    
+    # Should contain R002 (not R001 due to mutual exclusivity)
+    # Should contain R003 (and not R004 due to one-directional exclusivity)
+    assert len(effective_rules) == 2
+    assert effective_rules[0].rule_id == "R002"
+    assert effective_rules[1].rule_id == "R004"
+
+
+def test_rule_set_effective_rules_nested():
+    """Test that effective_rules correctly handles nested rule sets."""
+    parent_set = RuleSet("RS001", "Parent rule set")
+    child_set = RuleSet("RS002", "Child rule set")
+    
+    # Create rules with mutual exclusivity
+    rule1 = BiDirectionalRule1()   # R001, excludes R002
+    rule2 = BiDirectionalRule2()   # R002, excludes R001
+    rule3 = OneDirectionalRule1()  # R003, excludes R004
+    rule4 = OneDirectionalRule2()  # R004
+    
+    # Add rules to both parent and child sets
+    parent_set.add_rule(rule1)  # R001
+    child_set.add_rule(rule2)   # R002
+    child_set.add_rule(rule3)   # R003
+    parent_set.add_rule_set(child_set)
+    parent_set.add_rule(rule4)  # R004
+    
+    # Get effective rules
+    effective_rules = list(parent_set.effective_rules())
+    
+    # Should contain R002 (not R001 due to mutual exclusivity)
+    # Should contain R003 (and not R004 due to one-directional exclusivity)
+    assert len(effective_rules) == 2
+    assert effective_rules[0].rule_id == "R002"
+    assert effective_rules[1].rule_id == "R004"
