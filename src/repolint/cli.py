@@ -45,6 +45,11 @@ def create_parser() -> argparse.ArgumentParser:
         help="Attempt to fix issues automatically"
     )
     lint_parser.add_argument(
+        "--non-interactive",
+        action="store_true",
+        help="Apply fixes without prompting for confirmation"
+    )
+    lint_parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Show what would be done without making changes"
@@ -107,6 +112,8 @@ def handle_lint(args: argparse.Namespace) -> None:
         print(f"Using configuration from {args.config}")
         if args.fix:
             print("Auto-fix is enabled - will attempt to fix issues automatically")
+            if args.non_interactive:
+                print("Non-interactive mode is enabled - fixes will be applied without prompting")
         if args.dry_run:
             print("Dry-run mode is enabled - no changes will be made")
         
@@ -128,7 +135,7 @@ def handle_lint(args: argparse.Namespace) -> None:
             print(f"Found {len(repos)} repositories")
             
             # Create linter and process repositories
-            linter = Linter(config, dry_run=args.dry_run)
+            linter = Linter(config, dry_run=args.dry_run, non_interactive=args.non_interactive)
             results = linter.lint_repositories(repos)
             
             # TODO: Display results

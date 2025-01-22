@@ -169,6 +169,8 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.10.4: Iterate over repositories. In the loop body, set up the context to pass to linting rules, but don't actually call them yet.
   - [x] 1.10.5: Determine which rule set to use for each repository in the loop body.
   - [x] 1.10.6: Iterate over all rules in the rule set for each repository in the loop body. Consider using a generator pattern to recursively enumerate all rules in a rule set.
+  - [x] 1.10.7: For each rule check on a repository, execute the fix step immediately after, if the --fix CLI option has been passed. Ensure proper terminal output to inform the user.
+  - [x] 1.10.8: Add a --non-interactive CLI option. By default, when not given, applying fixes is interactive, i.e. the user should be prompted before executing each fix. When given, applying fixes should not be interactive.
 - [x] 1.11: Beautify the linting output.
   - [x] 1.11.1: For each repository, list the repository name followed by the rule set applied for the repo in parenthesis.
   - [x] 1.11.2: For each repository, start the line with a hyphen to indicate an itemized list.
@@ -257,6 +259,7 @@ We can record here that this dependency should not be used in the future and lis
    - Use `json_schema_extra={"env": [...]}` instead of `env=...` to specify environment variable names (deprecated in Pydantic V2).
    - Set `env_vars_override_env_file=True` to ensure environment variables take precedence over `.env` file.
    - Use `env_nested_delimiter="__"` to support nested configuration via environment variables.
+
 2. When implementing configuration file handling:
    - Provide a well-documented default configuration template with examples and comments
    - Include clear next steps for users after initialization
@@ -300,24 +303,45 @@ We can record here that this dependency should not be used in the future and lis
 1. When mocking configuration in tests:
    - Use temporary files instead of in-memory objects to test actual file loading behavior
    - Keep configuration fixtures in conftest.py for reusability
-2. When mocking GitHub API responses in tests:
+2. When using `pydantic_settings` with environment variables:
+   - Use `json_schema_extra={"env": [...]}` instead of `env=...` to specify environment variable names (deprecated in Pydantic V2).
+   - Set `env_vars_override_env_file=True` to ensure environment variables take precedence over `.env` file.
+   - Use `env_nested_delimiter="__"` to support nested configuration via environment variables.
+3. When mocking properties in Python unit tests:
+   - Use `PropertyMock` from `unittest.mock` to mock properties correctly.
+   - Set the mock on the type of the object using `type(obj).property_name = PropertyMock(...)` instead of directly on the instance.
+   - This ensures that property behavior (like raising exceptions) works correctly in tests.
+4. When mocking GitHub API responses in tests:
    - Use a consolidated mock in conftest.py that supports both simple and advanced use cases
    - Provide default mock data that matches real GitHub API responses
    - Allow for both simple mocking (fixed responses) and advanced mocking (verifying calls)
    - Mock at the module level (e.g., `repolint.github.Github`) rather than the package level (`github.Github`)
-3. When creating test helper classes:
+5. When creating test helper classes:
    - Place them in a dedicated fixtures module to avoid pytest collection issues
    - This is especially important for classes that have constructors and inherit from production classes
-4. When testing code that uses singletons:
+6. When testing code that uses singletons:
    - Mock the singleton class itself, not its instance methods
    - Use pytest fixtures to ensure consistent mocking across test functions
    - Mock at the point where the singleton is imported, not where it's instantiated
    - Reset singleton state between tests if necessary
-5. When testing rule execution:
+7. When testing rule execution:
    - Create mock rules that inherit from the base Rule class for testing
    - Test both successful and error cases for rule execution
    - Verify that rule results are correctly propagated through the system
    - Ensure error handling captures and reports rule execution failures appropriately
+8. When implementing default rule sets:
+   - Use an empty rule set as the default to provide a clean slate for repositories without specific rules configured.
+   - This makes it easier for users to opt-in to rules rather than having to opt-out of unwanted rules.
+   - The empty rule set should still be a proper rule set class to maintain consistent behavior with other rule sets.
+
+### Implementation Patterns
+
+#### Rule Execution and Fixes
+- When implementing automated fixes, it's important to execute them immediately after each rule check rather than batching them. This provides better feedback to users and makes it easier to track the success/failure of each fix.
+- Re-running rule checks after successful fixes helps verify that the fix actually resolved the issue and provides updated status to users.
+- Consistent output formatting for both successful and failed checks/fixes improves user experience. Using distinct symbols (✓, ✗, ⚡) and colors helps users quickly understand results.
+- Test fixtures for rules with fixes should properly implement both check() and fix() methods to ensure the fix functionality works as expected.
+- In dry-run mode, use a different tone in output messages to clearly indicate what would happen (e.g., "Would attempt to fix...") rather than what is actually happening. This helps users understand the potential impact of running without --dry-run.
 
 ### CLI Implementation
 1. When implementing a Python CLI tool, create both a dedicated CLI module and a simple `__main__.py` entry point. The CLI module should contain all the actual implementation, while `__main__.py` just imports and calls the main function. This separation allows the tool to be run both as `python -m package` and as a direct script.
@@ -363,6 +387,20 @@ We can record here that this dependency should not be used in the future and lis
    - Use an empty rule set as the default to provide a clean slate for repositories without specific rules configured.
    - This makes it easier for users to opt-in to rules rather than having to opt-out of unwanted rules.
    - The empty rule set should still be a proper rule set class to maintain consistent behavior with other rule sets.
+
+### Implementation Patterns
+
+#### Rule Execution and Fixes
+- When implementing automated fixes, it's important to execute them immediately after each rule check rather than batching them. This provides better feedback to users and makes it easier to track the success/failure of each fix.
+- Re-running rule checks after successful fixes helps verify that the fix actually resolved the issue and provides updated status to users.
+- Consistent output formatting for both successful and failed checks/fixes improves user experience. Using distinct symbols (✓, ✗, ⚡) and colors helps users quickly understand results.
+- Test fixtures for rules with fixes should properly implement both check() and fix() methods to ensure the fix functionality works as expected.
+- In dry-run mode, use a different tone in output messages to clearly indicate what would happen (e.g., "Would attempt to fix...") rather than what is actually happening. This helps users understand the potential impact of running without --dry-run.
+
+7. When implementing rule-based systems:
+   - Keep track of rule state (e.g., whether a fix has been applied)
+   - Re-check and display rule status after applying fixes
+   - This provides better feedback to users about the effects of their actions
 
 ## Future Scope (only for context, not a goal of current implementation)
 - Support for organization-wide rules.

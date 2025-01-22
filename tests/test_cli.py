@@ -323,3 +323,26 @@ def test_cli_lint_with_mock_github(capsys, mock_config, mock_github_token, mock_
     captured = capsys.readouterr()
     assert str(config_path) in captured.out
     assert "Found 2 repositories" in captured.out
+
+
+def test_cli_lint_with_non_interactive(capsys, mock_config_file, mock_github, mock_github_token):
+    """Test lint command with --non-interactive option."""
+    # Create a mock config file with a GitHub token
+    mock_config_file.write_text("""
+github_token: mock-github-token
+rule_sets:
+  default:
+    name: Default Rule Set
+    rules:
+      - test.rule
+""")
+
+    # Run lint command with --fix and --non-interactive
+    args = ["lint", "--fix", "--non-interactive", "--config", str(mock_config_file)]
+    main(args)
+    
+    # Verify output messages
+    captured = capsys.readouterr()
+    output = captured.out
+    assert "Auto-fix is enabled - will attempt to fix issues automatically" in output
+    assert "Non-interactive mode is enabled - fixes will be applied without prompting" in output

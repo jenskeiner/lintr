@@ -18,15 +18,17 @@ colorama.init()
 class Linter:
     """Core linting functionality."""
 
-    def __init__(self, config: BaseRepolintConfig, dry_run: bool = False):
+    def __init__(self, config: BaseRepolintConfig, dry_run: bool = False, non_interactive: bool = False):
         """Initialize the linter.
         
         Args:
             config: Repolint configuration.
             dry_run: If True, no changes will be made.
+            non_interactive: If True, apply fixes without prompting for confirmation.
         """
         self._config = config
         self._dry_run = dry_run
+        self._non_interactive = non_interactive
         self._rule_manager = RuleManager()
         
         # Load rule sets from configuration
@@ -85,15 +87,64 @@ class Linter:
         results = {}
         
         for rule in rule_set.rules():
+            result = None
             try:
-                results[rule.rule_id] = rule.check(context)
+                result = rule.check(context)
+                results[rule.rule_id] = result
             except Exception as e:
                 print(f"{Fore.RED}Error executing rule {rule.rule_id} on repository {repository.name}: {str(e)}{Style.RESET_ALL}")
-                results[rule.rule_id] = RuleCheckResult(
+                result = RuleCheckResult(
                     result=RuleResult.FAILED,
                     message=f"Rule execution failed: {str(e)}",
                     fix_available=False
                 )
+                results[rule.rule_id] = result
+
+            # Print rule result
+            if result.result == RuleResult.PASSED:
+                status_symbol = f"{Fore.GREEN}✓{Style.RESET_ALL}"
+            elif result.result == RuleResult.FAILED:
+                status_symbol = f"{Fore.RED}✗{Style.RESET_ALL}"
+            else:  # SKIPPED
+                status_symbol = f"{Fore.YELLOW}-{Style.RESET_ALL}"
+            
+            print(f"  {status_symbol} {rule.rule_id}: {result.message}")
+            
+            # Handle fix-related output
+            if result.fix_available:
+                if self._dry_run:
+                    print(f"    {Fore.BLUE}⚡ {result.fix_description}{Style.RESET_ALL}")
+                    print(f"    {Fore.YELLOW}ℹ Would attempt to fix this issue (dry run){Style.RESET_ALL}")
+                else:
+                    print(f"    {Fore.BLUE}⚡ {result.fix_description}{Style.RESET_ALL}")
+                    should_fix = True
+                    
+                    if not self._non_interactive:
+                        response = input(f"    {Fore.YELLOW}ℹ Apply this fix? [y/N]: {Style.RESET_ALL}").lower()
+                        should_fix = response in ['y', 'yes']
+                    
+                    if should_fix:
+                        try:
+                            success, message = rule.fix(context)
+                            if success:
+                                print(f"    {Fore.GREEN}⚡ Fixed: {message}{Style.RESET_ALL}")
+                                # Re-run check to get updated status
+                                result = rule.check(context)
+                                results[rule.rule_id] = result
+                                # Re-display rule status
+                                if result.result == RuleResult.PASSED:
+                                    status_symbol = f"{Fore.GREEN}✓{Style.RESET_ALL}"
+                                elif result.result == RuleResult.FAILED:
+                                    status_symbol = f"{Fore.RED}✗{Style.RESET_ALL}"
+                                else:  # SKIPPED
+                                    status_symbol = f"{Fore.YELLOW}-{Style.RESET_ALL}"
+                                print(f"  {status_symbol} {rule.rule_id}: {result.message}")
+                            else:
+                                print(f"    {Fore.RED}⚡ Fix failed: {message}{Style.RESET_ALL}")
+                        except Exception as fix_error:
+                            print(f"    {Fore.RED}⚡ Fix error: {str(fix_error)}{Style.RESET_ALL}")
+                    else:
+                        print(f"    {Fore.YELLOW}ℹ Fix skipped{Style.RESET_ALL}")
         
         return results
     
@@ -126,20 +177,6 @@ class Linter:
             try:
                 rule_results = self.check_repository(repo, rule_set)
                 results[repo.name] = rule_results
-                
-                # Print rule results
-                for rule_id, result in rule_results.items():
-                    if result.result == RuleResult.PASSED:
-                        status_symbol = f"{Fore.GREEN}✓{Style.RESET_ALL}"
-                    elif result.result == RuleResult.FAILED:
-                        status_symbol = f"{Fore.RED}✗{Style.RESET_ALL}"
-                    else:  # SKIPPED
-                        status_symbol = f"{Fore.YELLOW}-{Style.RESET_ALL}"
-                    
-                    print(f"  {status_symbol} {rule_id}: {result.message}")
-                    if result.fix_available:
-                        print(f"    {Fore.BLUE}⚡ {result.fix_description}{Style.RESET_ALL}")
-                
             except Exception as e:
                 print(f"{Fore.RED}  Error: {str(e)}{Style.RESET_ALL}")
                 results[repo.name] = {

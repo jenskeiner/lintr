@@ -9,6 +9,7 @@ from repolint.config import BaseRepolintConfig
 from repolint.linter import Linter
 from repolint.rules import Rule, RuleCheckResult, RuleResult, RuleSet
 from repolint.rules.base import RuleContext
+from typing import Tuple
 
 
 def strip_color_codes(text: str) -> str:
@@ -55,15 +56,28 @@ class FixableDummyRule(Rule):
     """Dummy rule with a fix available."""
     def __init__(self, rule_id: str, description: str):
         super().__init__(rule_id, description)
+        self._fixed = False
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Return a failed result with a fix available."""
+        if self._fixed:
+            return RuleCheckResult(
+                result=RuleResult.PASSED,
+                message="Rule passed after fix",
+                fix_available=False,
+                fix_description=""
+            )
         return RuleCheckResult(
             result=RuleResult.FAILED,
             message="Rule failed but can be fixed",
             fix_available=True,
             fix_description="This can be fixed automatically"
         )
+
+    def fix(self, context: RuleContext) -> Tuple[bool, str]:
+        """Apply the fix for this rule."""
+        self._fixed = True
+        return True, "Mock fix applied"
 
 
 class CustomException(Exception):
@@ -428,3 +442,85 @@ def test_lint_repositories_no_rule_set_found(mock_repo, mock_config, capsys):
     captured = capsys.readouterr()
     output_lines = [strip_color_codes(line) for line in captured.out.splitlines()]
     assert output_lines[0] == f"- {mock_repo.name} (no rule set)"
+
+
+@pytest.mark.parametrize("non_interactive,user_input,expected_fix", [
+    (False, "y\n", True),    # Interactive mode, user confirms
+    (False, "n\n", False),   # Interactive mode, user declines
+    (True, "", True),        # Non-interactive mode, always fixes
+])
+def test_lint_repositories_fix_interaction(mock_repo, mock_config, capsys, monkeypatch, non_interactive, user_input, expected_fix):
+    """Test interactive and non-interactive fix modes."""
+    # Create a rule set with a fixable rule
+    rule = FixableDummyRule("test.rule", "Test rule")
+    rule_set = RuleSet("test", "Test rule set")
+    rule_set.add_rule(rule)
+    
+    # Mock rule manager
+    rule_manager = MagicMock()
+    rule_manager.get_rule_set.return_value = rule_set
+    
+    # Mock user input
+    mock_input = MagicMock(return_value=user_input.strip())
+    monkeypatch.setattr('builtins.input', mock_input)
+    
+    # Mock repository name
+    mock_repo.name = "test-repo"
+
+    # Create linter with mocked components
+    linter = Linter(mock_config, dry_run=False, non_interactive=non_interactive)
+    linter._rule_manager = rule_manager
+    
+    # Run linting
+    results = linter.lint_repositories([mock_repo])
+    captured = capsys.readouterr()
+    
+    # Verify fix was applied or skipped based on interaction mode and user input
+    if expected_fix:
+        assert "⚡ Fixed: Mock fix applied" in strip_color_codes(captured.out)
+    else:
+        assert "Fix skipped" in strip_color_codes(captured.out)
+
+
+@pytest.mark.parametrize("non_interactive,user_input,expected_fix", [
+    (False, "y\n", True),    # Interactive mode, user confirms
+    (False, "n\n", False),   # Interactive mode, user declines
+    (True, "", True),        # Non-interactive mode, always fixes
+])
+def test_lint_repositories_fix_interaction(mock_repo, mock_config, capsys, monkeypatch, non_interactive, user_input, expected_fix):
+    """Test interactive and non-interactive fix modes."""
+    # Create a rule set with a fixable rule
+    rule = FixableDummyRule("test.rule", "Test rule")
+    rule_set = RuleSet("test", "Test rule set")
+    rule_set.add_rule(rule)
+    
+    # Mock rule manager
+    rule_manager = MagicMock()
+    rule_manager.get_rule_set.return_value = rule_set
+    
+    # Mock user input
+    mock_input = MagicMock(return_value=user_input.strip())
+    monkeypatch.setattr('builtins.input', mock_input)
+
+    # Mock repository name and context
+    mock_repo.name = "test-repo"
+    mock_repo.empty = True
+
+    # Create linter with mocked components
+    linter = Linter(mock_config, dry_run=False, non_interactive=non_interactive)
+    linter._rule_manager = rule_manager
+
+    # Mock create_context to return a RuleContext
+    context = RuleContext(mock_repo, mock_config)
+    linter.create_context = MagicMock(return_value=context)
+
+    # Run linting
+    results = linter.lint_repositories([mock_repo])
+    captured = capsys.readouterr()
+
+    # Verify fix was applied or skipped based on interaction mode and user input
+    if expected_fix:
+        assert "⚡ Fixed: Mock fix applied" in strip_color_codes(captured.out)
+        assert "✓ test.rule: Rule passed after fix" in strip_color_codes(captured.out)
+    else:
+        assert "Fix skipped" in strip_color_codes(captured.out)
