@@ -413,6 +413,13 @@ We can record here that this dependency should not be used in the future and lis
 - Test fixtures for rules with fixes should properly implement both check() and fix() methods to ensure the fix functionality works as expected.
 - In dry-run mode, use a different tone in output messages to clearly indicate what would happen (e.g., "Would attempt to fix...") rather than what is actually happening. This helps users understand the potential impact of running without --dry-run.
 
+6. When testing code that relies on environment variables:
+   - Use pytest's `monkeypatch` fixture instead of directly modifying `os.environ`
+   - This ensures automatic cleanup even if tests fail
+   - Provides safer operations with `setenv()` and `delenv()`
+   - Maintains test isolation by scoping changes to individual tests
+   - Makes tests more maintainable by removing manual cleanup code
+
 7. When implementing rule-based systems:
    - Keep track of rule state (e.g., whether a fix has been applied)
    - Re-check and display rule status after applying fixes
@@ -422,3 +429,9 @@ We can record here that this dependency should not be used in the future and lis
 - Support for organization-wide rules.
 - Enhanced reporting with detailed analytics.
 - Plugin system for third-party extensions.
+
+5. When testing error handling in CLI applications:
+   - Write test cases for each error condition separately
+   - Use `pytest.raises()` to test for expected exceptions like `SystemExit`
+   - Test all possible configuration sources (e.g., for GitHub tokens: config file, GITHUB_TOKEN, REPOLINT_GITHUB_TOKEN)
+   - Clean up environment variables in tests to ensure test isolation

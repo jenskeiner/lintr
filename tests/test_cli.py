@@ -346,3 +346,94 @@ rule_sets:
     output = captured.out
     assert "Auto-fix is enabled - will attempt to fix issues automatically" in output
     assert "Non-interactive mode is enabled - fixes will be applied without prompting" in output
+
+
+def test_cli_lint_config_not_found(capsys):
+    """Test lint command with non-existent config file."""
+    # Use a non-existent config file path
+    non_existent_config = "non_existent_config.yml"
+    
+    with pytest.raises(SystemExit) as exc_info:
+        main(['lint', '--config', non_existent_config])
+    
+    assert exc_info.value.code == 1
+    
+    captured = capsys.readouterr()
+    assert f"Error: Configuration file not found: {non_existent_config}" in captured.out
+    assert "Run 'repolint init' to create a new configuration file" in captured.out
+
+
+def test_cli_lint_no_github_token(capsys, mock_config, monkeypatch):
+    """Test lint command with no GitHub token configured."""
+    config = {
+        "github_token": "",  # Empty token
+        "default_rule_set": "default",
+        "repository_filter": {
+            "include_patterns": [],
+            "exclude_patterns": []
+        },
+        "rule_sets": {},
+        "repository_rule_sets": {}
+    }
+    config_file = mock_config(config)
+
+    # Remove any existing tokens from environment
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("REPOLINT_GITHUB_TOKEN", raising=False)
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(["lint", "--config", str(config_file)])
+    assert exc_info.value.code == 1
+    captured = capsys.readouterr()
+    assert "Error: GitHub token not configured" in captured.out
+    assert "Set it in your configuration file" in captured.out
+    assert "Set the GITHUB_TOKEN environment variable" in captured.out
+    assert "Set the REPOLINT_GITHUB_TOKEN environment variable" in captured.out
+
+
+def test_cli_lint_empty_env_token(capsys, mock_config, monkeypatch):
+    """Test lint command with empty GitHub token in environment."""
+    config = {
+        "github_token": "",  # Empty token in config
+        "default_rule_set": "default",
+        "repository_filter": {
+            "include_patterns": [],
+            "exclude_patterns": []
+        },
+        "rule_sets": {},
+        "repository_rule_sets": {}
+    }
+    config_file = mock_config(config)
+
+    # Set empty token in environment
+    monkeypatch.setenv("GITHUB_TOKEN", "")
+    
+    with pytest.raises(SystemExit) as exc_info:
+        main(["lint", "--config", str(config_file)])
+    assert exc_info.value.code == 1
+    captured = capsys.readouterr()
+    assert "Error: GitHub token not configured" in captured.out
+
+
+def test_cli_lint_empty_repolint_token(capsys, mock_config, monkeypatch):
+    """Test lint command with empty REPOLINT_GITHUB_TOKEN in environment."""
+    config = {
+        "github_token": "",  # Empty token in config
+        "default_rule_set": "default",
+        "repository_filter": {
+            "include_patterns": [],
+            "exclude_patterns": []
+        },
+        "rule_sets": {},
+        "repository_rule_sets": {}
+    }
+    config_file = mock_config(config)
+
+    # Set empty REPOLINT token in environment
+    monkeypatch.setenv("REPOLINT_GITHUB_TOKEN", "")
+    
+    with pytest.raises(SystemExit) as exc_info:
+        main(["lint", "--config", str(config_file)])
+    assert exc_info.value.code == 1
+    captured = capsys.readouterr()
+    assert "Error: GitHub token not configured" in captured.out

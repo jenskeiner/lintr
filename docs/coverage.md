@@ -9,16 +9,6 @@ This document identifies gaps in test coverage for the Repolint project. Each ga
 
 ## CLI Module
 
-### Error Handling (GAP-CLI-1)
-- Missing coverage for error handling in `handle_lint` (lines 99-101)
-- Impact: Medium - error paths for configuration file not found
-- Suggested Test: Add test with non-existent config file
-
-### GitHub Token Validation (GAP-CLI-2)
-- Missing coverage for GitHub token validation (lines 109-114)
-- Impact: High - critical authentication functionality
-- Suggested Test: Add tests with missing/invalid GitHub tokens
-
 ### List Command Error Handling (GAP-CLI-3)
 - Missing coverage in `handle_list` (lines 148-154)
 - Impact: Medium - error handling for invalid list types
