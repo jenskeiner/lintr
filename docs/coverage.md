@@ -7,36 +7,13 @@ This document identifies gaps in test coverage for the Repolint project. Each ga
 - Impact: Low - standard Python boilerplate code
 - Suggested Test: Add test that runs the module as a script
 
-## CLI Module
-
-### Init Command Edge Cases (GAP-CLI-4)
-- Missing coverage in `handle_init` (lines 191-192, 207-209)
-- Impact: Medium - error handling for file operations
-- Suggested Test: Add tests for file permission issues and existing files
-
-### Main Function Edge Cases (GAP-CLI-5)
-- Missing coverage in `main` (lines 222, 243, 247)
-- Impact: Low - error handling for argument parsing
-- Suggested Test: Add tests with invalid command line arguments
-
-## Linter Module
-
-### Interactive Fix Mode (GAP-LINTER-1)
-- Missing coverage for interactive fix prompts (lines 116-117)
-- Impact: High - user interaction for applying fixes
-- Suggested Test: Add tests simulating user input for fix confirmation
-
-### Fix Application Error Handling (GAP-LINTER-2)
-- Missing coverage for fix application errors (lines 137-140, 143-145)
-- Impact: High - error handling during fix operations
-- Suggested Test: Add tests for failed fix operations
-
 ## Rule Manager Module
 
-### Entry Point Loading (GAP-RULE-MGR-1)
+### Entry Point Loading (GAP-RULE-MGR-1) [FIXED]
 - Missing coverage for entry point loading errors (lines 43-45, 58-60)
 - Impact: Medium - error handling for invalid plugins
 - Suggested Test: Add tests with invalid/malformed entry points
+- Status: Fixed in commit [INSERT_COMMIT_HASH] by adding comprehensive tests for error handling during rule and rule set discovery
 
 ### Rule Set Configuration (GAP-RULE-MGR-2)
 - Missing coverage for rule set configuration validation (lines 103-105)

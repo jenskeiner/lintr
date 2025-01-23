@@ -298,54 +298,17 @@ We can record here that this dependency should not be used in the future and lis
 2. When using `monkeypatch` in pytest, ensure that the path to the mocked attribute matches the actual import path in the code.
 3. When mocking a class method, ensure the method exists in the class before attempting to mock it.
 4. When mocking instance methods, remember to include `self` as the first parameter in the mock function.
-5. When testing singleton classes, be aware that instance methods need to be mocked differently than static methods.
-
-### Testing Best Practices
-1. When testing abstract base classes, create concrete test implementations that satisfy the abstract methods.
-2. Test both success and error cases, including empty states (e.g., no rules available).
-3. Use descriptive test names and docstrings to clearly indicate what each test verifies.
-
-### Code Organization
-1. Keep test helper classes (like `TestRule` and `TestRuleSet`) together with the tests that use them.
-2. Use singleton pattern consistently - get the instance once and reuse it instead of creating new instances.
-3. Organize related functionality together (e.g., rule and rule-set operations in the same manager class).
-4. When implementing complex operations like linting, create a dedicated class to handle the core functionality. This:
-   - Keeps the CLI code focused on user interaction and command handling
-   - Makes the core functionality easier to test in isolation
-   - Allows for better separation of concerns
-   - Makes it easier to extend or modify the functionality in the future
-
-### Test
-1. When mocking configuration in tests:
-   - Use temporary files instead of in-memory objects to test actual file loading behavior
-   - Keep configuration fixtures in conftest.py for reusability
-2. When using `pydantic_settings` with environment variables:
-   - Use `json_schema_extra={"env": [...]}` instead of `env=...` to specify environment variable names (deprecated in Pydantic V2).
-   - Set `env_vars_override_env_file=True` to ensure environment variables take precedence over `.env` file.
-   - Use `env_nested_delimiter="__"` to support nested configuration via environment variables.
-3. When mocking properties in Python unit tests:
-   - Use `PropertyMock` from `unittest.mock` to mock properties correctly.
-   - Set the mock on the type of the object using `type(obj).property_name = PropertyMock(...)` instead of directly on the instance.
-   - This ensures that property behavior (like raising exceptions) works correctly in tests.
-4. When mocking GitHub API responses in tests:
-   - Use a consolidated mock in conftest.py that supports both simple and advanced use cases
-   - Provide default mock data that matches real GitHub API responses
-   - Allow for both simple mocking (fixed responses) and advanced mocking (verifying calls)
-   - Mock at the module level (e.g., `repolint.github.Github`) rather than the package level (`github.Github`)
-5. When creating test helper classes:
-   - Place them in a dedicated fixtures module to avoid pytest collection issues
-   - This is especially important for classes that have constructors and inherit from production classes
-6. When testing code that uses singletons:
+5. When testing code that uses singletons:
    - Mock the singleton class itself, not its instance methods
    - Use pytest fixtures to ensure consistent mocking across test functions
    - Mock at the point where the singleton is imported, not where it's instantiated
    - Reset singleton state between tests if necessary
-7. When testing rule execution:
+6. When testing rule execution:
    - Create mock rules that inherit from the base Rule class for testing
    - Test both successful and error cases for rule execution
    - Verify that rule results are correctly propagated through the system
    - Ensure error handling captures and reports rule execution failures appropriately
-8. When implementing default rule sets:
+7. When implementing default rule sets:
    - Use an empty rule set as the default to provide a clean slate for repositories without specific rules configured.
    - This makes it easier for users to opt-in to rules rather than having to opt-out of unwanted rules.
    - The empty rule set should still be a proper rule set class to maintain consistent behavior with other rule sets.
@@ -413,14 +376,23 @@ We can record here that this dependency should not be used in the future and lis
 - Test fixtures for rules with fixes should properly implement both check() and fix() methods to ensure the fix functionality works as expected.
 - In dry-run mode, use a different tone in output messages to clearly indicate what would happen (e.g., "Would attempt to fix...") rather than what is actually happening. This helps users understand the potential impact of running without --dry-run.
 
-6. When testing code that relies on environment variables:
+4. Error Handling Tests
+   - When using Python entry points for plugin discovery, it's important to test both successful and failed loading scenarios
+   - Test cases should include:
+     - Complete failure to load an entry point
+     - Mixed scenarios with both successful and failed entry points
+     - Rule creation failures:
+       - Attempting to create non-existent rules
+       - Rule initialization failures (e.g., invalid parameters)
+
+5. When testing code that relies on environment variables:
    - Use pytest's `monkeypatch` fixture instead of directly modifying `os.environ`
    - This ensures automatic cleanup even if tests fail
    - Provides safer operations with `setenv()` and `delenv()`
    - Maintains test isolation by scoping changes to individual tests
    - Makes tests more maintainable by removing manual cleanup code
 
-7. When implementing rule-based systems:
+6. When implementing rule-based systems:
    - Keep track of rule state (e.g., whether a fix has been applied)
    - Re-check and display rule status after applying fixes
    - This provides better feedback to users about the effects of their actions

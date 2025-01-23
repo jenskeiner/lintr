@@ -3,7 +3,7 @@
 import pytest
 
 from repolint.cli import main
-from repolint.rules.base import RuleResult
+from repolint.rules.base import Rule, RuleSet, RuleCheckResult, RuleResult
 from repolint.rules.context import RuleContext
 from tests.fixtures import TestRule, TestRuleSet
 import os
@@ -552,3 +552,199 @@ def test_cli_main_command_not_in_handlers(monkeypatch, capsys):
     assert result == 1
     captured = capsys.readouterr()
     assert "Mock help message" not in captured.out  # Help shouldn't be shown for unknown command
+
+
+def test_cli_lint_interactive_fix(capsys, mock_config, mock_github, mock_github_token, monkeypatch):
+    """Test lint command with interactive fix prompts."""
+    # Create config with a test rule set
+    config = {
+        "github_token": mock_github_token,
+        "default_rule_set": "test",
+        "repository_filter": {
+            "include_patterns": [],
+            "exclude_patterns": []
+        },
+        "rule_sets": {
+            "test": {
+                "name": "Test Rule Set",
+                "rules": ["TEST001"]
+            }
+        },
+        "repository_rule_sets": {}
+    }
+    config_path = mock_config(config)
+    
+    # Mock a repository that needs fixing
+    class MockRepo:
+        def __init__(self):
+            self.name = "test-repo"
+            self.html_url = "https://github.com/test/test-repo"
+    
+    # Mock GitHub client with a repository that needs fixing
+    class MockGitHubClientWithRepo(mock_github):
+        def get_repositories(self):
+            return [MockRepo()]
+    
+    monkeypatch.setattr('repolint.github.GitHubClient', MockGitHubClientWithRepo)
+    
+    # Mock a rule that always needs fixing
+    class MockRule(Rule):
+        def __init__(self):
+            super().__init__("TEST001", "Test rule")
+        
+        def check(self, context):
+            return RuleCheckResult(
+                result=RuleResult.FAILED,
+                message="Test failed",
+                fix_available=True,
+                fix_description="This can be fixed"
+            )
+        
+        def fix(self, context):
+            return True, "Fixed test issue"
+    
+    # Mock RuleManager to return our test rule
+    class MockRuleManager:
+        def __init__(self):
+            self._rules = {"TEST001": MockRule}
+            self._rule_sets = {}
+            
+        def load_rule_sets_from_config(self, config):
+            for rule_set_id, rule_set_config in config.rule_sets.items():
+                self._rule_sets[rule_set_id] = self.create_rule_set(
+                    rule_set_id,
+                    rule_set_config.name,
+                    rule_set_config.rules
+                )
+            
+        def create_rule_set(self, rule_set_id, description, rule_ids):
+            rule_set = RuleSet(rule_set_id, description)
+            for rule_id in rule_ids:
+                rule = self._rules[rule_id]()
+                rule_set.add_rule(rule)
+            return rule_set
+            
+        def get_rule_set(self, rule_set_id):
+            return self._rule_sets.get(rule_set_id)
+
+    monkeypatch.setattr('repolint.linter.RuleManager', MockRuleManager)
+    
+    # First test: User accepts the fix
+    def mock_input_yes(prompt):
+        # Print the prompt to stdout to ensure it's captured
+        print(prompt, end='')
+        return 'y'
+
+    monkeypatch.setattr('builtins.input', mock_input_yes)
+    
+    result = main(['lint', '--fix', '--config', str(config_path)])
+    assert result == 0
+    
+    captured = capsys.readouterr()
+    assert "Apply this fix? [y/N]:" in captured.out
+    assert "Fixed:" in captured.out
+    
+    # Second test: User rejects the fix
+    def mock_input_no(prompt):
+        # Print the prompt to stdout to ensure it's captured
+        print(prompt, end='')
+        return 'n'
+    
+    monkeypatch.setattr('builtins.input', mock_input_no)
+    
+    result = main(['lint', '--fix', '--config', str(config_path)])
+    assert result == 0
+    
+    captured = capsys.readouterr()
+    assert "Apply this fix? [y/N]:" in captured.out
+    assert "Fixed:" not in captured.out
+
+
+def test_cli_lint_fix_error(capsys, mock_config, mock_github, mock_github_token, monkeypatch):
+    """Test lint command when fix application raises an exception."""
+    # Mock rule that raises an exception during fix
+    class FailingFixRule(TestRule):
+        def check(self, context):
+            return RuleCheckResult(
+                result=RuleResult.FAILED,
+                message="Test failed",
+                fix_available=True,
+                fix_description="Fix available"
+            )
+        
+        def fix(self, context):
+            raise RuntimeError("Fix failed with test error")
+
+    # Create test rule set with failing fix rule
+    failing_rule = FailingFixRule("R001", "Rule with failing fix")
+    rule_set = TestRuleSet("default", "Default rule set")
+    rule_set.add_rule(failing_rule)
+    
+    # Mock rule manager to return test rule set
+    def mock_get_rule_set(self, rule_set_id):
+        return rule_set if rule_set_id == "default" else None
+    
+    monkeypatch.setattr("repolint.rule_manager.RuleManager.get_rule_set", mock_get_rule_set)
+    
+    # Create config with fix enabled
+    config = {
+        "github_token": mock_github_token,
+        "default_rule_set": "default",
+        "repository_filter": {},
+        "rule_sets": {},
+        "repository_rule_sets": {}
+    }
+    config_file = mock_config(config)
+    
+    # Run lint with fix
+    result = main(["lint", "--config", str(config_file), "--fix", "--non-interactive"])
+    assert result == 0
+    
+    # Verify output shows fix error
+    captured = capsys.readouterr()
+    assert "Fix error: Fix failed with test error" in captured.out
+
+
+def test_cli_lint_fix_failure(capsys, mock_config, mock_github, mock_github_token, monkeypatch):
+    """Test lint command when fix returns failure status."""
+    # Mock rule that returns failure from fix
+    class FailingFixRule(TestRule):
+        def check(self, context):
+            return RuleCheckResult(
+                result=RuleResult.FAILED,
+                message="Test failed",
+                fix_available=True,
+                fix_description="Fix available"
+            )
+        
+        def fix(self, context):
+            return False, "Fix could not be applied"
+
+    # Create test rule set with failing fix rule
+    failing_rule = FailingFixRule("R001", "Rule with failing fix")
+    rule_set = TestRuleSet("default", "Default rule set")
+    rule_set.add_rule(failing_rule)
+    
+    # Mock rule manager to return test rule set
+    def mock_get_rule_set(self, rule_set_id):
+        return rule_set if rule_set_id == "default" else None
+    
+    monkeypatch.setattr("repolint.rule_manager.RuleManager.get_rule_set", mock_get_rule_set)
+    
+    # Create config with fix enabled
+    config = {
+        "github_token": mock_github_token,
+        "default_rule_set": "default",
+        "repository_filter": {},
+        "rule_sets": {},
+        "repository_rule_sets": {}
+    }
+    config_file = mock_config(config)
+    
+    # Run lint with fix
+    result = main(["lint", "--config", str(config_file), "--fix", "--non-interactive"])
+    assert result == 0
+    
+    # Verify output shows fix failure
+    captured = capsys.readouterr()
+    assert "Fix failed: Fix could not be applied" in captured.out
