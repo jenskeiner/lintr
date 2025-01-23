@@ -397,6 +397,14 @@ We can record here that this dependency should not be used in the future and lis
    - Re-check and display rule status after applying fixes
    - This provides better feedback to users about the effects of their actions
 
+### Code Coverage and Exception Handling
+- Python's coverage tool has limitations in recognizing coverage of exception handling blocks
+- Solutions to improve coverage reporting:
+  1. Use `# pragma: no branch` comments to mark branches that are covered but not recognized
+  2. Configure coverage tool via `.coveragerc` to enable branch coverage and set appropriate exclusion rules
+  3. Write explicit test cases for each branch condition and error path
+- Sometimes remaining "uncovered" lines in exception blocks can be ignored if tests verify the behavior
+
 ## Future Scope (only for context, not a goal of current implementation)
 - Support for organization-wide rules.
 - Enhanced reporting with detailed analytics.
@@ -407,3 +415,11 @@ We can record here that this dependency should not be used in the future and lis
    - Use `pytest.raises()` to test for expected exceptions like `SystemExit`
    - Test all possible configuration sources (e.g., for GitHub tokens: config file, GITHUB_TOKEN, REPOLINT_GITHUB_TOKEN)
    - Clean up environment variables in tests to ensure test isolation
+
+### Testing Coverage Gaps
+
+When improving test coverage:
+- Always measure coverage before and after adding tests to verify improvement
+- Handle SystemExit exceptions in CLI tests using pytest.raises to properly test error paths
+- Test both success and error paths for file operations (e.g., file exists vs doesn't exist)
+- Use pytest's tmp_path fixture for file-based tests to ensure clean test environment

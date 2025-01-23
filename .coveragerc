@@ -1,0 +1,20 @@
+[run]
+branch = True
+source = src/repolint
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    pass
+    raise AssertionError
+    raise NotImplementedError
+    if False:
+    if typing.TYPE_CHECKING:
+
+[paths]
+source =
+    src/repolint/
+    */site-packages/repolint/

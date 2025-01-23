@@ -748,3 +748,78 @@ def test_cli_lint_fix_failure(capsys, mock_config, mock_github, mock_github_toke
     # Verify output shows fix failure
     captured = capsys.readouterr()
     assert "Fix failed: Fix could not be applied" in captured.out
+
+def test_cli_lint_github_access_error(capsys, mock_config, mock_github_token, monkeypatch):
+    """Test lint command when GitHub API access raises an exception."""
+    # Create a test config file
+    config_file = mock_config({
+        'repositories': ['test-org/test-repo'],
+        'rules': ['test-rule'],
+        'github_token': mock_github_token
+    })
+
+    # Mock GitHub client to raise an exception
+    class MockGitHubError(Exception):
+        pass
+
+    class MockGitHubClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def get_repositories(self):
+            raise MockGitHubError("Failed to access GitHub API")
+
+    monkeypatch.setattr('repolint.github.GitHubClient', MockGitHubClient)
+    
+    # Run lint command
+    with pytest.raises(SystemExit) as exc_info:
+        main(['lint', '--config', str(config_file)])
+    
+    assert exc_info.value.code == 1
+    captured = capsys.readouterr()
+    assert "Error accessing GitHub: Failed to access GitHub API" in captured.out
+
+def test_cli_lint_config_load_error(capsys, mock_config):
+    """Test lint command when configuration loading raises an exception."""
+    # Create an invalid YAML config file
+    config_file = mock_config({
+        'repositories': 'not-a-list',  # This will cause a validation error
+        'rules': ['test-rule']
+    })
+
+    # Run lint command
+    with pytest.raises(SystemExit) as exc_info:
+        main(['lint', '--config', str(config_file)])
+    
+    assert exc_info.value.code == 1
+    captured = capsys.readouterr()
+    assert "Error loading configuration:" in captured.out
+
+def test_cli_init_existing_file(capsys, tmp_path):
+    """Test init command when output file already exists."""
+    # Create a file that already exists
+    output_file = tmp_path / "config.yml"
+    output_file.write_text("")  # Create an empty file
+    
+    # Run init command with existing file path
+    with pytest.raises(SystemExit) as exc_info:
+        main(["init", "--output", str(output_file)])
+    
+    # Verify exit code and error message
+    assert exc_info.value.code == 1
+    captured = capsys.readouterr()
+    assert f"Error: File {output_file} already exists" in captured.out
+
+def test_cli_init_parent_dir_exists(capsys, tmp_path):
+    """Test init command when parent directory exists."""
+    # Create parent directory
+    parent_dir = tmp_path / "config"
+    parent_dir.mkdir()
+    output_file = parent_dir / "config.yml"
+    
+    # Run init command
+    result = main(["init", "--output", str(output_file)])
+    
+    # Verify success
+    assert result == 0
+    assert output_file.exists()

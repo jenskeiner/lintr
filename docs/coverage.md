@@ -1,62 +1,59 @@
-# Test Coverage Analysis
+# Code Coverage Gaps
 
-This document identifies gaps in test coverage for the Repolint project. Each gap is uniquely identified for reference in future tasks.
+This document lists the identified coverage gaps in the codebase. Each gap has a unique identifier for easy reference.
 
-## Main Module (GAP-MAIN-1)
-- Missing coverage for the `if __name__ == "__main__"` block in `__main__.py`
-- Impact: Low - standard Python boilerplate code
-- Suggested Test: Add test that runs the module as a script
+## Main Package (MAIN)
 
-## Rule Manager Module
+- **MAIN-001**: Missing coverage in `__main__.py` line 7 (75% coverage)
+  - Description: Entry point execution path not covered
 
-### Entry Point Loading (GAP-RULE-MGR-1) [FIXED]
-- Missing coverage for entry point loading errors (lines 43-45, 58-60)
-- Impact: Medium - error handling for invalid plugins
-- Suggested Test: Add tests with invalid/malformed entry points
-- Status: Fixed in commit [INSERT_COMMIT_HASH] by adding comprehensive tests for error handling during rule and rule set discovery
+## CLI Module (CLI)
 
-### Rule Set Configuration (GAP-RULE-MGR-2)
-- Missing coverage for rule set configuration validation (lines 103-105)
-- Impact: High - configuration validation
-- Suggested Test: Add tests with invalid rule set configurations
+- **CLI-001**: Missing coverage in `cli.py` lines 148-150, 153-154 (92% coverage)
+  - Description: Error handling paths in CLI processing
 
-### Rule Creation Edge Cases (GAP-RULE-MGR-3)
-- Missing coverage for rule creation errors (lines 114, 125-126, 141)
-- Impact: Medium - error handling for rule instantiation
-- Suggested Test: Add tests with invalid rule parameters
+- **CLI-002**: Missing coverage in `cli.py` lines 194-195, 203-204
+  - Description: Branch conditions in command processing
 
-### Rule Set Management (GAP-RULE-MGR-4)
-- Missing coverage for rule set management (lines 160, 227-230, 238)
-- Impact: High - core rule set functionality
-- Suggested Test: Add tests for complex rule set operations
+- **CLI-003**: Missing coverage in `cli.py` line 259
+  - Description: Exception handling path
 
-## Base Rules Module
+## Linter Module (LINT)
 
-### Rule Execution Edge Cases (GAP-RULES-1)
-- Missing coverage in `base.py` (lines 55, 71)
-- Impact: Medium - error handling in rule execution
-- Suggested Test: Add tests for edge cases in rule execution
+- **LINT-001**: Missing coverage in `linter.py` lines 116-117, 140 (97% coverage)
+  - Description: Error handling paths in linting process
 
-## Test Coverage Metrics
+## Rule Manager Module (RULE)
 
-Current overall coverage: 91%
-- Lines covered: 486
-- Lines missing: 51
-- Total lines: 537
+- **RULE-001**: Missing coverage in `rule_manager.py` lines 103-105, 114 (88% coverage)
+  - Description: Rule initialization error paths
+
+- **RULE-002**: Missing coverage in `rule_manager.py` lines 125-126, 141
+  - Description: Rule validation and processing paths
+
+- **RULE-003**: Missing coverage in `rule_manager.py` line 160
+  - Description: Rule execution path
+
+- **RULE-004**: Missing coverage in `rule_manager.py` lines 227-230, 238
+  - Description: Rule manager error handling paths
+
+## Base Rules Module (BASE)
+
+- **BASE-001**: Missing coverage in `rules/base.py` lines 55, 71 (97% coverage)
+  - Description: Base rule error handling paths
+
+## Overall Statistics
+
+- Total statements: 549
+- Missed statements: 29
+- Overall coverage: 95%
 
 ## Priority Areas
 
-High priority gaps that should be addressed first:
-1. GAP-CLI-2: GitHub token validation
-2. GAP-LINTER-1: Interactive fix mode
-3. GAP-LINTER-2: Fix application error handling
-4. GAP-RULE-MGR-2: Rule set configuration
-5. GAP-RULE-MGR-4: Rule set management
+Based on coverage percentages, the following modules should be prioritized for coverage improvements:
 
-## Next Steps
+1. Rule Manager Module (88% coverage)
+2. CLI Module (92% coverage)
+3. Other modules with >95% coverage need minimal attention
 
-1. Address high priority gaps first
-2. Focus on error handling scenarios
-3. Add tests for user interaction flows
-4. Improve coverage of configuration validation
-5. Add tests for plugin system edge cases
+Each gap can be referenced by its unique identifier (e.g., "RULE-001") when discussing or working on coverage improvements.
