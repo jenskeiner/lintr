@@ -163,9 +163,7 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.7.4: Improve test to verify listing of rule-sets (`repolint --list rule-sets`) to verify output comprehensively.
 - [] 1.8: Create initial rules.
   - [x] 1.8.1: Create a rule that checks if a default branch exists.
-  - [] 1.8.2: Create a rule that checks if the default branch is named "develop".
-  - [] 1.8.3: Create a rule that checks if contributors are required to sign off on web-based commits.
-  - [x] 1.8.4: Create a rule that checks if the setting "Whether to require contributors to sign off on web-based commits" is enabled (web_commit_signoff_required).
+  - [x] 1.8.2: Create a rule that checks if the setting "Whether to require contributors to sign off on web-based commits" is enabled (web_commit_signoff_required).
 - [] 1.9: Create initial rule sets.
   - [x] 1.9.1: Review rule set discovery logic and ensure rule sets can be created programmatically as well as through configuration.
   - [x] 1.9.2: Create a minimalistic default rule set.
@@ -186,9 +184,14 @@ We are at Phase 1 of the project. The GitHub API integration has been implemente
   - [x] 1.11.4: Colorize the output where appropriate. E.g. printing a check mark should be green, a cross should be red, etc.
 - [] 1.12: Mutually exclusive rules and precedence.
   - [x] 1.12.1: Implement the concept of mutually exclusive rules. A rule may point to other rules that it is mutually exclusive with. The relationship is bi-directional.
-  - [] 1.12.2: Implement rule precedence in rule sets. Add new effective_rules() method to rule sets. Should return the rules that are actually active.
-- [] 1.13: Create a default rule set (e.g., for Python library projects).
-- [] 1.14: Output results of linting operations.
+  - [x] 1.12.2: Implement rule precedence in rule sets by adding new `effective_rules()` method. This method should:
+    - Process rules in reverse order (last added first) to respect precedence
+    - Build a dictionary of mutually exclusive relationships for efficient lookup
+    - For each rule being processed, exclude any earlier rules that are mutually exclusive with it
+    - Return an iterator of the effective rules in their original order
+    - Handle the bi-directional nature of mutual exclusivity automatically
+- [x] 1.13: Create a minimal default rule set.
+- [x] 1.14: Output results of linting operations.
 
 ### Phase 2: Autofix and Dry-Run Modes
 - [] 2.1: Implement autofix logic for auto-fixable rules.
