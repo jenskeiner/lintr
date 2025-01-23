@@ -9,11 +9,6 @@ This document identifies gaps in test coverage for the Repolint project. Each ga
 
 ## CLI Module
 
-### List Command Error Handling (GAP-CLI-3)
-- Missing coverage in `handle_list` (lines 148-154)
-- Impact: Medium - error handling for invalid list types
-- Suggested Test: Add tests with invalid list command arguments
-
 ### Init Command Edge Cases (GAP-CLI-4)
 - Missing coverage in `handle_init` (lines 191-192, 207-209)
 - Impact: Medium - error handling for file operations

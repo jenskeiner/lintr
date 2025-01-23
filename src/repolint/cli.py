@@ -158,29 +158,41 @@ def handle_list(args: argparse.Namespace) -> None:
     """Handle the list command."""
     from repolint.rule_manager import RuleManager
     
-    # Get singleton instance
-    manager = RuleManager()
-    
-    if args.rules:
-        print("Available rules:")
-        rules = manager.get_all_rules()
-        if not rules:
-            print("  No rules implemented yet")
-        else:
-            for rule_id, rule in sorted(rules.items()):
-                print(f"  {rule_id}: {rule.description}")
-    
-    if args.rule_sets:
-        print("Available rule-sets:")
-        rule_sets = manager.get_all_rule_sets()
-        if not rule_sets:
-            print("  No rule-sets implemented yet")
-        else:
-            for rule_set_id, rule_set in sorted(rule_sets.items()):
-                print(f"  {rule_set_id}: {rule_set.description}")
-    
-    if not (args.rules or args.rule_sets):
-        print("Please specify --rules and/or --rule-sets")
+    try:
+        # Get singleton instance
+        manager = RuleManager()
+        
+        if args.rules:
+            print("Available rules:")
+            try:
+                rules = manager.get_all_rules()
+                if not rules:
+                    print("  No rules implemented yet")
+                else:
+                    for rule_id, rule in sorted(rules.items()):
+                        print(f"  {rule_id}: {rule.description}")
+            except Exception as e:
+                print(f"Error: Failed to load rules: {e}", file=sys.stderr)
+                sys.exit(1)
+        
+        if args.rule_sets:
+            print("Available rule-sets:")
+            try:
+                rule_sets = manager.get_all_rule_sets()
+                if not rule_sets:
+                    print("  No rule-sets implemented yet")
+                else:
+                    for rule_set_id, rule_set in sorted(rule_sets.items()):
+                        print(f"  {rule_set_id}: {rule_set.description}")
+            except Exception as e:
+                print(f"Error: Failed to load rule sets: {e}", file=sys.stderr)
+                sys.exit(1)
+        
+        if not (args.rules or args.rule_sets):
+            print("Please specify --rules and/or --rule-sets")
+    except Exception as e:
+        print(f"Error: Failed to initialize RuleManager: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def handle_init(args: argparse.Namespace) -> None:

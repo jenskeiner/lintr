@@ -437,3 +437,118 @@ def test_cli_lint_empty_repolint_token(capsys, mock_config, monkeypatch):
     assert exc_info.value.code == 1
     captured = capsys.readouterr()
     assert "Error: GitHub token not configured" in captured.out
+
+
+def test_cli_list_invalid_argument(capsys):
+    """Test list command with an invalid argument."""
+    # Test with an invalid argument that should be caught by argparse
+    with pytest.raises(SystemExit) as exc_info:
+        main(["list", "--invalid"])
+    assert exc_info.value.code == 2
+    captured = capsys.readouterr()
+    assert "error: unrecognized arguments: --invalid" in captured.err
+
+
+def test_cli_list_rules_error(capsys, monkeypatch):
+    """Test list command with --rules when RuleManager.get_all_rules raises an exception."""
+    def mock_get_all_rules_error(self):
+        raise Exception("Failed to load rules")
+    
+    monkeypatch.setattr("repolint.rule_manager.RuleManager.get_all_rules", mock_get_all_rules_error)
+    
+    with pytest.raises(SystemExit) as exc_info:
+        main(["list", "--rules"])
+    assert exc_info.value.code == 1
+    captured = capsys.readouterr()
+    assert "Error: Failed to load rules: Failed to load rules" in captured.err
+
+
+def test_cli_list_rule_sets_error(capsys, monkeypatch):
+    """Test list command with --rule-sets when RuleManager.get_all_rule_sets raises an exception."""
+    def mock_get_all_rule_sets_error(self):
+        raise Exception("Failed to load rule sets")
+    
+    monkeypatch.setattr("repolint.rule_manager.RuleManager.get_all_rule_sets", mock_get_all_rule_sets_error)
+    
+    with pytest.raises(SystemExit) as exc_info:
+        main(["list", "--rule-sets"])
+    assert exc_info.value.code == 1
+    captured = capsys.readouterr()
+    assert "Error: Failed to load rule sets: Failed to load rule sets" in captured.err
+
+
+def test_cli_init_permission_error_mkdir(capsys, monkeypatch):
+    """Test init command when mkdir fails due to permissions."""
+    def mock_mkdir(*args, **kwargs):
+        raise PermissionError("Permission denied")
+    
+    monkeypatch.setattr(Path, "mkdir", mock_mkdir)
+    
+    with pytest.raises(SystemExit) as exc_info:
+        main(["init", "--output", "test/config.yml"])
+    assert exc_info.value.code == 1
+    
+    captured = capsys.readouterr()
+    assert "Error creating configuration file: Permission denied" in captured.out
+
+
+def test_cli_init_permission_error_copy(capsys, monkeypatch):
+    """Test init command when file copy fails due to permissions."""
+    def mock_copy2(*args, **kwargs):
+        raise PermissionError("Permission denied")
+    
+    # Allow mkdir to succeed but make copy2 fail
+    monkeypatch.setattr("shutil.copy2", mock_copy2)
+    
+    with pytest.raises(SystemExit) as exc_info:
+        main(["init", "--output", "test/config.yml"])
+    assert exc_info.value.code == 1
+    
+    captured = capsys.readouterr()
+    assert "Error creating configuration file: Permission denied" in captured.out
+
+
+def test_cli_main_no_args(capsys, monkeypatch):
+    """Test main function when no args are provided (using sys.argv)."""
+    # Mock sys.argv to be empty
+    monkeypatch.setattr("sys.argv", ["repolint"])
+    
+    # Call main without args to trigger sys.argv[1:] usage
+    result = main()
+    
+    assert result == 1
+    captured = capsys.readouterr()
+    assert "usage:" in captured.out.lower()
+
+
+def test_cli_main_unknown_command(capsys):
+    """Test main function with an unknown command."""
+    with pytest.raises(SystemExit) as exc_info:
+        main(["unknown-command"])
+    
+    assert exc_info.value.code == 2
+    captured = capsys.readouterr()
+    assert "invalid choice: 'unknown-command'" in captured.err
+    assert "choose from 'lint', 'list', 'init'" in captured.err
+
+
+def test_cli_main_command_not_in_handlers(monkeypatch, capsys):
+    """Test main function when command is not in handlers dict."""
+    # Create a mock parser that returns a command not in handlers
+    class MockParser:
+        def parse_args(self, args):
+            class MockArgs:
+                command = "nonexistent"
+            return MockArgs()
+        
+        def print_help(self):
+            print("Mock help message")
+    
+    # Mock create_parser to return our mock parser
+    monkeypatch.setattr("repolint.cli.create_parser", lambda: MockParser())
+    
+    result = main(["nonexistent"])
+    
+    assert result == 1
+    captured = capsys.readouterr()
+    assert "Mock help message" not in captured.out  # Help shouldn't be shown for unknown command
