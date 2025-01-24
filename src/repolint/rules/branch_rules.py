@@ -2,7 +2,6 @@
 
 from typing import Tuple
 
-from github.Repository import Repository
 from github.GithubException import GithubException
 
 from repolint.rules.base import Rule, RuleCheckResult, RuleResult

@@ -3,7 +3,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from github import Auth, Github
 from repolint.github import GitHubClient, GitHubConfig
 
 

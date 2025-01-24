@@ -1,8 +1,7 @@
 """Configuration management for repolint."""
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type
-import yaml
+from typing import Dict, List, Optional, Type
 
 from pydantic import BaseModel, Field, ValidationError
 from pydantic_core import PydanticCustomError

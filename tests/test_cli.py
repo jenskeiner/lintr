@@ -4,7 +4,6 @@ import pytest
 
 from repolint.cli import main
 from repolint.rules.base import Rule, RuleSet, RuleCheckResult, RuleResult
-from repolint.rules.context import RuleContext
 from tests.fixtures import TestRule, TestRuleSet
 import os
 import tempfile

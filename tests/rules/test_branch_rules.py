@@ -1,8 +1,6 @@
 """Tests for branch-related rules."""
 
 from unittest.mock import MagicMock, PropertyMock
-from unittest.mock import patch
-import pytest
 from github.GithubException import GithubException
 
 from repolint.rules.base import RuleResult

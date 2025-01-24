@@ -7,7 +7,6 @@ from typing import Any, Generator, Optional
 from unittest.mock import MagicMock
 
 import pytest
-from _pytest.fixtures import FixtureRequest
 from _pytest.monkeypatch import MonkeyPatch
 
 from repolint.config import create_config_class

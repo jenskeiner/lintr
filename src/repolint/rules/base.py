@@ -3,9 +3,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Iterator, List, Optional, Set, Tuple, Union
+from typing import Iterator, List, Optional, Set, Tuple, Union
 
-from github.Repository import Repository
 
 from repolint.rules.context import RuleContext
 

@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock
 
-import pytest
 
 from repolint.rules import Rule, RuleCheckResult, RuleResult, RuleSet
 from repolint.rules.context import RuleContext

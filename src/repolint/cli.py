@@ -1,7 +1,6 @@
 """Command-line interface for Repolint."""
 
 import argparse
-import os
 import shutil
 import sys
 from pathlib import Path
@@ -9,7 +8,6 @@ from typing import List, Optional
 
 from repolint import __version__
 from repolint.config import create_config_class
-import yaml
 
 # Path to the default configuration template
 DEFAULT_CONFIG_TEMPLATE = Path(__file__).parent / "templates" / "default_config.yml"
@@ -97,7 +95,7 @@ def handle_lint(args: argparse.Namespace) -> None:
         config_path = Path(args.config)
         if not config_path.exists():
             print(f"Error: Configuration file not found: {args.config}")
-            print(f"Run 'repolint init' to create a new configuration file")
+            print("Run 'repolint init' to create a new configuration file")
             sys.exit(1)
             
         # Load and validate configuration from all sources
