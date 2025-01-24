@@ -143,8 +143,8 @@ We are at Phase 2 of the project.
   - [x] 1.2.2: Add regular and dev dependencies to `pyproject.toml`.
   - [x] 1.2.3: Initialize Python virtual environment by running `uv sync --all-extras`.
 - [] 1.3: Setup pre-commit framework.
-  - [] 1.3.1: Add pe-commit framework as dev dependency and sync it into the project's Python virtual environment.
-  - [] 1.3.2: Create ` .pre-commit-config.yaml` file. Add the following checks:
+  - [x] 1.3.1: Add pe-commit framework as dev dependency and sync it into the project's Python virtual environment.
+  - [x] 1.3.2: Create ` .pre-commit-config.yaml` file. Add the following checks:
     - `pyupgrade` (for the used Python version): https://github.com/asottile/pyupgrade
     - `ruff` (linter and formatter): https://github.com/astral-sh/ruff
 - [x] 1.4: Set up `pytest` for unit testing.
