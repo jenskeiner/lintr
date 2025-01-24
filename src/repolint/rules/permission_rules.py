@@ -73,3 +73,91 @@ class SingleOwnerRule(Rule):
                 message=f"Failed to check repository admins: {str(e)}",
                 fix_available=False,
             )
+
+
+class NoCollaboratorsRule(Rule):
+    """Rule that checks if a repository has no collaborators other than the user."""
+
+    def __init__(self):
+        """Initialize the rule."""
+        super().__init__(
+            rule_id="R006",
+            description="Repository must have no collaborators other than the user",
+        )
+
+    def check(self, context: RuleContext) -> RuleCheckResult:
+        """Check if the repository has no collaborators other than the user.
+
+        Args:
+            context: Context object containing all information needed for the check.
+
+        Returns:
+            Result of the check with details.
+        """
+        try:
+            # Get all collaborators
+            collaborators = context.repository.get_collaborators()
+
+            # Get the authenticated user's login
+            authenticated_user = context.repository.owner.login
+
+            # Check for any collaborators other than the user
+            other_collaborators = []
+            for collaborator in collaborators:
+                if collaborator.login != authenticated_user:
+                    other_collaborators.append(collaborator.login)
+
+            if not other_collaborators:
+                return RuleCheckResult(
+                    result=RuleResult.PASSED,
+                    message="Repository has no collaborators other than the user",
+                    fix_available=False,
+                )
+            else:
+                return RuleCheckResult(
+                    result=RuleResult.FAILED,
+                    message=f"Repository has {len(other_collaborators)} other collaborators: {', '.join(other_collaborators)}",
+                    fix_available=True,
+                    fix_description=f"Remove collaborators: {', '.join(other_collaborators)}",
+                )
+
+        except Exception as e:
+            return RuleCheckResult(
+                result=RuleResult.FAILED,
+                message=f"Failed to check collaborators: {str(e)}",
+                fix_available=False,
+            )
+
+    def fix(self, context: RuleContext) -> tuple[bool, str]:
+        """Remove all collaborators from the repository except the user.
+
+        Args:
+            context: Context object containing all information needed for the fix.
+
+        Returns:
+            A tuple of (success, message) indicating if the fix was successful.
+        """
+        try:
+            # Get all collaborators
+            collaborators = context.repository.get_collaborators()
+
+            # Get the authenticated user's login
+            authenticated_user = context.repository.owner.login
+
+            # Remove all collaborators except the user
+            removed_collaborators = []
+            for collaborator in collaborators:
+                if collaborator.login != authenticated_user:
+                    context.repository.remove_from_collaborators(collaborator.login)
+                    removed_collaborators.append(collaborator.login)
+
+            if removed_collaborators:
+                return (
+                    True,
+                    f"Removed collaborators: {', '.join(removed_collaborators)}",
+                )
+            else:
+                return True, "No collaborators needed to be removed"
+
+        except Exception as e:
+            return False, f"Failed to remove collaborators: {str(e)}"

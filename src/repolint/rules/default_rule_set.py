@@ -5,6 +5,7 @@ from repolint.rules.branch_rules import (
     DefaultBranchExistsRule,
     WebCommitSignoffRequiredRule,
 )
+from repolint.rules.permission_rules import SingleOwnerRule, NoCollaboratorsRule
 
 
 def get_default_rule_set() -> RuleSet:
@@ -25,5 +26,7 @@ def get_default_rule_set() -> RuleSet:
     # Add basic repository checks
     rule_set.add_rule(DefaultBranchExistsRule())
     rule_set.add_rule(WebCommitSignoffRequiredRule())
+    rule_set.add_rule(SingleOwnerRule())
+    rule_set.add_rule(NoCollaboratorsRule())
 
     return rule_set

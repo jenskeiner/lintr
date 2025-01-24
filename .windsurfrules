@@ -12,3 +12,7 @@ ALWAYS ACTIVATE THE EXISTING PYTHON VIRTUAL ENVIRONMENT BEFORE RUNNING AUTOMATED
 Python coding style:
   - Assume Python >= 3.12.
   - In type annotations, avoid types from `typing` where possible, e.g. use `list` instead of typing's `List`.
+
+When adding linting rules:
+  - Ensure that tests cover the new rule.
+  - Ensure that an entrypoint is added for the rule so that it can be discovered at runtime.

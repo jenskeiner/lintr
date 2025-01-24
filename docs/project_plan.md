@@ -202,7 +202,8 @@ We are at Phase 2 of the project.
 - [] 2.1: Analyze and improve test coverage.
   - [x] 2.1.1: Identify test coverage gaps and note them down in a new file `docs/coverage.md`. Each gap must be uniquely identifiable so we can refer to it in tasks below.
 - [] 2.2: Rules build-out.
-  - [] 2.2.1: Add a rule that checks that the user is the only owner or admin of the repository.
+  - [x] 2.2.1: Add a rule that checks that the user is the only owner or admin of the repository.
+  - [x] 2.2.2: Add a rule that checks that a repo has no collaborators other than the user itself.
 - [] 2.3: Create usage and developer documentation.
 
 ### Phase 3: Predefined Rule-Sets and Enhancements

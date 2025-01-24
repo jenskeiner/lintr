@@ -1,6 +1,5 @@
 """Tests for configuration handling."""
 
-import os
 import tempfile
 from pathlib import Path
 
@@ -8,23 +7,6 @@ import pytest
 from pydantic import ValidationError
 
 from repolint.config import RepositoryFilter, RuleSetConfig, create_config_class
-
-
-@pytest.fixture(autouse=True)
-def clean_env():
-    """Clean environment variables before each test."""
-    # Save old values
-    old_env = {}
-    for key in list(os.environ.keys()):
-        if key.startswith("REPOLINT_"):
-            old_env[key] = os.environ[key]
-            del os.environ[key]
-
-    yield
-
-    # Restore old values
-    for key, value in old_env.items():
-        os.environ[key] = value
 
 
 @pytest.fixture
@@ -172,10 +154,11 @@ def test_config_missing_required():
         RepolintConfig()
 
 
-def test_repolint_config_from_env():
+def test_repolint_config_from_env(monkeypatch):
     """Test loading configuration from environment variables."""
-    os.environ["REPOLINT_GITHUB_TOKEN"] = "test-token"
-    os.environ["REPOLINT_DEFAULT_RULE_SET"] = "custom-default"
+    # Override environment with specific values
+    monkeypatch.setenv("REPOLINT_GITHUB_TOKEN", "test-token")
+    monkeypatch.setenv("REPOLINT_DEFAULT_RULE_SET", "custom-default")
 
     RepolintConfig = create_config_class()
     config = RepolintConfig()
@@ -186,10 +169,8 @@ def test_repolint_config_from_env():
 
 def test_repolint_config_defaults():
     """Test default values in RepolintConfig."""
-    os.environ["REPOLINT_GITHUB_TOKEN"] = "test-token"
-
     RepolintConfig = create_config_class()
-    config = RepolintConfig()
+    config = RepolintConfig(github_token="test-token")
 
     assert config.default_rule_set == "empty"  # Default value
     assert isinstance(config.repository_filter, RepositoryFilter)

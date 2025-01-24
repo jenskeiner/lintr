@@ -546,7 +546,9 @@ def test_lint_repositories_fix_interaction(
     mock_repo.name = "test-repo"
 
     # Create linter with mocked components
-    linter = Linter(mock_config, dry_run=False, non_interactive=non_interactive)
+    linter = Linter(
+        mock_config, dry_run=False, non_interactive=non_interactive, fix=True
+    )
     linter._rule_manager = rule_manager
 
     # Run linting
@@ -571,7 +573,7 @@ def test_lint_repositories_fix_error(mock_repo, mock_config, capsys):
     mock_manager.get_rule_set.return_value = rule_set
     with patch("repolint.linter.RuleManager", return_value=mock_manager):
         # Run linter in non-interactive mode to trigger fix
-        linter = Linter(mock_config, non_interactive=True)
+        linter = Linter(mock_config, non_interactive=True, fix=True)
         linter.lint_repositories([mock_repo])
 
         # Check output
@@ -595,7 +597,7 @@ def test_lint_repositories_recheck_error(mock_repo, mock_config, capsys):
     mock_manager.get_rule_set.return_value = rule_set
     with patch("repolint.linter.RuleManager", return_value=mock_manager):
         # Run linter in non-interactive mode to trigger fix
-        linter = Linter(mock_config, non_interactive=True)
+        linter = Linter(mock_config, non_interactive=True, fix=True)
         linter.lint_repositories([mock_repo])
 
         # Check output
@@ -632,7 +634,7 @@ def test_lint_repositories_fix_error_with_failed_fix(mock_repo, mock_config, cap
     mock_manager.get_rule_set.return_value = rule_set
     with patch("repolint.linter.RuleManager", return_value=mock_manager):
         # Run linter in non-interactive mode to trigger fix
-        linter = Linter(mock_config, non_interactive=True)
+        linter = Linter(mock_config, non_interactive=True, fix=True)
         linter.lint_repositories([mock_repo])
 
         # Check output
@@ -681,7 +683,7 @@ def test_lint_repositories_fix_with_all_rule_results(mock_repo, mock_config, cap
         mock_manager.get_rule_set.return_value = rule_set
         with patch("repolint.linter.RuleManager", return_value=mock_manager):
             # Run linter in non-interactive mode to trigger fix
-            linter = Linter(mock_config, non_interactive=True)
+            linter = Linter(mock_config, non_interactive=True, fix=True)
             linter.lint_repositories([mock_repo])
 
             # Check output
@@ -694,3 +696,40 @@ def test_lint_repositories_fix_with_all_rule_results(mock_repo, mock_config, cap
                 assert "✗" in output
             else:  # SKIPPED
                 assert "-" in output
+
+
+def test_lint_repositories_no_fix_prompt_without_fix_flag(
+    mock_repo, mock_config, capsys
+):
+    """Test that fix prompts are not shown when --fix is not provided."""
+    # Create a rule set with a fixable rule
+    rule = FixableDummyRule("test.rule", "Test rule")
+    rule_set = RuleSet("test", "Test rule set")
+    rule_set.add_rule(rule)
+
+    # Mock rule manager
+    rule_manager = MagicMock()
+    rule_manager.get_rule_set.return_value = rule_set
+
+    # Mock repository name and context
+    mock_repo.name = "test-repo"
+    mock_repo.empty = True
+
+    # Create linter with mocked components (fix=False)
+    linter = Linter(mock_config, dry_run=False, non_interactive=False, fix=False)
+    linter._rule_manager = rule_manager
+
+    # Mock create_context to return a RuleContext
+    context = RuleContext(mock_repo, mock_config)
+    linter.create_context = MagicMock(return_value=context)
+
+    # Run linting
+    linter.lint_repositories([mock_repo])
+    captured = capsys.readouterr()
+    output = strip_color_codes(captured.out)
+
+    # Fix description should be shown but not fix prompt
+    assert "⚡ This can be fixed automatically" in output
+    assert "Apply this fix?" not in output
+    assert "Fix skipped" not in output
+    assert "Fixed: Mock fix applied" not in output

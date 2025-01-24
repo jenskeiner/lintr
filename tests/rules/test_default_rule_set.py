@@ -5,6 +5,7 @@ from repolint.rules.branch_rules import (
     DefaultBranchExistsRule,
     WebCommitSignoffRequiredRule,
 )
+from repolint.rules.permission_rules import SingleOwnerRule, NoCollaboratorsRule
 
 
 def test_get_default_rule_set():
@@ -16,6 +17,8 @@ def test_get_default_rule_set():
 
     # Verify that the rule set contains all expected rules
     rules = list(rule_set.rules())
-    assert len(rules) == 2
+    assert len(rules) == 4
     assert isinstance(rules[0], DefaultBranchExistsRule)
     assert isinstance(rules[1], WebCommitSignoffRequiredRule)
+    assert isinstance(rules[2], SingleOwnerRule)
+    assert isinstance(rules[3], NoCollaboratorsRule)

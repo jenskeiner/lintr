@@ -40,23 +40,32 @@ rule_sets:
 
 
 @pytest.fixture
-def config(config_file: Path, monkeypatch: MonkeyPatch) -> Generator[Any, None, None]:
-    """Create a configuration object."""
-    # Set environment variables for testing
-    monkeypatch.setenv("REPOLINT_GITHUB_TOKEN", "env-token")
-    monkeypatch.setenv("REPOLINT_DEFAULT_RULE_SET", "env-ruleset")
+def test_env(monkeypatch: MonkeyPatch) -> None:
+    """Set up a controlled test environment with known environment variables.
 
-    # Create config class with the temporary file
-    RepolintConfig = create_config_class(yaml_file=config_file)
-    yield RepolintConfig()
+    This fixture ensures all tests run with a consistent environment setup.
+    It should be used instead of directly manipulating environment variables.
+    """
+    # Clear any existing environment variables we care about
+    env_vars_to_clear = [
+        "GITHUB_TOKEN",
+        "REPOLINT_GITHUB_TOKEN",
+    ]
+    for var in env_vars_to_clear:
+        monkeypatch.delenv(var, raising=False)
+
+    # Set default test environment
+    monkeypatch.setenv("REPOLINT_GITHUB_TOKEN", "env-token")
 
 
 @pytest.fixture
-def mock_github_token():
-    """Set up a mock GitHub token in environment."""
-    os.environ["GITHUB_TOKEN"] = "mock-github-token"
-    yield os.environ["GITHUB_TOKEN"]
-    del os.environ["GITHUB_TOKEN"]
+def config(
+    config_file: Path, test_env, monkeypatch: MonkeyPatch
+) -> Generator[Any, None, None]:
+    """Create a configuration object with controlled environment."""
+    # Create config class with the temporary file
+    RepolintConfig = create_config_class(yaml_file=config_file)
+    yield RepolintConfig()
 
 
 @pytest.fixture

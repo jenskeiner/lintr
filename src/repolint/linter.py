@@ -123,59 +123,61 @@ class Linter:
 
             print(f"  {status_symbol} {rule.rule_id}: {result.message}")
 
-            # Handle fix-related output
+            # Always show fix description if available
             if result.fix_available:
-                if self._dry_run:
-                    print(
-                        f"    {Fore.BLUE}⚡ {result.fix_description}{Style.RESET_ALL}"
-                    )
-                    print(
-                        f"    {Fore.YELLOW}ℹ Would attempt to fix this issue (dry run){Style.RESET_ALL}"
-                    )
-                else:
-                    print(
-                        f"    {Fore.BLUE}⚡ {result.fix_description}{Style.RESET_ALL}"
-                    )
-                    should_fix = False
+                print(f"    {Fore.BLUE}⚡ {result.fix_description}{Style.RESET_ALL}")
 
-                    if self._non_interactive:
-                        should_fix = True
+                # Only proceed with fix if --fix flag is provided
+                if self._fix:
+                    if self._dry_run:
+                        print(
+                            f"    {Fore.YELLOW}ℹ Would attempt to fix this issue (dry run){Style.RESET_ALL}"
+                        )
                     else:
-                        response = input(
-                            f"    {Fore.YELLOW}ℹ Apply this fix? [y/N]: {Style.RESET_ALL}"
-                        ).lower()
-                        should_fix = response in ["y", "yes"]
-
-                    if should_fix:
                         try:
-                            success, message = rule.fix(context)
-                            if success:
-                                print(
-                                    f"    {Fore.GREEN}⚡ Fixed: {message}{Style.RESET_ALL}"
-                                )
-                                # Re-run check to get updated status
-                                result = rule.check(context)
-                                results[rule.rule_id] = result
-                                # Re-display rule status
-                                if result.result == RuleResult.PASSED:
-                                    status_symbol = f"{Fore.GREEN}✓{Style.RESET_ALL}"
-                                elif result.result == RuleResult.FAILED:
-                                    status_symbol = f"{Fore.RED}✗{Style.RESET_ALL}"
-                                else:  # SKIPPED
-                                    status_symbol = f"{Fore.YELLOW}-{Style.RESET_ALL}"
-                                print(
-                                    f"  {status_symbol} {rule.rule_id}: {result.message}"
-                                )
+                            should_fix = self._non_interactive
+
+                            if not self._non_interactive:
+                                response = input(
+                                    f"    {Fore.YELLOW}ℹ Apply this fix? [y/N]: {Style.RESET_ALL}"
+                                ).lower()
+                                should_fix = response in ["y", "yes"]
+
+                            if should_fix:
+                                success, message = rule.fix(context)
+                                if success:
+                                    print(
+                                        f"    {Fore.GREEN}⚡ Fixed: {message}{Style.RESET_ALL}"
+                                    )
+                                    # Re-run check to get updated status
+                                    result = rule.check(context)
+                                    results[rule.rule_id] = result
+                                    # Re-display rule status
+                                    if result.result == RuleResult.PASSED:
+                                        status_symbol = (
+                                            f"{Fore.GREEN}✓{Style.RESET_ALL}"
+                                        )
+                                    elif result.result == RuleResult.FAILED:
+                                        status_symbol = f"{Fore.RED}✗{Style.RESET_ALL}"
+                                    else:  # SKIPPED
+                                        status_symbol = (
+                                            f"{Fore.YELLOW}-{Style.RESET_ALL}"
+                                        )
+                                    print(
+                                        f"  {status_symbol} {rule.rule_id}: {result.message}"
+                                    )
+                                else:
+                                    print(
+                                        f"    {Fore.RED}⚡ Fix failed: {message}{Style.RESET_ALL}"
+                                    )
                             else:
                                 print(
-                                    f"    {Fore.RED}⚡ Fix failed: {message}{Style.RESET_ALL}"
+                                    f"    {Fore.YELLOW}ℹ Fix skipped{Style.RESET_ALL}"
                                 )
                         except Exception as e:
                             print(
                                 f"    {Fore.RED}⚡ Fix error: {str(e)}{Style.RESET_ALL}"
                             )
-                    else:
-                        print(f"    {Fore.YELLOW}ℹ Fix skipped{Style.RESET_ALL}")
 
         return results
 

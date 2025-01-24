@@ -6,7 +6,7 @@ from github.GithubException import GithubException
 
 from repolint.rules.base import RuleResult
 from repolint.rules.context import RuleContext
-from repolint.rules.permission_rules import SingleOwnerRule
+from repolint.rules.permission_rules import SingleOwnerRule, NoCollaboratorsRule
 
 
 def test_single_owner_rule_pass():
@@ -80,4 +80,110 @@ def test_single_owner_rule_fail_api_error():
     # Verify result
     assert result.result == RuleResult.FAILED
     assert "API Error" in result.message
+    assert not result.fix_available
+
+
+def test_no_collaborators_rule_pass(mock_repository, config):
+    """Test NoCollaboratorsRule when repository has no collaborators."""
+    # Create rule
+    rule = NoCollaboratorsRule()
+
+    # Mock collaborators
+    mock_repository.get_collaborators.return_value = []
+    mock_repository.owner.login = "test-user"
+
+    # Create context
+    context = RuleContext(mock_repository, config)
+
+    # Run check
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.PASSED
+    assert "no collaborators" in result.message
+    assert not result.fix_available
+
+
+def test_no_collaborators_rule_fail(mock_repository, config):
+    """Test NoCollaboratorsRule when repository has other collaborators."""
+    # Create rule
+    rule = NoCollaboratorsRule()
+
+    # Create mock collaborators
+    class MockCollaborator:
+        def __init__(self, login):
+            self.login = login
+
+    collaborators = [
+        MockCollaborator("test-user"),  # The owner
+        MockCollaborator("other-user"),  # Another collaborator
+    ]
+
+    # Mock repository
+    mock_repository.get_collaborators.return_value = collaborators
+    mock_repository.owner.login = "test-user"
+
+    # Create context
+    context = RuleContext(mock_repository, config)
+
+    # Run check
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "other-user" in result.message
+    assert result.fix_available
+    assert "Remove collaborators" in result.fix_description
+
+
+def test_no_collaborators_rule_fix(mock_repository, config):
+    """Test NoCollaboratorsRule fix functionality."""
+    # Create rule
+    rule = NoCollaboratorsRule()
+
+    # Create mock collaborators
+    class MockCollaborator:
+        def __init__(self, login):
+            self.login = login
+
+    collaborators = [
+        MockCollaborator("test-user"),  # The owner
+        MockCollaborator("other-user"),  # Another collaborator
+    ]
+
+    # Mock repository
+    mock_repository.get_collaborators.return_value = collaborators
+    mock_repository.owner.login = "test-user"
+    mock_repository.remove_from_collaborators = MagicMock()
+
+    # Create context
+    context = RuleContext(mock_repository, config)
+
+    # Run fix
+    success, message = rule.fix(context)
+
+    # Verify fix
+    assert success
+    assert "Removed collaborators" in message
+    assert "other-user" in message
+    mock_repository.remove_from_collaborators.assert_called_once_with("other-user")
+
+
+def test_no_collaborators_rule_api_error(mock_repository, config):
+    """Test NoCollaboratorsRule when API call fails."""
+    # Create rule
+    rule = NoCollaboratorsRule()
+
+    # Mock API error
+    mock_repository.get_collaborators.side_effect = Exception("API error")
+
+    # Create context
+    context = RuleContext(mock_repository, config)
+
+    # Run check
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "Failed to check collaborators" in result.message
     assert not result.fix_available
