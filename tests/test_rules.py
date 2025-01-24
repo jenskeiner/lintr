@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 from repolint.rules import Rule, RuleCheckResult, RuleResult, RuleSet
 from repolint.rules.context import RuleContext
 
+
 class DummyRule(Rule):
     """Dummy rule implementation for testing."""
 
@@ -17,7 +18,7 @@ class DummyRule(Rule):
         """Return predefined result."""
         return RuleCheckResult(
             result=self._result,
-            message=f"Rule {self.rule_id} returned {self._result.value}"
+            message=f"Rule {self.rule_id} returned {self._result.value}",
         )
 
     def can_fix(self) -> bool:
@@ -28,70 +29,75 @@ class DummyRule(Rule):
         """This dummy rule cannot fix anything."""
         return False
 
+
 class MutuallyExclusiveRule1(Rule):
     """Test rule that is mutually exclusive with Rule2."""
-    
+
     mutually_exclusive_with = {"R002"}  # Class-level declaration
-    
+
     def __init__(self):
         super().__init__("R001", "Test Rule 1")
-    
+
     def check(self, context: RuleContext) -> RuleCheckResult:
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
 
 
 class MutuallyExclusiveRule2(Rule):
     """Test rule that is mutually exclusive with Rule1."""
-    
+
     mutually_exclusive_with = {"R001"}  # Class-level declaration
-    
+
     def __init__(self):
         super().__init__("R002", "Test Rule 2")
-    
+
     def check(self, context: RuleContext) -> RuleCheckResult:
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
 
 
 class BiDirectionalRule1(Rule):
     """Test rule that is mutually exclusive with Rule2 (bi-directional)."""
+
     mutually_exclusive_with = {"R002"}
-    
+
     def __init__(self):
         super().__init__("R001", "Test Rule 1")
-    
+
     def check(self, context: RuleContext) -> RuleCheckResult:
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
 
 
 class BiDirectionalRule2(Rule):
     """Test rule that is mutually exclusive with Rule1 (bi-directional)."""
+
     mutually_exclusive_with = {"R001"}
-    
+
     def __init__(self):
         super().__init__("R002", "Test Rule 2")
-    
+
     def check(self, context: RuleContext) -> RuleCheckResult:
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
 
 
 class OneDirectionalRule1(Rule):
     """Test rule that is mutually exclusive with Rule2 (one-directional)."""
+
     mutually_exclusive_with = {"R004"}
-    
+
     def __init__(self):
         super().__init__("R003", "Test Rule 3")
-    
+
     def check(self, context: RuleContext) -> RuleCheckResult:
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
 
 
 class OneDirectionalRule2(Rule):
     """Test rule that Rule1 points to as mutually exclusive."""
+
     mutually_exclusive_with = set()  # Empty set, no explicit mutual exclusivity
-    
+
     def __init__(self):
         super().__init__("R004", "Test Rule 4")
-    
+
     def check(self, context: RuleContext) -> RuleCheckResult:
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
 
@@ -210,22 +216,22 @@ def test_rule_set_effective_rules():
     """Test that effective_rules correctly handles mutually exclusive rules."""
     # Create a rule set with mutually exclusive rules
     rule_set = RuleSet("RS001", "Test rule set")
-    
+
     # Add rules in order: R001, R002, R003, R004
     rule1 = OneDirectionalRule1()  # R003, excludes R004
     rule2 = OneDirectionalRule2()  # R004
-    rule3 = BiDirectionalRule1()   # R001, excludes R002
-    rule4 = BiDirectionalRule2()   # R002, excludes R001
-    
+    rule3 = BiDirectionalRule1()  # R001, excludes R002
+    rule4 = BiDirectionalRule2()  # R002, excludes R001
+
     # Add rules in specific order to test both one-directional and bi-directional cases
     rule_set.add_rule(rule3)  # R001
     rule_set.add_rule(rule4)  # R002 (excludes R001)
     rule_set.add_rule(rule1)  # R003
     rule_set.add_rule(rule2)  # R004 (excluded by R003)
-    
+
     # Get effective rules
     effective_rules = list(rule_set.effective_rules())
-    
+
     # Should contain R002 (not R001 due to mutual exclusivity)
     # Should contain R003 (and not R004 due to one-directional exclusivity)
     assert len(effective_rules) == 2
@@ -237,23 +243,23 @@ def test_rule_set_effective_rules_nested():
     """Test that effective_rules correctly handles nested rule sets."""
     parent_set = RuleSet("RS001", "Parent rule set")
     child_set = RuleSet("RS002", "Child rule set")
-    
+
     # Create rules with mutual exclusivity
-    rule1 = BiDirectionalRule1()   # R001, excludes R002
-    rule2 = BiDirectionalRule2()   # R002, excludes R001
+    rule1 = BiDirectionalRule1()  # R001, excludes R002
+    rule2 = BiDirectionalRule2()  # R002, excludes R001
     rule3 = OneDirectionalRule1()  # R003, excludes R004
     rule4 = OneDirectionalRule2()  # R004
-    
+
     # Add rules to both parent and child sets
     parent_set.add_rule(rule1)  # R001
-    child_set.add_rule(rule2)   # R002
-    child_set.add_rule(rule3)   # R003
+    child_set.add_rule(rule2)  # R002
+    child_set.add_rule(rule3)  # R003
     parent_set.add_rule_set(child_set)
     parent_set.add_rule(rule4)  # R004
-    
+
     # Get effective rules
     effective_rules = list(parent_set.effective_rules())
-    
+
     # Should contain R002 (not R001 due to mutual exclusivity)
     # Should contain R003 (and not R004 due to one-directional exclusivity)
     assert len(effective_rules) == 2

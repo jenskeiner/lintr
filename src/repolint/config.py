@@ -1,28 +1,30 @@
 """Configuration management for repolint."""
 
 from pathlib import Path
-from typing import Dict, List, Optional, Type
 
 from pydantic import BaseModel, Field, ValidationError
 from pydantic_core import PydanticCustomError
-from pydantic_settings import (BaseSettings, PydanticBaseSettingsSource,
-                             SettingsConfigDict)
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 from pydantic_settings.sources import YamlConfigSettingsSource
 
 
 class RepositoryFilter(BaseModel):
     """Configuration for repository filtering."""
 
-    include_patterns: List[str] = Field(default_factory=list)
-    exclude_patterns: List[str] = Field(default_factory=list)
+    include_patterns: list[str] = Field(default_factory=list)
+    exclude_patterns: list[str] = Field(default_factory=list)
 
 
 class RuleSetConfig(BaseModel):
     """Configuration for a rule set."""
 
     name: str
-    rules: List[str] = Field(default_factory=list)
-    rule_sets: List[str] = Field(default_factory=list)
+    rules: list[str] = Field(default_factory=list)
+    rule_sets: list[str] = Field(default_factory=list)
 
 
 class BaseRepolintConfig(BaseSettings):
@@ -33,10 +35,10 @@ class BaseRepolintConfig(BaseSettings):
     repository_filter: RepositoryFilter = Field(
         default_factory=RepositoryFilter,
     )
-    rule_sets: Dict[str, RuleSetConfig] = Field(
+    rule_sets: dict[str, RuleSetConfig] = Field(
         default_factory=dict,
     )
-    repository_rule_sets: Dict[str, str] = Field(
+    repository_rule_sets: dict[str, str] = Field(
         default_factory=dict,
     )
 
@@ -51,7 +53,7 @@ class BaseRepolintConfig(BaseSettings):
     )
 
 
-def create_config_class(yaml_file: Optional[Path] = None) -> Type[BaseRepolintConfig]:
+def create_config_class(yaml_file: Path | None = None) -> type[BaseRepolintConfig]:
     """Create a configuration class with a specific YAML file path.
 
     Args:
@@ -72,7 +74,7 @@ def create_config_class(yaml_file: Optional[Path] = None) -> Type[BaseRepolintCo
         @classmethod
         def settings_customise_sources(
             cls,
-            settings_cls: Type[BaseSettings],
+            settings_cls: type[BaseSettings],
             init_settings: PydanticBaseSettingsSource,
             env_settings: PydanticBaseSettingsSource,
             dotenv_settings: PydanticBaseSettingsSource,
@@ -93,7 +95,18 @@ def create_config_class(yaml_file: Optional[Path] = None) -> Type[BaseRepolintCo
                     )
                     return (init_settings, env_settings, dotenv_settings, yaml_settings)
                 except Exception as e:
-                    raise ValidationError.from_exception_data(title="YAML parsing error", line_errors=[dict(type=PydanticCustomError("yaml_validation_error", "Error while parsing YAML file {file}", dict(file=yaml_file)))]) from e
+                    raise ValidationError.from_exception_data(
+                        title="YAML parsing error",
+                        line_errors=[
+                            dict(
+                                type=PydanticCustomError(
+                                    "yaml_validation_error",
+                                    "Error while parsing YAML file {file}",
+                                    dict(file=yaml_file),
+                                )
+                            )
+                        ],
+                    ) from e
             return (init_settings, env_settings, dotenv_settings)
 
     return RepolintConfig

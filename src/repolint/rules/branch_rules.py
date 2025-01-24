@@ -1,6 +1,5 @@
 """Rules for checking repository branch settings."""
 
-from typing import Tuple
 
 from github.GithubException import GithubException
 
@@ -14,16 +13,15 @@ class DefaultBranchExistsRule(Rule):
     def __init__(self):
         """Initialize the rule."""
         super().__init__(
-            rule_id="R001",
-            description="Repository must have a default branch"
+            rule_id="R001", description="Repository must have a default branch"
         )
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if the repository has a default branch.
-        
+
         Args:
             context: Context object containing all information needed for the check.
-            
+
         Returns:
             Result of the check with details.
         """
@@ -36,7 +34,7 @@ class DefaultBranchExistsRule(Rule):
             if default_branch:
                 return RuleCheckResult(
                     result=RuleResult.PASSED,
-                    message=f"Repository has default branch: {default_branch}"
+                    message=f"Repository has default branch: {default_branch}",
                 )
             else:
                 return RuleCheckResult(
@@ -46,13 +44,13 @@ class DefaultBranchExistsRule(Rule):
                     fix_description=(
                         "Create a branch and set it as the default branch "
                         "in the repository settings"
-                    )
+                    ),
                 )
         except GithubException as e:
             return RuleCheckResult(
                 result=RuleResult.FAILED,
                 message=f"Failed to check default branch: {str(e)}",
-                fix_available=False
+                fix_available=False,
             )
 
 
@@ -63,15 +61,15 @@ class WebCommitSignoffRequiredRule(Rule):
         """Initialize the rule."""
         super().__init__(
             rule_id="R004",
-            description="Repository must require signoff on web-based commits"
+            description="Repository must require signoff on web-based commits",
         )
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if the repository requires signoff on web-based commits.
-        
+
         Args:
             context: Context object containing all information needed for the check.
-            
+
         Returns:
             Result of the check with details.
         """
@@ -80,7 +78,7 @@ class WebCommitSignoffRequiredRule(Rule):
             if web_commit_signoff_required:
                 return RuleCheckResult(
                     result=RuleResult.PASSED,
-                    message="Repository requires signoff on web-based commits"
+                    message="Repository requires signoff on web-based commits",
                 )
             else:
                 return RuleCheckResult(
@@ -90,24 +88,24 @@ class WebCommitSignoffRequiredRule(Rule):
                     fix_description=(
                         "Enable 'Require contributors to sign off on web-based commits' "
                         "in the repository settings"
-                    )
+                    ),
                 )
         except GithubException as e:
             return RuleCheckResult(
                 result=RuleResult.FAILED,
                 message=f"Error checking web commit signoff requirement: {str(e)}",
-                fix_available=False
+                fix_available=False,
             )
 
-    def fix(self, context: RuleContext) -> Tuple[bool, str]:
+    def fix(self, context: RuleContext) -> tuple[bool, str]:
         """Apply the fix for this rule.
-        
+
         Enable the 'Require contributors to sign off on web-based commits' setting
         in the repository settings.
-        
+
         Args:
             context: Context object containing all information needed for the fix.
-            
+
         Returns:
             A tuple of (success, message) indicating if the fix was successful.
         """

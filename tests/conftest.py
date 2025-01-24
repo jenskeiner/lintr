@@ -3,7 +3,8 @@
 import os
 import tempfile
 from pathlib import Path
-from typing import Any, Generator, Optional
+from typing import Any
+from collections.abc import Generator
 from unittest.mock import MagicMock
 
 import pytest
@@ -13,10 +14,11 @@ from repolint.config import create_config_class
 
 
 @pytest.fixture
-def config_file() -> Generator[Optional[Path], None, None]:
+def config_file() -> Generator[Path | None, None, None]:
     """Create a temporary configuration file."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
-        f.write("""
+        f.write(
+            """
 github_token: test-token
 default_rule_set: test-ruleset
 repository_filter:
@@ -30,7 +32,8 @@ rule_sets:
     name: basic
     rules:
       - "has_readme"
-""")
+"""
+        )
         f.flush()
         yield Path(f.name)
         os.unlink(f.name)
@@ -79,13 +82,14 @@ def mock_repository():
 @pytest.fixture
 def mock_github(monkeypatch, mock_repository):
     """Mock GitHub API responses.
-    
+
     This fixture provides a flexible mock for GitHub API calls. It can be used
     in two ways:
     1. Simple mode: Returns a fixed list of repositories (default)
     2. Advanced mode: Allows for verifying method calls and customizing behavior
        by using the unittest.mock functionality
     """
+
     class MockGitHubClient:
         def __init__(self, *args, **kwargs):
             pass
@@ -100,8 +104,8 @@ def mock_github(monkeypatch, mock_repository):
                     archived=True,
                     default_branch="master",
                     has_issues=False,
-                    allow_squash_merge=False
-                )
+                    allow_squash_merge=False,
+                ),
             ]
 
         def get_repository_settings(self, repo):
@@ -119,7 +123,9 @@ def mock_github(monkeypatch, mock_repository):
                 "allow_squash_merge": getattr(repo, "allow_squash_merge", False),
                 "allow_merge_commit": getattr(repo, "allow_merge_commit", False),
                 "allow_rebase_merge": getattr(repo, "allow_rebase_merge", False),
-                "delete_branch_on_merge": getattr(repo, "delete_branch_on_merge", False)
+                "delete_branch_on_merge": getattr(
+                    repo, "delete_branch_on_merge", False
+                ),
             }
 
     monkeypatch.setattr("repolint.github.GitHubClient", MockGitHubClient)

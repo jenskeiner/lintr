@@ -162,14 +162,14 @@ def test_config_invalid_yaml(monkeypatch):
 
         with pytest.raises(ValidationError):
             RepolintConfig = create_config_class(yaml_file=Path(f.name))
-            config = RepolintConfig()
+            RepolintConfig()
 
 
 def test_config_missing_required():
     """Test error when required fields are missing."""
     RepolintConfig = create_config_class()
     with pytest.raises(ValidationError):
-        config = RepolintConfig()
+        RepolintConfig()
 
 
 def test_repolint_config_from_env():

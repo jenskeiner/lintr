@@ -1,6 +1,5 @@
 """GitHub API integration for Repolint."""
 
-from typing import Dict, List, Optional
 from fnmatch import fnmatch
 
 from github import Github
@@ -10,14 +9,16 @@ from pydantic import BaseModel
 
 class RepositoryFilter(BaseModel):
     """Repository filter configuration."""
-    include_patterns: Optional[List[str]] = None
-    exclude_patterns: Optional[List[str]] = None
+
+    include_patterns: list[str] | None = None
+    exclude_patterns: list[str] | None = None
 
 
 class GitHubConfig(BaseModel):
     """Configuration for GitHub API access."""
+
     token: str
-    org_name: Optional[str] = None
+    org_name: str | None = None
     include_private: bool = True
     include_archived: bool = False
     include_organisations: bool = False
@@ -29,16 +30,16 @@ class GitHubClient:
 
     def __init__(self, config: GitHubConfig):
         """Initialize GitHub client.
-        
+
         Args:
             config: GitHub configuration.
         """
         self._config = config
         self._client = Github(config.token)
 
-    def get_repositories(self) -> List[Repository]:
+    def get_repositories(self) -> list[Repository]:
         """Get list of repositories based on configuration.
-        
+
         Returns:
             List of GitHub repositories.
         """
@@ -51,7 +52,7 @@ class GitHubClient:
         else:
             # Get authenticated user's repositories
             user = self._client.get_user()
-            
+
             # Get user's own repositories (affiliation="owner")
             repositories.extend(user.get_repos(affiliation="owner"))
 
@@ -62,35 +63,42 @@ class GitHubClient:
 
         # Filter repositories based on configuration
         filtered_repos = [
-            repo for repo in repositories
-            if (self._config.include_private or not repo.private) and
-               (self._config.include_archived or not repo.archived)
+            repo
+            for repo in repositories
+            if (self._config.include_private or not repo.private)
+            and (self._config.include_archived or not repo.archived)
         ]
 
         # Apply repository filters if configured
         if self._config.repository_filter.include_patterns:
             filtered_repos = [
-                repo for repo in filtered_repos
-                if any(fnmatch(repo.name, pattern)
-                      for pattern in self._config.repository_filter.include_patterns)
+                repo
+                for repo in filtered_repos
+                if any(
+                    fnmatch(repo.name, pattern)
+                    for pattern in self._config.repository_filter.include_patterns
+                )
             ]
 
         # Apply exclusion patterns if specified
         if self._config.repository_filter.exclude_patterns:
             filtered_repos = [
-                repo for repo in filtered_repos
-                if not any(fnmatch(repo.name, pattern)
-                          for pattern in self._config.repository_filter.exclude_patterns)
+                repo
+                for repo in filtered_repos
+                if not any(
+                    fnmatch(repo.name, pattern)
+                    for pattern in self._config.repository_filter.exclude_patterns
+                )
             ]
 
         return filtered_repos
 
-    def get_repository_settings(self, repo: Repository) -> Dict:
+    def get_repository_settings(self, repo: Repository) -> dict:
         """Get settings for a repository.
-        
+
         Args:
             repo: GitHub repository.
-            
+
         Returns:
             Dictionary containing repository settings.
         """

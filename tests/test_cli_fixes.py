@@ -32,19 +32,19 @@ def test_fix_option_is_passed_to_linter(mock_config_file, mock_args):
     # Set up args
     mock_args.config = str(mock_config_file)
     mock_args.fix = True  # Enable fix mode
-    
+
     # Mock the GitHub client and Linter
     mock_client = MagicMock()
     mock_client.get_repositories.return_value = []
-    
+
     mock_linter = MagicMock()
-    
-    with patch("repolint.github.GitHubClient", return_value=mock_client), \
-         patch("repolint.linter.Linter", return_value=mock_linter) as mock_linter_class:
-        
+
+    with patch("repolint.github.GitHubClient", return_value=mock_client), patch(
+        "repolint.linter.Linter", return_value=mock_linter
+    ) as mock_linter_class:
         # Run the command
         handle_lint(mock_args)
-        
+
         # Verify that Linter was created with fix=True
         mock_linter_class.assert_called_once()
         _, kwargs = mock_linter_class.call_args

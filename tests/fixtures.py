@@ -7,10 +7,10 @@ from repolint.rule_manager import RuleManager  # Import RuleManager
 
 class TestRule(Rule):
     """Test rule implementation for testing."""
-    
+
     def __init__(self, rule_id: str, description: str):
         super().__init__(rule_id, description)
-    
+
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Always returns PASSED."""
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
@@ -18,7 +18,7 @@ class TestRule(Rule):
 
 class TestRuleSet(RuleSet):
     """Test rule set implementation for testing."""
-    
+
     def __init__(self, rule_set_id: str, description: str, rules: list = None):
         super().__init__(rule_set_id, description)
         if rules is None:

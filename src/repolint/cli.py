@@ -4,7 +4,6 @@ import argparse
 import shutil
 import sys
 from pathlib import Path
-from typing import List, Optional
 
 from repolint import __version__
 from repolint.config import create_config_class
@@ -17,72 +16,57 @@ def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser for the CLI."""
     parser = argparse.ArgumentParser(
         description="Repolint - A tool to lint and enforce consistent settings across GitHub repositories.",
-        prog="repolint"
+        prog="repolint",
     )
     parser.add_argument(
-        "--version",
-        action="version",
-        version=f"repolint {__version__}"
+        "--version", action="version", version=f"repolint {__version__}"
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
     # Lint command
     lint_parser = subparsers.add_parser(
-        "lint",
-        help="Lint repositories according to configured rules"
+        "lint", help="Lint repositories according to configured rules"
     )
     lint_parser.add_argument(
-        "--config",
-        help="Path to configuration file",
-        default=".repolint.yml"
+        "--config", help="Path to configuration file", default=".repolint.yml"
     )
     lint_parser.add_argument(
-        "--fix",
-        action="store_true",
-        help="Attempt to fix issues automatically"
+        "--fix", action="store_true", help="Attempt to fix issues automatically"
     )
     lint_parser.add_argument(
         "--non-interactive",
         action="store_true",
-        help="Apply fixes without prompting for confirmation"
+        help="Apply fixes without prompting for confirmation",
     )
     lint_parser.add_argument(
         "--include-organisations",
         action="store_true",
-        help="Include organisation repositories in addition to user repositories"
+        help="Include organisation repositories in addition to user repositories",
     )
     lint_parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Show what would be done without making changes"
+        help="Show what would be done without making changes",
     )
 
     # List command
     list_parser = subparsers.add_parser(
-        "list",
-        help="List available rules and rule-sets"
+        "list", help="List available rules and rule-sets"
     )
     list_parser.add_argument(
-        "--rules",
-        action="store_true",
-        help="List available rules"
+        "--rules", action="store_true", help="List available rules"
     )
     list_parser.add_argument(
-        "--rule-sets",
-        action="store_true",
-        help="List available rule-sets"
+        "--rule-sets", action="store_true", help="List available rule-sets"
     )
 
     # Init command
     init_parser = subparsers.add_parser(
-        "init",
-        help="Initialize a new configuration file"
+        "init", help="Initialize a new configuration file"
     )
     init_parser.add_argument(
-        "--output",
-        help="Path to write configuration file",
-        default=".repolint.yml"
+        "--output", help="Path to write configuration file", default=".repolint.yml"
     )
 
     return parser
@@ -97,11 +81,11 @@ def handle_lint(args: argparse.Namespace) -> None:
             print(f"Error: Configuration file not found: {args.config}")
             print("Run 'repolint init' to create a new configuration file")
             sys.exit(1)
-            
+
         # Load and validate configuration from all sources
         RepolintConfig = create_config_class(config_path)
         config = RepolintConfig()
-        
+
         # Validate GitHub token
         if not config.github_token:
             print("Error: GitHub token not configured.")
@@ -110,43 +94,50 @@ def handle_lint(args: argparse.Namespace) -> None:
             print("  2. Set the GITHUB_TOKEN environment variable")
             print("  3. Set the REPOLINT_GITHUB_TOKEN environment variable")
             sys.exit(1)
-        
+
         # Show what we're about to do
         print(f"Using configuration from {args.config}")
         if args.fix:
             print("Auto-fix is enabled - will attempt to fix issues automatically")
             if args.non_interactive:
-                print("Non-interactive mode is enabled - fixes will be applied without prompting")
+                print(
+                    "Non-interactive mode is enabled - fixes will be applied without prompting"
+                )
         if args.dry_run:
             print("Dry-run mode is enabled - no changes will be made")
-        
+
         # Create GitHub client with configuration
         from repolint.github import GitHubClient, GitHubConfig
         from repolint.linter import Linter
-        
+
         github_config = GitHubConfig(
             token=config.github_token,
             include_private=True,  # TODO: Make configurable
-            include_organisations=getattr(args, 'include_organisations', False)
+            include_organisations=getattr(args, "include_organisations", False),
         )
         client = GitHubClient(github_config)
-        
+
         # Get repositories
         print("\nEnumerating repositories...")
         try:
             repos = client.get_repositories()
             print(f"Found {len(repos)} repositories")
-            
+
             # Create linter and process repositories
-            linter = Linter(config, dry_run=args.dry_run, non_interactive=args.non_interactive, fix=args.fix)
-            results = linter.lint_repositories(repos)
-            
+            linter = Linter(
+                config,
+                dry_run=args.dry_run,
+                non_interactive=args.non_interactive,
+                fix=args.fix,
+            )
+            linter.lint_repositories(repos)
+
             # TODO: Display results
-            
+
         except Exception as e:
             print(f"Error accessing GitHub: {e}")
             sys.exit(1)
-        
+
     except Exception as e:
         print(f"Error loading configuration: {e}")
         sys.exit(1)
@@ -155,11 +146,11 @@ def handle_lint(args: argparse.Namespace) -> None:
 def handle_list(args: argparse.Namespace) -> None:
     """Handle the list command."""
     from repolint.rule_manager import RuleManager
-    
+
     try:
         # Get singleton instance
         manager = RuleManager()
-        
+
         if args.rules:
             print("Available rules:")
             try:
@@ -172,7 +163,7 @@ def handle_list(args: argparse.Namespace) -> None:
             except Exception as e:
                 print(f"Error: Failed to load rules: {e}", file=sys.stderr)
                 sys.exit(1)
-        
+
         if args.rule_sets:
             print("Available rule-sets:")
             try:
@@ -185,7 +176,7 @@ def handle_list(args: argparse.Namespace) -> None:
             except Exception as e:
                 print(f"Error: Failed to load rule sets: {e}", file=sys.stderr)
                 sys.exit(1)
-        
+
         if not (args.rules or args.rule_sets):
             print("Please specify --rules and/or --rule-sets")
     except Exception as e:
@@ -196,18 +187,20 @@ def handle_list(args: argparse.Namespace) -> None:
 def handle_init(args: argparse.Namespace) -> None:
     """Handle the init command."""
     output_path = Path(args.output)
-    
+
     if output_path.exists():
-        print(f"Error: File {output_path} already exists. Use a different path or remove the existing file.")
+        print(
+            f"Error: File {output_path} already exists. Use a different path or remove the existing file."
+        )
         sys.exit(1)
-    
+
     try:
         # Create parent directories if they don't exist
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Copy the default configuration template
         shutil.copy2(DEFAULT_CONFIG_TEMPLATE, output_path)
-        
+
         print(f"Created new configuration file at {output_path}")
         print("\nNext steps:")
         print("1. Edit the configuration file to set your GitHub token")
@@ -219,18 +212,18 @@ def handle_init(args: argparse.Namespace) -> None:
         sys.exit(1)
 
 
-def main(args: Optional[List[str]] = None) -> int:
+def main(args: list[str] | None = None) -> int:
     """Main entry point for the CLI.
-    
+
     Args:
         args: Command line arguments. If None, sys.argv[1:] is used.
-    
+
     Returns:
         Exit code (0 for success, non-zero for error)
     """
     if args is None:
         args = sys.argv[1:]
-    
+
     parser = create_parser()
     parsed_args = parser.parse_args(args)
 
@@ -244,12 +237,12 @@ def main(args: Optional[List[str]] = None) -> int:
         "list": handle_list,
         "init": handle_init,
     }
-    
+
     handler = handlers.get(parsed_args.command)
     if handler:
         handler(parsed_args)
         return 0
-    
+
     return 1
 
 
