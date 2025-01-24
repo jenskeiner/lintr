@@ -240,8 +240,8 @@ def test_include_organisation_repositories(github_config, mock_repo):
         mock_github.get_user.return_value = mock_user
         mock_github_class.return_value = mock_github
 
-        config = GitHubConfig(token="test-token", include_organisations=True)
-        client = GitHubClient(config)
+        github_config.include_organisations = True
+        client = GitHubClient(github_config)
         repos = client.get_repositories()
 
         # Should get both user and org repos

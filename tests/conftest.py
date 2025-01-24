@@ -10,7 +10,58 @@ from unittest.mock import MagicMock
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-from repolint.config import create_config_class
+
+@pytest.fixture(autouse=True)
+def empty_env(monkeypatch: MonkeyPatch) -> None:
+    """Temporarily clear all environment variables for a test.
+
+    This fixture removes all environment variables for the duration of a test,
+    ensuring a completely clean environment. The original environment is automatically
+    restored after the test completes.
+
+    This is an autouse fixture, meaning it will automatically run for all tests
+    to ensure a clean environment by default.
+    """
+    # Clear all environment variables
+    for key in list(os.environ.keys()):
+        monkeypatch.delenv(key)
+
+    # The monkeypatch fixture will automatically restore the environment
+    # when the test completes
+
+
+@pytest.fixture
+def env(monkeypatch: MonkeyPatch) -> None:
+    """Set up a controlled test environment with known environment variables.
+
+    This fixture ensures all tests run with a consistent environment setup.
+    It should be used instead of directly manipulating environment variables.
+    """
+    # Set default test environment
+    monkeypatch.setenv("REPOLINT_GITHUB_TOKEN", "env-var-token")
+    monkeypatch.setenv("REPOLINT_DEFAULT_RULE_SET", "env-var-ruleset")
+
+
+@pytest.fixture
+def env_file() -> Generator[Path, None, None]:
+    """Create a temporary .env file.
+
+    Creates a .env file in the current working directory (which will be a temporary
+    directory thanks to the temp_working_dir fixture) with test values for verifying
+    configuration loading from .env files.
+
+    The file is automatically cleaned up after the test completes.
+
+    Returns:
+        Path to the .env file
+    """
+    env_file = Path(".env")
+    env_file.write_text(
+        "REPOLINT_GITHUB_TOKEN=env-file-token\n"
+        "REPOLINT_DEFAULT_RULE_SET=env-file-ruleset\n"
+    )
+    yield env_file
+    env_file.unlink()
 
 
 @pytest.fixture
@@ -19,8 +70,8 @@ def config_file() -> Generator[Path | None, None, None]:
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
         f.write(
             """
-github_token: test-token
-default_rule_set: test-ruleset
+github_token: yaml-token
+default_rule_set: yaml-ruleset
 repository_filter:
   include_patterns:
     - "src/*"
@@ -40,32 +91,44 @@ rule_sets:
 
 
 @pytest.fixture
-def test_env(monkeypatch: MonkeyPatch) -> None:
-    """Set up a controlled test environment with known environment variables.
+def config(monkeypatch: MonkeyPatch) -> Generator[Any, None, None]:
+    """Create a mocked configuration object with pre-defined properties."""
+    # Create a mock config instance with pre-defined properties
+    mock_config = MagicMock()
+    mock_config.github_token = "token"
+    mock_config.default_rule_set = "rule-set"
+    mock_config.repository_filter = MagicMock()
+    mock_config.rule_sets = {}
+    mock_config.repository_rule_sets = {}
 
-    This fixture ensures all tests run with a consistent environment setup.
-    It should be used instead of directly manipulating environment variables.
+    # Create a mock config class that returns our pre-defined config
+    mock_config_class = MagicMock()
+    mock_config_class.return_value = mock_config
+
+    # Mock the create_config_class function to return our mock class
+    monkeypatch.setattr(
+        "repolint.config.create_config_class", lambda *args, **kwargs: mock_config_class
+    )
+
+    yield mock_config
+
+
+@pytest.fixture(autouse=True)
+def temp_working_dir(monkeypatch: MonkeyPatch) -> Generator[Path, None, None]:
+    """Create a temporary empty working directory for each test.
+
+    This fixture is auto-used to ensure that every test runs in a clean directory,
+    preventing interference between tests and avoiding conflicts with existing files.
+
+    The directory is automatically cleaned up after each test.
+
+    Returns:
+        Path to the temporary working directory
     """
-    # Clear any existing environment variables we care about
-    env_vars_to_clear = [
-        "GITHUB_TOKEN",
-        "REPOLINT_GITHUB_TOKEN",
-    ]
-    for var in env_vars_to_clear:
-        monkeypatch.delenv(var, raising=False)
-
-    # Set default test environment
-    monkeypatch.setenv("REPOLINT_GITHUB_TOKEN", "env-token")
-
-
-@pytest.fixture
-def config(
-    config_file: Path, test_env, monkeypatch: MonkeyPatch
-) -> Generator[Any, None, None]:
-    """Create a configuration object with controlled environment."""
-    # Create config class with the temporary file
-    RepolintConfig = create_config_class(yaml_file=config_file)
-    yield RepolintConfig()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir_path = Path(temp_dir)
+        monkeypatch.chdir(temp_dir_path)
+        yield temp_dir_path
 
 
 @pytest.fixture

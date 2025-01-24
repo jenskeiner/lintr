@@ -80,7 +80,7 @@ def test_cli_no_args(capsys):
     assert "usage:" in captured.out.lower()
 
 
-def test_cli_lint_basic(capsys, test_env, mock_github, mock_config_file):
+def test_cli_lint_basic(capsys, env, mock_github, mock_config_file):
     """Test basic lint command."""
     result = main(["lint", "--config", str(mock_config_file)])
     assert result == 0
@@ -89,7 +89,7 @@ def test_cli_lint_basic(capsys, test_env, mock_github, mock_config_file):
     assert "Found 2 repositories" in captured.out
 
 
-def test_cli_lint_with_options(capsys, test_env, mock_github, mock_config_file):
+def test_cli_lint_with_options(capsys, env, mock_github, mock_config_file):
     """Test lint command with options."""
     result = main(["lint", "--config", str(mock_config_file), "--fix", "--dry-run"])
     assert result == 0
@@ -269,7 +269,7 @@ def test_cli_lint_with_default_config(capsys, mock_config_file, mock_github):
     assert "Found 2 repositories" in captured.out
 
 
-def test_cli_lint_with_mock_github(capsys, mock_config, test_env, mock_github):
+def test_cli_lint_with_mock_github(capsys, mock_config, env, mock_github):
     """Test lint command with mocked GitHub API responses."""
     # Define mock repository data
 
@@ -298,7 +298,7 @@ def test_cli_lint_with_mock_github(capsys, mock_config, test_env, mock_github):
     assert "Found 2 repositories" in captured.out
 
 
-def test_cli_lint_with_non_interactive(capsys, mock_config_file, mock_github, test_env):
+def test_cli_lint_with_non_interactive(capsys, mock_config_file, mock_github, env):
     """Test lint command with --non-interactive option."""
     # Create a mock config file with a GitHub token
     mock_config_file.write_text(
@@ -341,7 +341,7 @@ def test_cli_lint_config_not_found(capsys):
     assert "Run 'repolint init' to create a new configuration file" in captured.out
 
 
-def test_cli_lint_no_github_token(capsys, mock_config, monkeypatch, test_env):
+def test_cli_lint_no_github_token(capsys, mock_config, monkeypatch, env):
     """Test lint command with no GitHub token configured."""
     # Remove tokens from environment
     monkeypatch.delenv("REPOLINT_GITHUB_TOKEN", raising=False)
@@ -496,13 +496,11 @@ def test_cli_main_command_not_in_handlers(monkeypatch, capsys):
     )  # Help shouldn't be shown for unknown command
 
 
-def test_cli_lint_interactive_fix(
-    capsys, mock_config, mock_github, test_env, monkeypatch
-):
+def test_cli_lint_interactive_fix(capsys, mock_config, mock_github, monkeypatch):
     """Test lint command with interactive fix prompts."""
     # Create config with a test rule set
     config = {
-        "github_token": "env-token",
+        "github_token": "token",
         "default_rule_set": "test",
         "repository_filter": {"include_patterns": [], "exclude_patterns": []},
         "rule_sets": {
@@ -598,7 +596,7 @@ def test_cli_lint_interactive_fix(
     assert "Fix skipped" in captured.out
 
 
-def test_cli_lint_fix_error(capsys, mock_config, mock_github, test_env, monkeypatch):
+def test_cli_lint_fix_error(capsys, mock_config, mock_github, monkeypatch):
     """Test lint command when fix application raises an exception."""
 
     # Mock rule that raises an exception during fix
@@ -665,7 +663,7 @@ def test_cli_lint_fix_error(capsys, mock_config, mock_github, test_env, monkeypa
     assert "Fix error: Fix failed with test error" in captured.out
 
 
-def test_cli_lint_fix_failure(capsys, mock_config, mock_github, test_env, monkeypatch):
+def test_cli_lint_fix_failure(capsys, mock_config, mock_github, monkeypatch):
     """Test lint command when fix returns failure status."""
 
     # Mock rule that returns failure from fix
@@ -732,7 +730,7 @@ def test_cli_lint_fix_failure(capsys, mock_config, mock_github, test_env, monkey
     assert "Fix failed: Fix could not be applied" in captured.out
 
 
-def test_cli_lint_github_access_error(capsys, mock_config, test_env, monkeypatch):
+def test_cli_lint_github_access_error(capsys, mock_config, env, monkeypatch):
     """Test lint command when GitHub API access raises an exception."""
     # Create a test config file
     config_file = mock_config(

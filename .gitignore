@@ -174,3 +174,6 @@ cython_debug/
 .repolint.yml
 
 docs/api.github.com/
+
+# VS Code
+.vscode

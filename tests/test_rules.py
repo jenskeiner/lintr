@@ -54,30 +54,6 @@ class MutuallyExclusiveRule2(Rule):
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
 
 
-class BiDirectionalRule1(Rule):
-    """Test rule that is mutually exclusive with Rule2 (bi-directional)."""
-
-    mutually_exclusive_with = {"R002"}
-
-    def __init__(self):
-        super().__init__("R001", "Test Rule 1")
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        return RuleCheckResult(RuleResult.PASSED, "Test passed")
-
-
-class BiDirectionalRule2(Rule):
-    """Test rule that is mutually exclusive with Rule1 (bi-directional)."""
-
-    mutually_exclusive_with = {"R001"}
-
-    def __init__(self):
-        super().__init__("R002", "Test Rule 2")
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        return RuleCheckResult(RuleResult.PASSED, "Test passed")
-
-
 class OneDirectionalRule1(Rule):
     """Test rule that is mutually exclusive with Rule2 (one-directional)."""
 
@@ -168,8 +144,8 @@ def test_rule_class_mutually_exclusive():
 
 def test_rule_class_mutually_exclusive_bi_directional():
     """Test bi-directional mutually exclusive rules."""
-    rule1 = BiDirectionalRule1()
-    rule2 = BiDirectionalRule2()
+    rule1 = MutuallyExclusiveRule1()
+    rule2 = MutuallyExclusiveRule2()
 
     # Both rules should see each other as mutually exclusive
     assert "R002" in rule1.mutually_exclusive_with
@@ -220,8 +196,8 @@ def test_rule_set_effective_rules():
     # Add rules in order: R001, R002, R003, R004
     rule1 = OneDirectionalRule1()  # R003, excludes R004
     rule2 = OneDirectionalRule2()  # R004
-    rule3 = BiDirectionalRule1()  # R001, excludes R002
-    rule4 = BiDirectionalRule2()  # R002, excludes R001
+    rule3 = MutuallyExclusiveRule1()  # R001, excludes R002
+    rule4 = MutuallyExclusiveRule2()  # R002, excludes R001
 
     # Add rules in specific order to test both one-directional and bi-directional cases
     rule_set.add_rule(rule3)  # R001
@@ -245,8 +221,8 @@ def test_rule_set_effective_rules_nested():
     child_set = RuleSet("RS002", "Child rule set")
 
     # Create rules with mutual exclusivity
-    rule1 = BiDirectionalRule1()  # R001, excludes R002
-    rule2 = BiDirectionalRule2()  # R002, excludes R001
+    rule1 = MutuallyExclusiveRule1()  # R001, excludes R002
+    rule2 = MutuallyExclusiveRule2()  # R002, excludes R001
     rule3 = OneDirectionalRule1()  # R003, excludes R004
     rule4 = OneDirectionalRule2()  # R004
 

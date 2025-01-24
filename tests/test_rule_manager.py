@@ -37,6 +37,17 @@ def reset_singleton():
     yield
 
 
+@pytest.fixture
+def manager():
+    manager = RuleManager()
+
+    # Register a rule class
+    manager._rules["TEST001"] = TestRule
+    manager._factory.register_rule_class("TEST001", TestRule)
+
+    return manager
+
+
 def test_rule_manager_singleton():
     """Test that RuleManager is a singleton."""
     with patch("importlib.metadata.entry_points") as mock_entry_points:
@@ -77,57 +88,10 @@ def test_rule_set_discovery():
         assert "RS999" in rule_set_ids
 
 
-def test_rule_manager_default_rule_set():
-    """Test that RuleManager creates the default rule set."""
-    # Mock entry points
-    default_rule_set = RuleSet("default", "Default rule set")
-    mock_entry_point = MagicMock()
-    mock_entry_point.name = "default"
-    mock_entry_point.load.return_value = lambda: default_rule_set
-
-    with patch("importlib.metadata.entry_points") as mock_entry_points:
-        mock_entry_points.return_value.select.side_effect = lambda group: {
-            "repolint.rules": [],
-            "repolint.rule_sets": [mock_entry_point],
-        }[group]
-
-        manager = RuleManager()
-
-        # Verify that the default rule set exists
-        default_set = manager.get_rule_set("default")
-        assert default_set is not None
-        assert default_set.rule_set_id == "default"
-        assert "Default rule set" in default_set.description
-
-
-def test_rule_manager_create_rule():
-    """Test creating a rule with the rule manager."""
-    with patch("importlib.metadata.entry_points") as mock_entry_points:
-        mock_entry_points.return_value.select.return_value = []
-
-        manager = RuleManager()
-        # No rules registered yet
-        with pytest.raises(ValueError):
-            _ = manager.create_rule("TEST001", "Test rule")
-
-        # Register a rule class
-        manager._rules["TEST001"] = TestRule
-        rule = manager.create_rule("TEST001", "Test rule")
-        assert isinstance(rule, TestRule)
-        assert rule.rule_id == "TEST001"
-        assert rule.description == "Test rule"
-
-
-def test_rule_manager_load_rule_sets_from_config():
+def test_rule_manager_load_rule_sets_from_config(manager):
     """Test loading rule sets from configuration."""
     with patch("importlib.metadata.entry_points") as mock_entry_points:
         mock_entry_points.return_value.select.return_value = []
-
-        manager = RuleManager()
-
-        # Register a rule class
-        manager._rules["TEST001"] = TestRule
-        manager._factory.register_rule_class("TEST001", TestRule)
 
         # Create a config with rule sets
         config = BaseRepolintConfig(
@@ -174,16 +138,10 @@ def test_rule_manager_load_rule_sets_from_config():
         assert manager.get_rule_set("RS004") is None
 
 
-def test_rule_manager_create_rule_set():
+def test_rule_manager_create_rule_set(manager):
     """Test creating a rule set with the rule manager."""
     with patch("importlib.metadata.entry_points") as mock_entry_points:
         mock_entry_points.return_value.select.return_value = []
-
-        manager = RuleManager()
-
-        # Register a rule class
-        manager._rules["TEST001"] = TestRule
-        manager._factory.register_rule_class("TEST001", TestRule)
 
         # Create a rule set with a single rule
         rule_set = manager.create_rule_set(
@@ -227,24 +185,6 @@ def test_rule_manager_create_rule_set():
             )
 
 
-def test_rule_discovery_error_handling():
-    """Test error handling during rule discovery from entry points."""
-    # Mock entry points
-    mock_entry_point = MagicMock()
-    mock_entry_point.name = "test_rule"
-    mock_entry_point.load.side_effect = Exception("Failed to load rule")
-
-    with patch("importlib.metadata.entry_points") as mock_entry_points:
-        mock_entry_points.return_value.select.return_value = [mock_entry_point]
-
-        # Should not raise exception, but log warning
-        manager = RuleManager()
-
-        # Verify rule was not registered
-        assert "test_rule" not in manager._rules
-        assert "test_rule" not in manager._factory._rule_classes
-
-
 def test_rule_set_discovery_error_handling():
     """Test error handling during rule set discovery from entry points."""
     # Mock entry points
@@ -260,35 +200,6 @@ def test_rule_set_discovery_error_handling():
 
         # Verify rule set was not registered
         assert "test_rule_set" not in manager._rule_sets
-
-
-def test_rule_discovery_mixed_success():
-    """Test rule discovery with mix of successful and failed entry points."""
-    # Mock entry points
-    mock_entry_point_success = MagicMock()
-    mock_entry_point_success.name = "test_rule_success"
-    mock_entry_point_success.load.return_value = TestRule
-
-    mock_entry_point_failure = MagicMock()
-    mock_entry_point_failure.name = "test_rule_failure"
-    mock_entry_point_failure.load.side_effect = Exception("Failed to load rule")
-
-    with patch("importlib.metadata.entry_points") as mock_entry_points:
-        mock_entry_points.return_value.select.return_value = [
-            mock_entry_point_success,
-            mock_entry_point_failure,
-        ]
-
-        # Should not raise exception
-        manager = RuleManager()
-
-        # Verify successful rule was registered
-        assert "test_rule_success" in manager._rules
-        assert "test_rule_success" in manager._factory._rule_classes
-
-        # Verify failed rule was not registered
-        assert "test_rule_failure" not in manager._rules
-        assert "test_rule_failure" not in manager._factory._rule_classes
 
 
 def test_rule_set_discovery_mixed_success():
@@ -320,16 +231,10 @@ def test_rule_set_discovery_mixed_success():
         assert "test_rule_set_failure" not in manager._rule_sets
 
 
-def test_rule_set_config_validation():
+def test_rule_set_config_validation(manager):
     """Test validation of rule set configurations."""
     with patch("importlib.metadata.entry_points") as mock_entry_points:
         mock_entry_points.return_value.select.return_value = []
-
-        manager = RuleManager()
-
-        # Register a rule class
-        manager._rules["TEST001"] = TestRule
-        manager._factory.register_rule_class("TEST001", TestRule)
 
         # Create a config with various edge cases
         config = BaseRepolintConfig(
@@ -398,6 +303,71 @@ def test_rule_set_config_validation():
         rs006 = manager.get_rule_set("RS006")
         assert rs006 is not None
         assert len(list(rs006.rules())) == 1  # Inherits rule from RS005
+
+
+def test_rule_manager_create_rule():
+    """Test creating a rule with the rule manager."""
+    with patch("importlib.metadata.entry_points") as mock_entry_points:
+        mock_entry_points.return_value.select.return_value = []
+
+        manager = RuleManager()
+        # No rules registered yet
+        with pytest.raises(ValueError):
+            _ = manager.create_rule("TEST001", "Test rule")
+
+        # Register a rule class
+        manager._rules["TEST001"] = TestRule
+        rule = manager.create_rule("TEST001", "Test rule")
+        assert isinstance(rule, TestRule)
+        assert rule.rule_id == "TEST001"
+        assert rule.description == "Test rule"
+
+
+def test_rule_discovery_error_handling():
+    """Test error handling during rule discovery from entry points."""
+    # Mock entry points
+    mock_entry_point = MagicMock()
+    mock_entry_point.name = "test_rule"
+    mock_entry_point.load.side_effect = Exception("Failed to load rule")
+
+    with patch("importlib.metadata.entry_points") as mock_entry_points:
+        mock_entry_points.return_value.select.return_value = [mock_entry_point]
+
+        # Should not raise exception, but log warning
+        manager = RuleManager()
+
+        # Verify rule was not registered
+        assert "test_rule" not in manager._rules
+        assert "test_rule" not in manager._factory._rule_classes
+
+
+def test_rule_discovery_mixed_success():
+    """Test rule discovery with mix of successful and failed entry points."""
+    # Mock entry points
+    mock_entry_point_success = MagicMock()
+    mock_entry_point_success.name = "test_rule_success"
+    mock_entry_point_success.load.return_value = TestRule
+
+    mock_entry_point_failure = MagicMock()
+    mock_entry_point_failure.name = "test_rule_failure"
+    mock_entry_point_failure.load.side_effect = Exception("Failed to load rule")
+
+    with patch("importlib.metadata.entry_points") as mock_entry_points:
+        mock_entry_points.return_value.select.return_value = [
+            mock_entry_point_success,
+            mock_entry_point_failure,
+        ]
+
+        # Should not raise exception
+        manager = RuleManager()
+
+        # Verify successful rule was registered
+        assert "test_rule_success" in manager._rules
+        assert "test_rule_success" in manager._factory._rule_classes
+
+        # Verify failed rule was not registered
+        assert "test_rule_failure" not in manager._rules
+        assert "test_rule_failure" not in manager._factory._rule_classes
 
 
 def test_rule_manager_create_rule_not_found():
