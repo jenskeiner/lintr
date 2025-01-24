@@ -140,7 +140,7 @@ def handle_lint(args: argparse.Namespace) -> None:
             print(f"Found {len(repos)} repositories")
             
             # Create linter and process repositories
-            linter = Linter(config, dry_run=args.dry_run, non_interactive=args.non_interactive)
+            linter = Linter(config, dry_run=args.dry_run, non_interactive=args.non_interactive, fix=args.fix)
             results = linter.lint_repositories(repos)
             
             # TODO: Display results

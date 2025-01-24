@@ -18,17 +18,19 @@ colorama.init()
 class Linter:
     """Core linting functionality."""
 
-    def __init__(self, config: BaseRepolintConfig, dry_run: bool = False, non_interactive: bool = False):
+    def __init__(self, config: BaseRepolintConfig, dry_run: bool = False, non_interactive: bool = False, fix: bool = False):
         """Initialize the linter.
         
         Args:
             config: Repolint configuration.
             dry_run: If True, no changes will be made.
             non_interactive: If True, apply fixes without prompting for confirmation.
+            fix: If True, attempt to fix issues automatically.
         """
         self._config = config
         self._dry_run = dry_run
         self._non_interactive = non_interactive
+        self._fix = fix
         self._rule_manager = RuleManager()
         
         # Load rule sets from configuration
@@ -117,9 +119,11 @@ class Linter:
                     print(f"    {Fore.YELLOW}ℹ Would attempt to fix this issue (dry run){Style.RESET_ALL}")
                 else:
                     print(f"    {Fore.BLUE}⚡ {result.fix_description}{Style.RESET_ALL}")
-                    should_fix = True
+                    should_fix = False
                     
-                    if not self._non_interactive:
+                    if self._non_interactive:
+                        should_fix = True
+                    else:
                         response = input(f"    {Fore.YELLOW}ℹ Apply this fix? [y/N]: {Style.RESET_ALL}").lower()
                         should_fix = response in ['y', 'yes']
                     
@@ -129,10 +133,10 @@ class Linter:
                             if success:
                                 print(f"    {Fore.GREEN}⚡ Fixed: {message}{Style.RESET_ALL}")
                                 # Re-run check to get updated status
-                                result = rule.check(context)  # pragma: no branch
-                                results[rule.rule_id] = result  # pragma: no branch
+                                result = rule.check(context)
+                                results[rule.rule_id] = result
                                 # Re-display rule status
-                                if result.result == RuleResult.PASSED:  # pragma: no branch
+                                if result.result == RuleResult.PASSED:
                                     status_symbol = f"{Fore.GREEN}✓{Style.RESET_ALL}"
                                 elif result.result == RuleResult.FAILED:
                                     status_symbol = f"{Fore.RED}✗{Style.RESET_ALL}"
@@ -141,8 +145,8 @@ class Linter:
                                 print(f"  {status_symbol} {rule.rule_id}: {result.message}")
                             else:
                                 print(f"    {Fore.RED}⚡ Fix failed: {message}{Style.RESET_ALL}")
-                        except Exception as fix_error:  # pragma: no branch
-                            print(f"    {Fore.RED}⚡ Fix error: {str(fix_error)}{Style.RESET_ALL}")
+                        except Exception as e:
+                            print(f"    {Fore.RED}⚡ Fix error: {str(e)}{Style.RESET_ALL}")
                     else:
                         print(f"    {Fore.YELLOW}ℹ Fix skipped{Style.RESET_ALL}")
         
