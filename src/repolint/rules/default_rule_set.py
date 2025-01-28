@@ -5,7 +5,12 @@ from repolint.rules.branch_rules import (
     DefaultBranchExistsRule,
     WebCommitSignoffRequiredRule,
 )
-from repolint.rules.permission_rules import SingleOwnerRule, NoCollaboratorsRule
+from repolint.rules.permission_rules import (
+    SingleOwnerRule,
+    NoCollaboratorsRule,
+    WikisDisabledRule,
+    IssuesDisabledRule,
+)
 
 
 def get_default_rule_set() -> RuleSet:
@@ -28,5 +33,7 @@ def get_default_rule_set() -> RuleSet:
     rule_set.add_rule(WebCommitSignoffRequiredRule())
     rule_set.add_rule(SingleOwnerRule())
     rule_set.add_rule(NoCollaboratorsRule())
+    rule_set.add_rule(WikisDisabledRule())
+    rule_set.add_rule(IssuesDisabledRule())
 
     return rule_set

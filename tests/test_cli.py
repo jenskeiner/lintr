@@ -46,7 +46,7 @@ def mock_github(monkeypatch):
                 MockRepository("test-repo-2", private=True, archived=True),
             ]
 
-    monkeypatch.setattr("repolint.github.GitHubClient", MockGitHubClient)
+    monkeypatch.setattr("repolint.gh.GitHubClient", MockGitHubClient)
     return MockGitHubClient
 
 
@@ -524,7 +524,7 @@ def test_cli_lint_interactive_fix(capsys, mock_config, mock_github, monkeypatch)
         def get_repositories(self):
             return [MockRepo()]
 
-    monkeypatch.setattr("repolint.github.GitHubClient", MockGitHubClientWithRepo)
+    monkeypatch.setattr("repolint.gh.GitHubClient", MockGitHubClientWithRepo)
 
     # Mock a rule that always needs fixing
     class MockRule(Rule):
@@ -752,7 +752,7 @@ def test_cli_lint_github_access_error(capsys, mock_config, env, monkeypatch):
         def get_repositories(self):
             raise MockGitHubError("Failed to access GitHub API")
 
-    monkeypatch.setattr("repolint.github.GitHubClient", MockGitHubClient)
+    monkeypatch.setattr("repolint.gh.GitHubClient", MockGitHubClient)
 
     # Run lint command
     with pytest.raises(SystemExit) as exc_info:

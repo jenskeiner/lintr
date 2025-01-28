@@ -39,7 +39,7 @@ def test_fix_option_is_passed_to_linter(mock_config_file, mock_args):
 
     mock_linter = MagicMock()
 
-    with patch("repolint.github.GitHubClient", return_value=mock_client), patch(
+    with patch("repolint.gh.GitHubClient", return_value=mock_client), patch(
         "repolint.linter.Linter", return_value=mock_linter
     ) as mock_linter_class:
         # Run the command

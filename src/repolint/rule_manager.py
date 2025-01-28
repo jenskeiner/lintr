@@ -37,9 +37,24 @@ class RuleManager:
 
         for entry_point in rule_entry_points:
             try:
-                rule_class = entry_point.load()
-                self._rules[entry_point.name] = rule_class
-                self._factory.register_rule_class(entry_point.name, rule_class)
+                # Load the rule class or factory
+                rule_class_or_factory = entry_point.load()
+
+                # Try to get a rule instance to determine its ID
+                if isinstance(rule_class_or_factory, type) and issubclass(
+                    rule_class_or_factory, Rule
+                ):
+                    # Direct rule class
+                    rule_class = rule_class_or_factory
+                    temp_rule = rule_class()
+                else:
+                    # Factory function or class
+                    temp_rule = rule_class_or_factory()
+                    rule_class = type(temp_rule)
+
+                rule_id = temp_rule.rule_id
+                self._rules[rule_id] = rule_class
+                self._factory.register_rule_class(rule_id, rule_class)
             except Exception as e:
                 # Log warning about invalid entry point
                 print(f"Warning: Failed to load rule {entry_point.name}: {e}")
@@ -170,27 +185,6 @@ class RuleManager:
             Set of all rule set IDs.
         """
         return set(self._rule_sets.keys())
-
-    def create_rule(self, rule_id: str, description: str) -> Rule | None:
-        """Create a new instance of a rule.
-
-        Args:
-            rule_id: ID of the rule to create.
-            description: Description for the new rule instance.
-
-        Returns:
-            Created rule instance.
-
-        Raises:
-            ValueError: If the rule ID is not found.
-        """
-        rule_class = self._rules.get(rule_id)
-        if not rule_class:
-            raise ValueError(f"Rule {rule_id} not found")
-
-        rule = rule_class(rule_id, description)
-
-        return rule
 
     def create_rule_set(
         self,

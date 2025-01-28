@@ -10,6 +10,13 @@ from repolint.rules.factories import RuleSetFactory
 class TestRule(Rule):
     """Test rule for testing."""
 
+    def __init__(self):
+        """Initialize the rule."""
+        super().__init__(
+            rule_id="TEST001",
+            description="Test rule",
+        )
+
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Always pass."""
         return RuleCheckResult(RuleResult.PASSED, "Test passed")

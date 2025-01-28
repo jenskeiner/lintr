@@ -12,6 +12,10 @@ from repolint.config import BaseRepolintConfig, RuleSetConfig
 class TestRule(Rule):
     """Test rule for testing."""
 
+    def __init__(self, rule_id: str = "TEST001", description: str = "Test rule"):
+        """Initialize the rule."""
+        super().__init__(rule_id=rule_id, description=description)
+
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Always pass."""
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
@@ -305,24 +309,6 @@ def test_rule_set_config_validation(manager):
         assert len(list(rs006.rules())) == 1  # Inherits rule from RS005
 
 
-def test_rule_manager_create_rule():
-    """Test creating a rule with the rule manager."""
-    with patch("importlib.metadata.entry_points") as mock_entry_points:
-        mock_entry_points.return_value.select.return_value = []
-
-        manager = RuleManager()
-        # No rules registered yet
-        with pytest.raises(ValueError):
-            _ = manager.create_rule("TEST001", "Test rule")
-
-        # Register a rule class
-        manager._rules["TEST001"] = TestRule
-        rule = manager.create_rule("TEST001", "Test rule")
-        assert isinstance(rule, TestRule)
-        assert rule.rule_id == "TEST001"
-        assert rule.description == "Test rule"
-
-
 def test_rule_discovery_error_handling():
     """Test error handling during rule discovery from entry points."""
     # Mock entry points
@@ -346,7 +332,19 @@ def test_rule_discovery_mixed_success():
     # Mock entry points
     mock_entry_point_success = MagicMock()
     mock_entry_point_success.name = "test_rule_success"
-    mock_entry_point_success.load.return_value = TestRule
+
+    # Create a custom rule class that will be registered
+    class SuccessRule(Rule):
+        def __init__(self, rule_id: str = "TEST002", description: str = "Success rule"):
+            super().__init__(rule_id=rule_id, description=description)
+
+        def check(self, context: RuleContext) -> RuleCheckResult:
+            return RuleCheckResult(RuleResult.PASSED, "Success")
+
+    # Create a mock rule class that matches how rules are registered
+    mock_rule = MagicMock()
+    mock_rule.return_value = SuccessRule()
+    mock_entry_point_success.load.return_value = mock_rule
 
     mock_entry_point_failure = MagicMock()
     mock_entry_point_failure.name = "test_rule_failure"
@@ -361,33 +359,10 @@ def test_rule_discovery_mixed_success():
         # Should not raise exception
         manager = RuleManager()
 
-        # Verify successful rule was registered
-        assert "test_rule_success" in manager._rules
-        assert "test_rule_success" in manager._factory._rule_classes
+        # Verify successful rule was registered with its ID
+        assert "TEST002" in manager._rules
+        assert "TEST002" in manager._factory._rule_classes
 
         # Verify failed rule was not registered
         assert "test_rule_failure" not in manager._rules
         assert "test_rule_failure" not in manager._factory._rule_classes
-
-
-def test_rule_manager_create_rule_not_found():
-    """Test error handling when creating a rule with non-existent ID."""
-    manager = RuleManager()
-
-    with pytest.raises(ValueError, match="Rule nonexistent_rule not found"):
-        manager.create_rule("nonexistent_rule", "Test description")
-
-
-def test_rule_manager_create_rule_init_error():
-    """Test error handling when rule initialization fails."""
-    with patch("importlib.metadata.entry_points") as mock_entry_points:
-        # Mock entry point for error rule
-        mock_entry_point = MagicMock()
-        mock_entry_point.name = "error_rule"
-        mock_entry_point.load.return_value = ErrorRule
-        mock_entry_points.return_value.select.return_value = [mock_entry_point]
-
-        manager = RuleManager()
-
-        with pytest.raises(ValueError, match="Test initialization error"):
-            manager.create_rule("error_rule", "Test description")

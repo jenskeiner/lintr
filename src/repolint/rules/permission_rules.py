@@ -161,3 +161,117 @@ class NoCollaboratorsRule(Rule):
 
         except Exception as e:
             return False, f"Failed to remove collaborators: {str(e)}"
+
+
+class WikisDisabledRule(Rule):
+    """Rule that checks if wikis are disabled for a repository."""
+
+    def __init__(self):
+        """Initialize the rule."""
+        super().__init__(
+            rule_id="R007",
+            description="Repository must have wikis disabled",
+        )
+
+    def check(self, context: RuleContext) -> RuleCheckResult:
+        """Check if wikis are disabled for the repository.
+
+        Args:
+            context: Context object containing all information needed for the check.
+
+        Returns:
+            Result of the check with details.
+        """
+        try:
+            if not context.repository.has_wiki:
+                return RuleCheckResult(
+                    result=RuleResult.PASSED,
+                    message="Wikis are disabled",
+                )
+            else:
+                return RuleCheckResult(
+                    result=RuleResult.FAILED,
+                    message="Wikis are enabled",
+                    fix_available=True,
+                    fix_description="Disable wikis in repository settings",
+                )
+        except GithubException as e:
+            return RuleCheckResult(
+                result=RuleResult.FAILED,
+                message=f"Failed to check wiki status: {str(e)}",
+                fix_available=False,
+            )
+
+    def fix(self, context: RuleContext) -> tuple[bool, str]:
+        """Apply the fix for this rule.
+
+        Disable wikis in the repository settings.
+
+        Args:
+            context: Context object containing all information needed for the fix.
+
+        Returns:
+            A tuple of (success, message) indicating if the fix was successful.
+        """
+        try:
+            context.repository.edit(has_wiki=False)
+            return True, "Wikis have been disabled"
+        except GithubException as e:
+            return False, f"Failed to disable wikis: {str(e)}"
+
+
+class IssuesDisabledRule(Rule):
+    """Rule that checks if issues are disabled for a repository."""
+
+    def __init__(self):
+        """Initialize the rule."""
+        super().__init__(
+            rule_id="R008",
+            description="Repository must have issues disabled",
+        )
+
+    def check(self, context: RuleContext) -> RuleCheckResult:
+        """Check if issues are disabled for the repository.
+
+        Args:
+            context: Context object containing all information needed for the check.
+
+        Returns:
+            Result of the check with details.
+        """
+        try:
+            if not context.repository.has_issues:
+                return RuleCheckResult(
+                    result=RuleResult.PASSED,
+                    message="Issues are disabled",
+                )
+            else:
+                return RuleCheckResult(
+                    result=RuleResult.FAILED,
+                    message="Issues are enabled",
+                    fix_available=True,
+                    fix_description="Disable issues in repository settings",
+                )
+        except GithubException as e:
+            return RuleCheckResult(
+                result=RuleResult.FAILED,
+                message=f"Failed to check issues status: {str(e)}",
+                fix_available=False,
+            )
+
+    def fix(self, context: RuleContext) -> tuple[bool, str]:
+        """Apply the fix for this rule.
+
+        Disable issues in the repository settings.
+
+        Args:
+            context: Context object containing all information needed for the fix.
+
+        Returns:
+            A tuple of (success, message) indicating if the fix was successful.
+        """
+        try:
+            context.repository.edit(has_issues=False)
+            return True, "Issues have been disabled"
+        except GithubException as e:
+            return False, f"Failed to disable issues: {str(e)}"

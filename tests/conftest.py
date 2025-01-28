@@ -200,5 +200,5 @@ def mock_github(monkeypatch, mock_repository):
                 ),
             }
 
-    monkeypatch.setattr("repolint.github.GitHubClient", MockGitHubClient)
+    monkeypatch.setattr("repolint.gh.GitHubClient", MockGitHubClient)
     return MockGitHubClient

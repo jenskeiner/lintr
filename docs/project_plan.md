@@ -204,6 +204,11 @@ We are at Phase 2 of the project.
 - [] 2.2: Rules build-out.
   - [x] 2.2.1: Add a rule that checks that the user is the only owner or admin of the repository.
   - [x] 2.2.2: Add a rule that checks that a repo has no collaborators other than the user itself.
+  - [x] 2.2.3: Add a rule that checks that Wikis are not enabled.
+  - [x] 2.2.4: Add a rule that checks that Issues are not enabled.
+  - [x] 2.2.5: Add a rule that checks that Sponsorships are not enabled.
+  - [] 2.2.6: Add a rule that checks that "Preserve this repository" is enabled.
+  - [] 2.2.7: Add a rule that checks that Discussions are not enabled.
 - [] 2.3: Create usage and developer documentation.
 
 ### Phase 3: Predefined Rule-Sets and Enhancements
@@ -228,7 +233,7 @@ We can record here that this dependency should not be used in the future and lis
 
 ### GitHub API Integration
 1. When using PyGithub, prefer passing the token directly to the `Github` constructor rather than using `Auth.Token`. This simplifies testing and avoids potential compatibility issues.
-2. When mocking GitHub API responses in tests, mock at the module level (e.g., `repolint.github.Github`) rather than the package level (`github.Github`) to avoid issues with internal assertions.
+2. When mocking GitHub API responses in tests, mock at the module level (e.g., `repolint.gh.Github`) rather than the package level (`github.Github`) to avoid issues with internal assertions.
 3. For repository list operations, handle both user and organization repositories consistently, applying filtering after fetching the repositories.
 4. When implementing repository enumeration:
    - Keep the GitHub-specific code in a dedicated module (`github.py`) to maintain separation of concerns
@@ -247,12 +252,24 @@ We can record here that this dependency should not be used in the future and lis
 2. Separate the rule result (passed/failed/skipped) from the result details (message, fix availability) using distinct classes (`RuleResult` enum and `RuleCheckResult` dataclass).
 3. Design rule sets to support nesting (rule sets containing other rule sets) from the start, as this provides flexibility in organizing rules.
 4. Use unique identifiers for both rules (e.g., 'R001') and rule sets (e.g., 'RS001') to prevent conflicts and enable easy referencing.
+5. When implementing permission rules:
+   - Always check both repository settings and related files (e.g., FUNDING.yml for sponsorships)
+   - Provide clear error messages that indicate exactly what needs to be fixed
+   - Consider implementing fix methods that handle both settings and file changes
+   - Ensure tests cover all possible combinations of settings and file states
 
 ### Rule Manager Implementation
-1. Use Python's entry point mechanism instead of module scanning for plugin-like functionality. Entry points provide a more flexible and maintainable way to extend functionality without modifying the core package.
-2. When implementing singletons in Python, include a way to reset the singleton state in tests. This can be done via a pytest fixture with `autouse=True` to ensure clean state between tests.
-3. When mocking entry points in tests, use `unittest.mock.MagicMock` instead of dynamic type creation. MagicMock provides better control over method behavior and makes test failures more debuggable.
-4. For plugin systems (like rules and rule sets), separate the discovery mechanism (Rule Manager) from the implementation (concrete rules). This allows for better extensibility and testing.
+1. When implementing singletons in Python, include a way to reset the singleton state in tests. This can be done via a pytest fixture with `autouse=True` to ensure clean state between tests.
+2. When mocking entry points in tests, use `unittest.mock.MagicMock` instead of dynamic type creation. MagicMock provides better control over method behavior and makes test failures more debuggable.
+3. For plugin systems (like rules and rule sets), separate the discovery mechanism (Rule Manager) from the implementation (concrete rules). This allows for better extensibility and testing.
+
+### Rule Discovery and Entry Points
+
+1. When adding new rules, always add an entry point in `pyproject.toml` under `[project.entry-points."repolint.rules"]` so that the rule can be discovered at runtime.
+2. The entry point key should be a snake_case identifier that describes the rule's purpose (e.g., `wikis_disabled`).
+3. The entry point value should be the fully qualified path to the rule class (e.g., `repolint.rules.permission_rules:WikisDisabledRule`).
+4. Remember to add entry points for all rules, even if they are only used in the default rule set.
+5. Entry points allow for dynamic rule discovery and enable users to selectively enable/disable rules in their configuration.
 
 ### Rule Design
 1. When designing rules:
@@ -440,3 +457,18 @@ When improving test coverage:
 - In dry-run mode, use a different tone in output messages to clearly indicate what would happen (e.g., "Would attempt to fix...") rather than what is actually happening. This helps users understand the potential impact of running without --dry-run.
 - The fix functionality should be explicitly enabled via a --fix command line option. This ensures that fixes are only attempted when the user explicitly requests them, preventing unintended modifications to repositories.
 - Test cases involving fixes should explicitly pass fix=True to the Linter constructor to ensure consistent behavior between tests and actual usage.
+
+### Testing GitHub API Interactions
+
+4. When mocking GitHub API properties:
+   - Use `PropertyMock` from `unittest.mock` to mock properties that are accessed via the dot notation (e.g., `repository.has_wiki`)
+   - Set up the mock using `type(mock_obj).property_name = PropertyMock(...)` instead of directly setting it on the mock object
+   - This ensures that property access behavior matches the real GitHub API
+   - Example:
+     ```python
+     # Incorrect:
+     mock_repo.has_wiki = MagicMock(side_effect=GithubException(500, "API Error"))
+     
+     # Correct:
+     type(mock_repo).has_wiki = PropertyMock(side_effect=GithubException(500, "API Error"))
+     

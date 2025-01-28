@@ -6,6 +6,7 @@ from repolint.rules.branch_rules import (
     WebCommitSignoffRequiredRule,
 )
 from repolint.rules.permission_rules import SingleOwnerRule, NoCollaboratorsRule
+from repolint.rules.general import PreserveRepositoryRule
 
 __all__ = [
     "Rule",
@@ -16,4 +17,5 @@ __all__ = [
     "WebCommitSignoffRequiredRule",
     "SingleOwnerRule",
     "NoCollaboratorsRule",
+    "PreserveRepositoryRule",
 ]

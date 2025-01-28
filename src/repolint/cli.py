@@ -107,7 +107,7 @@ def handle_lint(args: argparse.Namespace) -> None:
             print("Dry-run mode is enabled - no changes will be made")
 
         # Create GitHub client with configuration
-        from repolint.github import GitHubClient, GitHubConfig
+        from repolint.gh import GitHubClient, GitHubConfig
         from repolint.linter import Linter
 
         github_config = GitHubConfig(

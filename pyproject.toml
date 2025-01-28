@@ -9,7 +9,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 dependencies = [
-    "PyGithub>=2.1.1",
+    "PyGithub>=2.5.0",
     "pydantic>=2.5.3",
     "pydantic-settings>=2.1.0",
     "PyYAML>=6.0.1",
@@ -49,6 +49,12 @@ repolint = "repolint.cli:main"
 
 [project.entry-points."repolint.rules"]
 default_branch_exists = "repolint.rules.branch_rules:DefaultBranchExistsRule"
+web_commit_signoff_required = "repolint.rules.branch_rules:WebCommitSignoffRequiredRule"
+single_owner = "repolint.rules.permission_rules:SingleOwnerRule"
+no_collaborators = "repolint.rules.permission_rules:NoCollaboratorsRule"
+wikis_disabled = "repolint.rules.permission_rules:WikisDisabledRule"
+issues_disabled = "repolint.rules.permission_rules:IssuesDisabledRule"
+preserve_repository = "repolint.rules.archive_rules:PreserveRepositoryRule"
 
 [project.entry-points."repolint.rule_sets"]
 default = "repolint.rules.default_rule_set:get_default_rule_set"

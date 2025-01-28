@@ -1,12 +1,17 @@
 """Tests for permission rules."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, PropertyMock
 
 from github.GithubException import GithubException
 
 from repolint.rules.base import RuleResult
 from repolint.rules.context import RuleContext
-from repolint.rules.permission_rules import SingleOwnerRule, NoCollaboratorsRule
+from repolint.rules.permission_rules import (
+    SingleOwnerRule,
+    NoCollaboratorsRule,
+    WikisDisabledRule,
+    IssuesDisabledRule,
+)
 
 
 def test_single_owner_rule_pass():
@@ -187,3 +192,159 @@ def test_no_collaborators_rule_api_error(mock_repository, config):
     assert result.result == RuleResult.FAILED
     assert "Failed to check collaborators" in result.message
     assert not result.fix_available
+
+
+def test_wikis_disabled_rule_pass():
+    """Test WikisDisabledRule when wikis are disabled."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    mock_repo.has_wiki = False
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = WikisDisabledRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.PASSED
+    assert "disabled" in result.message
+
+
+def test_wikis_disabled_rule_fail():
+    """Test WikisDisabledRule when wikis are enabled."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    mock_repo.has_wiki = True
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = WikisDisabledRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "enabled" in result.message
+    assert result.fix_available
+    assert "disable" in result.fix_description.lower()
+
+
+def test_wikis_disabled_rule_fix():
+    """Test WikisDisabledRule fix functionality."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    mock_repo.has_wiki = True
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run fix
+    rule = WikisDisabledRule()
+    success, message = rule.fix(context)
+
+    # Verify fix was called correctly
+    mock_repo.edit.assert_called_once_with(has_wiki=False)
+    assert success
+    assert "disabled" in message.lower()
+
+
+def test_wikis_disabled_rule_api_error():
+    """Test WikisDisabledRule when API call fails."""
+    # Create mock repository that raises an exception
+    mock_repo = MagicMock()
+    type(mock_repo).has_wiki = PropertyMock(
+        side_effect=GithubException(500, "API Error")
+    )
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = WikisDisabledRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "Failed to check" in result.message
+    assert "API Error" in result.message
+
+
+def test_issues_disabled_rule_pass():
+    """Test IssuesDisabledRule when issues are disabled."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    type(mock_repo).has_issues = PropertyMock(return_value=False)
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = IssuesDisabledRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.PASSED
+    assert "disabled" in result.message
+
+
+def test_issues_disabled_rule_fail():
+    """Test IssuesDisabledRule when issues are enabled."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    type(mock_repo).has_issues = PropertyMock(return_value=True)
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = IssuesDisabledRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "enabled" in result.message
+    assert result.fix_available
+    assert "disable" in result.fix_description.lower()
+
+
+def test_issues_disabled_rule_fix():
+    """Test IssuesDisabledRule fix functionality."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    type(mock_repo).has_issues = PropertyMock(return_value=True)
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run fix
+    rule = IssuesDisabledRule()
+    success, message = rule.fix(context)
+
+    # Verify fix was called correctly
+    mock_repo.edit.assert_called_once_with(has_issues=False)
+    assert success
+    assert "disabled" in message.lower()
+
+
+def test_issues_disabled_rule_api_error():
+    """Test IssuesDisabledRule when API call fails."""
+    # Create mock repository that raises an exception
+    mock_repo = MagicMock()
+    type(mock_repo).has_issues = PropertyMock(
+        side_effect=GithubException(500, "API Error")
+    )
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = IssuesDisabledRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "Failed to check" in result.message
+    assert "API Error" in result.message
