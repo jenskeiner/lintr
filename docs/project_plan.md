@@ -207,8 +207,9 @@ We are at Phase 2 of the project.
   - [x] 2.2.3: Add a rule that checks that Wikis are not enabled.
   - [x] 2.2.4: Add a rule that checks that Issues are not enabled.
   - [x] 2.2.5: Add a rule that checks that Sponsorships are not enabled.
-  - [] 2.2.6: Add a rule that checks that "Preserve this repository" is enabled.
-  - [] 2.2.7: Add a rule that checks that Discussions are not enabled.
+  - [x] 2.2.6: Add a rule that checks that "Preserve this repository" is enabled.
+  - [x] 2.2.7: Add a rule that checks that Discussions are not enabled.
+  - [x] 2.2.8: Add a rule that checks that Projects are disabled.
 - [] 2.3: Create usage and developer documentation.
 
 ### Phase 3: Predefined Rule-Sets and Enhancements

@@ -54,7 +54,9 @@ single_owner = "repolint.rules.permission_rules:SingleOwnerRule"
 no_collaborators = "repolint.rules.permission_rules:NoCollaboratorsRule"
 wikis_disabled = "repolint.rules.permission_rules:WikisDisabledRule"
 issues_disabled = "repolint.rules.permission_rules:IssuesDisabledRule"
-preserve_repository = "repolint.rules.archive_rules:PreserveRepositoryRule"
+preserve_repository = "repolint.rules.general:PreserveRepositoryRule"
+discussions_disabled = "repolint.rules.general:DiscussionsDisabledRule"
+projects_disabled = "repolint.rules.general:ProjectsDisabledRule"
 
 [project.entry-points."repolint.rule_sets"]
 default = "repolint.rules.default_rule_set:get_default_rule_set"
