@@ -96,3 +96,67 @@ class GitFlowBranchNamingRule(Rule):
                 message=f"Failed to check branch names: {str(e)}",
                 fix_available=False,
             )
+
+
+class GitFlowDefaultBranchRule(Rule):
+    """Rule that checks if 'develop' is the default branch."""
+
+    def __init__(self):
+        """Initialize the rule."""
+        super().__init__(
+            rule_id="GF002",
+            description="Default branch must be 'develop'",
+        )
+
+    def check(self, context: RuleContext) -> RuleCheckResult:
+        """Check if 'develop' is the default branch.
+
+        Args:
+            context: Context object containing all information needed for the check.
+
+        Returns:
+            Result of the check with details.
+        """
+        try:
+            default_branch = context.repository.default_branch
+
+            if default_branch != "develop":
+                return RuleCheckResult(
+                    result=RuleResult.FAILED,
+                    message=f"Default branch is '{default_branch}' but should be 'develop'",
+                    fix_available=True,
+                )
+
+            return RuleCheckResult(
+                result=RuleResult.PASSED,
+                message="Default branch is correctly set to 'develop'",
+            )
+
+        except GithubException as e:
+            return RuleCheckResult(
+                result=RuleResult.FAILED,
+                message=f"Failed to check default branch: {str(e)}",
+                fix_available=False,
+            )
+
+    def fix(self, context: RuleContext) -> bool:
+        """Fix the default branch by setting it to 'develop'.
+
+        Args:
+            context: Context object containing all information needed for the fix.
+
+        Returns:
+            True if the fix was successful, False otherwise.
+        """
+        try:
+            # First check if develop branch exists
+            branches = list(context.repository.get_branches())
+            if not any(b.name == "develop" for b in branches):
+                return False
+
+            # Update default branch to develop
+            context.repository.edit(default_branch="develop")
+            return True
+
+        except GithubException:
+            return False

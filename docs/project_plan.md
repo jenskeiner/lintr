@@ -225,7 +225,7 @@ We are at Phase 2 of the project.
     - There may be other branches that must start with `temp/`.
     - The rule must accumulate all violations of rules in a list so a comprehensive error message can be returned.
     - The rule is not auto-fixable.
-  - [] 2.3.2: Add a rule that checks that `develop` is the default branch. This rule is auto-fixable.
+  - [x] 2.3.2: Add a rule that checks that `develop` is the default branch. This rule is auto-fixable.
   - [] 2.3.3: Add a rule that checks that `develop`and `master`/`main` have branch protection rules set up.
 - [] 2.4: Create usage and developer documentation.
 
