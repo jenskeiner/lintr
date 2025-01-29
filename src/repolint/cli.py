@@ -114,6 +114,7 @@ def handle_lint(args: argparse.Namespace) -> None:
             token=config.github_token,
             include_private=True,  # TODO: Make configurable
             include_organisations=getattr(args, "include_organisations", False),
+            repository_filter=config.repository_filter,
         )
         client = GitHubClient(github_config)
 

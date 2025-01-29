@@ -5,13 +5,7 @@ from fnmatch import fnmatch
 from github import Github
 from github.Repository import Repository
 from pydantic import BaseModel
-
-
-class RepositoryFilter(BaseModel):
-    """Repository filter configuration."""
-
-    include_patterns: list[str] | None = None
-    exclude_patterns: list[str] | None = None
+from repolint.config import RepositoryFilter
 
 
 class GitHubConfig(BaseModel):
@@ -74,7 +68,8 @@ class GitHubClient:
             filtered_repos = [
                 repo
                 for repo in filtered_repos
-                if any(
+                if not self._config.repository_filter.include_patterns
+                or any(
                     fnmatch(repo.name, pattern)
                     for pattern in self._config.repository_filter.include_patterns
                 )
@@ -85,7 +80,8 @@ class GitHubClient:
             filtered_repos = [
                 repo
                 for repo in filtered_repos
-                if not any(
+                if not self._config.repository_filter.exclude_patterns
+                or not any(
                     fnmatch(repo.name, pattern)
                     for pattern in self._config.repository_filter.exclude_patterns
                 )

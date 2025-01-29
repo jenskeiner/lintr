@@ -57,6 +57,11 @@ issues_disabled = "repolint.rules.permission_rules:IssuesDisabledRule"
 preserve_repository = "repolint.rules.general:PreserveRepositoryRule"
 discussions_disabled = "repolint.rules.general:DiscussionsDisabledRule"
 projects_disabled = "repolint.rules.general:ProjectsDisabledRule"
+merge_commits_allowed = "repolint.rules.permission_rules:MergeCommitsAllowedRule"
+squash_merge_disabled = "repolint.rules.permission_rules:SquashMergeDisabledRule"
+rebase_merge_disabled = "repolint.rules.permission_rules:RebaseMergeDisabledRule"
+delete_branch_on_merge = "repolint.rules.branch_rules:DeleteBranchOnMergeRule"
+auto_merge_disabled = "repolint.rules.branch_rules:AutoMergeDisabledRule"
 
 [project.entry-points."repolint.rule_sets"]
 default = "repolint.rules.default_rule_set:get_default_rule_set"

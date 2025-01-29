@@ -275,3 +275,180 @@ class IssuesDisabledRule(Rule):
             return True, "Issues have been disabled"
         except GithubException as e:
             return False, f"Failed to disable issues: {str(e)}"
+
+
+class MergeCommitsAllowedRule(Rule):
+    """Rule that checks if merge commits are allowed for pull requests."""
+
+    def __init__(self):
+        """Initialize the rule."""
+        super().__init__(
+            rule_id="R014",
+            description="Repository must allow merge commits for pull requests",
+        )
+
+    def check(self, context: RuleContext) -> RuleCheckResult:
+        """Check if merge commits are allowed for pull requests.
+
+        Args:
+            context: Context object containing all information needed for the check.
+
+        Returns:
+            Result of the check with details.
+        """
+        try:
+            # Check if merge commits are allowed
+            if context.repository.allow_merge_commit:
+                return RuleCheckResult(
+                    result=RuleResult.PASSED,
+                    message="Merge commits are allowed for pull requests",
+                )
+            else:
+                return RuleCheckResult(
+                    result=RuleResult.FAILED,
+                    message="Merge commits are not allowed for pull requests",
+                    fix_available=True,
+                    fix_description="Enable merge commits in repository settings",
+                )
+        except GithubException as e:
+            return RuleCheckResult(
+                result=RuleResult.FAILED,
+                message=f"Failed to check merge commit status: {str(e)}",
+                fix_available=False,
+            )
+
+    def fix(self, context: RuleContext) -> tuple[bool, str]:
+        """Apply the fix for this rule.
+
+        Enable merge commits in repository settings.
+
+        Args:
+            context: Context object containing all information needed for the fix.
+
+        Returns:
+            A tuple of (success, message) indicating if the fix was successful.
+        """
+        try:
+            # Enable merge commits
+            context.repository.edit(allow_merge_commit=True)
+            return True, "Enabled merge commits for pull requests"
+        except GithubException as e:
+            return False, f"Failed to enable merge commits: {str(e)}"
+
+
+class SquashMergeDisabledRule(Rule):
+    """Rule that checks if squash merging is disabled for pull requests."""
+
+    def __init__(self):
+        """Initialize the rule."""
+        super().__init__(
+            rule_id="R015",
+            description="Repository must have squash merging disabled for pull requests",
+        )
+
+    def check(self, context: RuleContext) -> RuleCheckResult:
+        """Check if squash merging is disabled for pull requests.
+
+        Args:
+            context: Context object containing all information needed for the check.
+
+        Returns:
+            Result of the check with details.
+        """
+        try:
+            # Check if squash merging is disabled
+            if not context.repository.allow_squash_merge:
+                return RuleCheckResult(
+                    result=RuleResult.PASSED,
+                    message="Squash merging is disabled for pull requests",
+                )
+            else:
+                return RuleCheckResult(
+                    result=RuleResult.FAILED,
+                    message="Squash merging is enabled for pull requests",
+                    fix_available=True,
+                    fix_description="Disable squash merging in repository settings",
+                )
+        except GithubException as e:
+            return RuleCheckResult(
+                result=RuleResult.FAILED,
+                message=f"Failed to check squash merge status: {str(e)}",
+                fix_available=False,
+            )
+
+    def fix(self, context: RuleContext) -> tuple[bool, str]:
+        """Apply the fix for this rule.
+
+        Disable squash merging in repository settings.
+
+        Args:
+            context: Context object containing all information needed for the fix.
+
+        Returns:
+            A tuple of (success, message) indicating if the fix was successful.
+        """
+        try:
+            # Disable squash merging
+            context.repository.edit(allow_squash_merge=False)
+            return True, "Disabled squash merging for pull requests"
+        except GithubException as e:
+            return False, f"Failed to disable squash merging: {str(e)}"
+
+
+class RebaseMergeDisabledRule(Rule):
+    """Rule that checks if rebase merging is disabled for pull requests."""
+
+    def __init__(self):
+        """Initialize the rule."""
+        super().__init__(
+            rule_id="R016",
+            description="Repository must have rebase merging disabled for pull requests",
+        )
+
+    def check(self, context: RuleContext) -> RuleCheckResult:
+        """Check if rebase merging is disabled for pull requests.
+
+        Args:
+            context: Context object containing all information needed for the check.
+
+        Returns:
+            Result of the check with details.
+        """
+        try:
+            # Check if rebase merging is disabled
+            if not context.repository.allow_rebase_merge:
+                return RuleCheckResult(
+                    result=RuleResult.PASSED,
+                    message="Rebase merging is disabled for pull requests",
+                )
+            else:
+                return RuleCheckResult(
+                    result=RuleResult.FAILED,
+                    message="Rebase merging is enabled for pull requests",
+                    fix_available=True,
+                    fix_description="Disable rebase merging in repository settings",
+                )
+        except GithubException as e:
+            return RuleCheckResult(
+                result=RuleResult.FAILED,
+                message=f"Failed to check rebase merge status: {str(e)}",
+                fix_available=False,
+            )
+
+    def fix(self, context: RuleContext) -> tuple[bool, str]:
+        """Apply the fix for this rule.
+
+        Disable rebase merging in repository settings.
+
+        Args:
+            context: Context object containing all information needed for the fix.
+
+        Returns:
+            A tuple of (success, message) indicating if the fix was successful.
+        """
+        try:
+            # Disable rebase merging
+            context.repository.edit(allow_rebase_merge=False)
+            return True, "Disabled rebase merging for pull requests"
+        except GithubException as e:
+            return False, f"Failed to disable rebase merging: {str(e)}"

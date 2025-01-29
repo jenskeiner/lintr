@@ -210,6 +210,11 @@ We are at Phase 2 of the project.
   - [x] 2.2.6: Add a rule that checks that "Preserve this repository" is enabled.
   - [x] 2.2.7: Add a rule that checks that Discussions are not enabled.
   - [x] 2.2.8: Add a rule that checks that Projects are disabled.
+  - [x] 2.2.9: Add a rule that checks that merge commits are allowed for PRs.
+  - [x] 2.2.10: Add a rule that checks that squash merging is not allowed for PRs.
+  - [x] 2.2.11: Add a rule that checks that rebase merging is not allowed for PRs.
+  - [x] 2.2.12: Add a rule that checks that `delete_branch_on_merge` is enabled.
+  - [x] 2.2.13: Add a rule that checks that `allow_auto_merge` is disabled.
 - [] 2.3: Create usage and developer documentation.
 
 ### Phase 3: Predefined Rule-Sets and Enhancements

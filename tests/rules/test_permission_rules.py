@@ -11,6 +11,9 @@ from repolint.rules.permission_rules import (
     NoCollaboratorsRule,
     WikisDisabledRule,
     IssuesDisabledRule,
+    MergeCommitsAllowedRule,
+    SquashMergeDisabledRule,
+    RebaseMergeDisabledRule,
 )
 
 
@@ -348,3 +351,240 @@ def test_issues_disabled_rule_api_error():
     assert result.result == RuleResult.FAILED
     assert "Failed to check" in result.message
     assert "API Error" in result.message
+
+
+def test_merge_commits_allowed_rule_pass():
+    """Test MergeCommitsAllowedRule when merge commits are allowed."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    type(mock_repo).allow_merge_commit = PropertyMock(return_value=True)
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = MergeCommitsAllowedRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.PASSED
+    assert "Merge commits are allowed" in result.message
+
+
+def test_merge_commits_allowed_rule_fail():
+    """Test MergeCommitsAllowedRule when merge commits are not allowed."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    type(mock_repo).allow_merge_commit = PropertyMock(return_value=False)
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = MergeCommitsAllowedRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "Merge commits are not allowed" in result.message
+    assert result.fix_available
+    assert "Enable merge commits" in result.fix_description
+
+
+def test_merge_commits_allowed_rule_fix():
+    """Test MergeCommitsAllowedRule fix functionality."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    type(mock_repo).allow_merge_commit = PropertyMock(return_value=False)
+    mock_repo.edit = MagicMock()
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run fix
+    rule = MergeCommitsAllowedRule()
+    success, message = rule.fix(context)
+
+    # Verify fix
+    assert success
+    assert "Enabled merge commits" in message
+    mock_repo.edit.assert_called_once_with(allow_merge_commit=True)
+
+
+def test_merge_commits_allowed_rule_api_error():
+    """Test MergeCommitsAllowedRule when API call fails."""
+    # Create mock repository that raises an exception
+    mock_repo = MagicMock()
+    type(mock_repo).allow_merge_commit = PropertyMock(
+        side_effect=GithubException(status=500, data={"message": "API Error"})
+    )
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = MergeCommitsAllowedRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "API Error" in result.message
+    assert not result.fix_available
+
+
+def test_squash_merge_disabled_rule_pass():
+    """Test SquashMergeDisabledRule when squash merging is disabled."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    type(mock_repo).allow_squash_merge = PropertyMock(return_value=False)
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = SquashMergeDisabledRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.PASSED
+    assert "Squash merging is disabled" in result.message
+
+
+def test_squash_merge_disabled_rule_fail():
+    """Test SquashMergeDisabledRule when squash merging is enabled."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    type(mock_repo).allow_squash_merge = PropertyMock(return_value=True)
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = SquashMergeDisabledRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "Squash merging is enabled" in result.message
+    assert result.fix_available
+    assert "Disable squash merging" in result.fix_description
+
+
+def test_squash_merge_disabled_rule_fix():
+    """Test SquashMergeDisabledRule fix functionality."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    type(mock_repo).allow_squash_merge = PropertyMock(return_value=True)
+    mock_repo.edit = MagicMock()
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run fix
+    rule = SquashMergeDisabledRule()
+    success, message = rule.fix(context)
+
+    # Verify fix
+    assert success
+    assert "Disabled squash merging" in message
+    mock_repo.edit.assert_called_once_with(allow_squash_merge=False)
+
+
+def test_squash_merge_disabled_rule_api_error():
+    """Test SquashMergeDisabledRule when API call fails."""
+    # Create mock repository that raises an exception
+    mock_repo = MagicMock()
+    type(mock_repo).allow_squash_merge = PropertyMock(
+        side_effect=GithubException(status=500, data={"message": "API Error"})
+    )
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = SquashMergeDisabledRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "API Error" in result.message
+    assert not result.fix_available
+
+
+def test_rebase_merge_disabled_rule_pass():
+    """Test RebaseMergeDisabledRule when rebase merging is disabled."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    type(mock_repo).allow_rebase_merge = PropertyMock(return_value=False)
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = RebaseMergeDisabledRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.PASSED
+    assert "Rebase merging is disabled" in result.message
+
+
+def test_rebase_merge_disabled_rule_fail():
+    """Test RebaseMergeDisabledRule when rebase merging is enabled."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    type(mock_repo).allow_rebase_merge = PropertyMock(return_value=True)
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = RebaseMergeDisabledRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "Rebase merging is enabled" in result.message
+    assert result.fix_available
+    assert "Disable rebase merging" in result.fix_description
+
+
+def test_rebase_merge_disabled_rule_fix():
+    """Test RebaseMergeDisabledRule fix functionality."""
+    # Create mock repository
+    mock_repo = MagicMock()
+    type(mock_repo).allow_rebase_merge = PropertyMock(return_value=True)
+    mock_repo.edit = MagicMock()
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run fix
+    rule = RebaseMergeDisabledRule()
+    success, message = rule.fix(context)
+
+    # Verify fix
+    assert success
+    assert "Disabled rebase merging" in message
+    mock_repo.edit.assert_called_once_with(allow_rebase_merge=False)
+
+
+def test_rebase_merge_disabled_rule_api_error():
+    """Test RebaseMergeDisabledRule when API call fails."""
+    # Create mock repository that raises an exception
+    mock_repo = MagicMock()
+    type(mock_repo).allow_rebase_merge = PropertyMock(
+        side_effect=GithubException(status=500, data={"message": "API Error"})
+    )
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = RebaseMergeDisabledRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "API Error" in result.message
+    assert not result.fix_available

@@ -225,6 +225,43 @@ def test_repository_filtering_with_both_patterns(github_config, mock_repo):
         assert "demo-app" not in repo_names
 
 
+def test_repository_filtering_with_empty_patterns(github_config, mock_repo):
+    """Test that empty pattern lists don't affect filtering."""
+    # Create additional mock repos
+    mock_repo2 = MagicMock()
+    mock_repo2.name = "test-api"
+    mock_repo2.private = False
+    mock_repo2.archived = False
+
+    mock_repo3 = MagicMock()
+    mock_repo3.name = "demo-app"
+    mock_repo3.private = False
+    mock_repo3.archived = False
+
+    # Set up empty pattern lists
+    github_config.repository_filter.include_patterns = []
+    github_config.repository_filter.exclude_patterns = []
+
+    with patch("repolint.gh.Github") as mock_github_class:
+        # Setup mock
+        mock_user = MagicMock()
+        mock_user.get_repos.return_value = [mock_repo, mock_repo2, mock_repo3]
+        mock_github = MagicMock()
+        mock_github.get_user.return_value = mock_user
+        mock_github_class.return_value = mock_github
+
+        # Create client and get repositories
+        client = GitHubClient(github_config)
+        repos = client.get_repositories()
+
+        # Verify all repositories are returned when patterns are empty
+        assert len(repos) == 3
+        repo_names = [repo.name for repo in repos]
+        assert "test-repo" in repo_names
+        assert "test-api" in repo_names
+        assert "demo-app" in repo_names
+
+
 def test_include_organisation_repositories(github_config, mock_repo):
     """Test including organisation repositories."""
     with patch("repolint.gh.Github") as mock_github_class:
