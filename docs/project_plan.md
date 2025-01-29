@@ -201,7 +201,7 @@ We are at Phase 2 of the project.
 ### Phase 2: Testing, Documentation, Rule Build-Out
 - [] 2.1: Analyze and improve test coverage.
   - [x] 2.1.1: Identify test coverage gaps and note them down in a new file `docs/coverage.md`. Each gap must be uniquely identifiable so we can refer to it in tasks below.
-- [] 2.2: Rules build-out.
+- [x] 2.2: General Rules build-out.
   - [x] 2.2.1: Add a rule that checks that the user is the only owner or admin of the repository.
   - [x] 2.2.2: Add a rule that checks that a repo has no collaborators other than the user itself.
   - [x] 2.2.3: Add a rule that checks that Wikis are not enabled.
@@ -215,7 +215,19 @@ We are at Phase 2 of the project.
   - [x] 2.2.11: Add a rule that checks that rebase merging is not allowed for PRs.
   - [x] 2.2.12: Add a rule that checks that `delete_branch_on_merge` is enabled.
   - [x] 2.2.13: Add a rule that checks that `allow_auto_merge` is disabled.
-- [] 2.3: Create usage and developer documentation.
+- [] 2.3: GitFlow-related rules (use GFxxx as id, keep in separate source file named `gitflow.py`).
+  - [x] 2.3.1: Add a rule that checks if the branch names conform to GitFlow rules. That is:
+    - There must be branch named `develop`, as well as either `master`or  `main`.
+    - Feature branches start with `feature/`.
+    - Release branches start with `release/`.
+    - Hotfix branches start with `hotfix/`.
+    - Support branches start with `support/`.
+    - There may be other branches that must start with `temp/`.
+    - The rule must accumulate all violations of rules in a list so a comprehensive error message can be returned.
+    - The rule is not auto-fixable.
+  - [] 2.3.2: Add a rule that checks that `develop` is the default branch. This rule is auto-fixable.
+  - [] 2.3.3: Add a rule that checks that `develop`and `master`/`main` have branch protection rules set up.
+- [] 2.4: Create usage and developer documentation.
 
 ### Phase 3: Predefined Rule-Sets and Enhancements
 - [] 4.1: Add more pre-defined rule-sets for other project types.
