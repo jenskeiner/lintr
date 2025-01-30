@@ -452,3 +452,96 @@ class RebaseMergeDisabledRule(Rule):
             return True, "Disabled rebase merging for pull requests"
         except GithubException as e:
             return False, f"Failed to disable rebase merging: {str(e)}"
+
+
+class NoClassicBranchProtectionRule(Rule):
+    """Rule that checks if classic branch protection rules are used."""
+
+    def __init__(self):
+        """Initialize the rule."""
+        super().__init__(
+            rule_id="R019",
+            description="Repository must not use classic branch protection rules",
+        )
+
+    def check(self, context: RuleContext) -> RuleCheckResult:
+        """Check if classic branch protection rules are used.
+
+        Args:
+            context: Context object containing all information needed for the check.
+
+        Returns:
+            Result of the check with details.
+        """
+        try:
+            # Get all branches
+            branches = context.repository.get_branches()
+
+            # Check each branch for classic branch protection
+            protected_branches = []
+            for branch in branches:
+                if branch.protected:
+                    # Get protection settings to check if they are classic rules
+                    protection = branch.get_protection()
+                    # Classic protection has no required_status_checks and no required_pull_request_reviews
+                    if (
+                        protection.required_status_checks is None
+                        and protection.required_pull_request_reviews is None
+                    ):
+                        protected_branches.append(branch.name)
+
+            if not protected_branches:
+                return RuleCheckResult(
+                    result=RuleResult.PASSED,
+                    message="No classic branch protection rules found",
+                )
+            else:
+                return RuleCheckResult(
+                    result=RuleResult.FAILED,
+                    message=f"Classic branch protection rules found on branches: {', '.join(protected_branches)}",
+                    fix_available=True,
+                    fix_description="Remove classic branch protection rules and replace with repository rules",
+                )
+        except GithubException as e:
+            return RuleCheckResult(
+                result=RuleResult.FAILED,
+                message=f"Failed to check branch protection rules: {str(e)}",
+                fix_available=False,
+            )
+
+    def fix(self, context: RuleContext) -> tuple[bool, str]:
+        """Apply the fix for this rule.
+
+        Remove classic branch protection rules.
+
+        Args:
+            context: Context object containing all information needed for the fix.
+
+        Returns:
+            A tuple of (success, message) indicating if the fix was successful.
+        """
+        try:
+            # Get all branches
+            branches = context.repository.get_branches()
+
+            # Remove classic protection from each branch
+            fixed_branches = []
+            for branch in branches:
+                if branch.protected:
+                    protection = branch.get_protection()
+                    # Classic protection has no required_status_checks and no required_pull_request_reviews
+                    if (
+                        protection.required_status_checks is None
+                        and protection.required_pull_request_reviews is None
+                    ):
+                        branch.remove_protection()
+                        fixed_branches.append(branch.name)
+
+            if fixed_branches:
+                return (
+                    True,
+                    f"Removed classic branch protection rules from branches: {', '.join(fixed_branches)}",
+                )
+            return True, "No classic branch protection rules found to remove"
+        except GithubException as e:
+            return False, f"Failed to remove classic branch protection rules: {str(e)}"

@@ -71,6 +71,7 @@ delete_branch_on_merge = "repolint.rules.branch_rules:DeleteBranchOnMergeRule"
 auto_merge_disabled = "repolint.rules.branch_rules:AutoMergeDisabledRule"
 gitflow_branch_naming = "repolint.rules.gitflow:GitFlowBranchNamingRule"
 gitflow_default_branch = "repolint.rules.gitflow:GitFlowDefaultBranchRule"
+no_classic_branch_protection = "repolint.rules.permission_rules:NoClassicBranchProtectionRule"
 
 [project.entry-points."repolint.rule_sets"]
 default = "repolint.rules.default_rule_set:get_default_rule_set"

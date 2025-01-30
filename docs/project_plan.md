@@ -215,6 +215,7 @@ We are at Phase 2 of the project.
   - [x] 2.2.11: Add a rule that checks that rebase merging is not allowed for PRs.
   - [x] 2.2.12: Add a rule that checks that `delete_branch_on_merge` is enabled.
   - [x] 2.2.13: Add a rule that checks that `allow_auto_merge` is disabled.
+  - [x] 2.2.14: Add rule to check if classic branch protection rules are still used. Fail the check if used.
 - [] 2.3: GitFlow-related rules (use GFxxx as id, keep in separate source file named `gitflow.py`).
   - [x] 2.3.1: Add a rule that checks if the branch names conform to GitFlow rules. That is:
     - There must be branch named `develop`, as well as either `master`or  `main`.
@@ -226,7 +227,17 @@ We are at Phase 2 of the project.
     - The rule must accumulate all violations of rules in a list so a comprehensive error message can be returned.
     - The rule is not auto-fixable.
   - [x] 2.3.2: Add a rule that checks that `develop` is the default branch. This rule is auto-fixable.
-  - [] 2.3.3: Add a rule that checks that `develop`and `master`/`main` have branch protection rules set up.
+  - [] 2.3.3: Add a rule that checks that the `develop` branch has a branch ruleset set up. The rule set must:
+    - have the name `develop protection`
+    - must have the owner in the bypass list
+    - be enabled
+    - target the `develop` branch
+    - restrict creations
+    - restrict updates
+    - restrict deletions
+    - require a pull reequest before merging
+    - require status checks to pass
+    - block force pushes
 - [] 2.4: Create usage and developer documentation.
 
 ### Phase 3: Predefined Rule-Sets and Enhancements
@@ -489,4 +500,4 @@ When improving test coverage:
      
      # Correct:
      type(mock_repo).has_wiki = PropertyMock(side_effect=GithubException(500, "API Error"))
-     
+    ```

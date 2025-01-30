@@ -14,6 +14,7 @@ from repolint.rules.permission_rules import (
     MergeCommitsAllowedRule,
     SquashMergeDisabledRule,
     RebaseMergeDisabledRule,
+    NoClassicBranchProtectionRule,
 )
 
 
@@ -587,4 +588,104 @@ def test_rebase_merge_disabled_rule_api_error():
     # Verify result
     assert result.result == RuleResult.FAILED
     assert "API Error" in result.message
+    assert not result.fix_available
+
+
+def test_no_classic_branch_protection_rule_pass():
+    """Test NoClassicBranchProtectionRule when no classic branch protection is used."""
+    # Create mock branch without protection
+    mock_branch = MagicMock()
+    mock_branch.name = "main"
+    mock_branch.protected = False
+
+    # Create mock repository
+    mock_repo = MagicMock()
+    mock_repo.get_branches.return_value = [mock_branch]
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = NoClassicBranchProtectionRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.PASSED
+    assert "No classic branch protection rules found" in result.message
+
+
+def test_no_classic_branch_protection_rule_fail():
+    """Test NoClassicBranchProtectionRule when classic branch protection is used."""
+    # Create mock branch with classic protection
+    mock_branch = MagicMock()
+    mock_branch.name = "main"
+    mock_branch.protected = True
+    mock_protection = MagicMock()
+    # Classic protection has no required_status_checks or required_pull_request_reviews
+    mock_protection.required_status_checks = None
+    mock_protection.required_pull_request_reviews = None
+    mock_branch.get_protection.return_value = mock_protection
+
+    # Create mock repository
+    mock_repo = MagicMock()
+    mock_repo.get_branches.return_value = [mock_branch]
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = NoClassicBranchProtectionRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "main" in result.message
+    assert result.fix_available
+
+
+def test_no_classic_branch_protection_rule_fix():
+    """Test NoClassicBranchProtectionRule fix functionality."""
+    # Create mock branch with classic protection
+    mock_branch = MagicMock()
+    mock_branch.name = "main"
+    mock_branch.protected = True
+    mock_protection = MagicMock()
+    # Classic protection has no required_status_checks or required_pull_request_reviews
+    mock_protection.required_status_checks = None
+    mock_protection.required_pull_request_reviews = None
+    mock_branch.get_protection.return_value = mock_protection
+
+    # Create mock repository
+    mock_repo = MagicMock()
+    mock_repo.get_branches.return_value = [mock_branch]
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run fix
+    rule = NoClassicBranchProtectionRule()
+    success, message = rule.fix(context)
+
+    # Verify result
+    assert success
+    assert "main" in message
+    mock_branch.remove_protection.assert_called_once()
+
+
+def test_no_classic_branch_protection_rule_api_error():
+    """Test NoClassicBranchProtectionRule when API call fails."""
+    # Create mock repository that raises an exception
+    mock_repo = MagicMock()
+    mock_repo.get_branches.side_effect = GithubException(500, "API Error")
+
+    # Create context with mock repository
+    context = RuleContext(mock_repo)
+
+    # Run check
+    rule = NoClassicBranchProtectionRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "Failed to check branch protection rules" in result.message
     assert not result.fix_available
