@@ -2,16 +2,17 @@
 
 from unittest.mock import MagicMock
 
-
+from abc import ABC
 from repolint.rules import Rule, RuleCheckResult, RuleResult, RuleSet
 from repolint.rules.context import RuleContext
+from .fixtures import mk_rule
 
 
-class DummyRule(Rule):
+class DummyRule(Rule, ABC):
     """Dummy rule implementation for testing."""
 
-    def __init__(self, rule_id: str, description: str, result: RuleResult):
-        super().__init__(rule_id, description)
+    def __init__(self, result: RuleResult):
+        super().__init__()
         self._result = result
 
     def check(self, repo) -> RuleCheckResult:
@@ -30,13 +31,17 @@ class DummyRule(Rule):
         return False
 
 
+class DummyRule1(DummyRule):
+    _id = "R001"
+    _description = "Test rule"
+
+
 class MutuallyExclusiveRule1(Rule):
     """Test rule that is mutually exclusive with Rule2."""
 
+    _id = "R001"
+    _description = "Test Rule 1"
     mutually_exclusive_with = {"R002"}  # Class-level declaration
-
-    def __init__(self):
-        super().__init__("R001", "Test Rule 1")
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
@@ -45,10 +50,9 @@ class MutuallyExclusiveRule1(Rule):
 class MutuallyExclusiveRule2(Rule):
     """Test rule that is mutually exclusive with Rule1."""
 
+    _id = "R002"
+    _description = "Test Rule 2"
     mutually_exclusive_with = {"R001"}  # Class-level declaration
-
-    def __init__(self):
-        super().__init__("R002", "Test Rule 2")
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
@@ -57,10 +61,9 @@ class MutuallyExclusiveRule2(Rule):
 class OneDirectionalRule1(Rule):
     """Test rule that is mutually exclusive with Rule2 (one-directional)."""
 
+    _id = "R003"
+    _description = "Test Rule 3"
     mutually_exclusive_with = {"R004"}
-
-    def __init__(self):
-        super().__init__("R003", "Test Rule 3")
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
@@ -69,10 +72,9 @@ class OneDirectionalRule1(Rule):
 class OneDirectionalRule2(Rule):
     """Test rule that Rule1 points to as mutually exclusive."""
 
+    _id = "R004"
+    _description = "Test Rule 4"
     mutually_exclusive_with = set()  # Empty set, no explicit mutual exclusivity
-
-    def __init__(self):
-        super().__init__("R004", "Test Rule 4")
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
@@ -80,14 +82,14 @@ class OneDirectionalRule2(Rule):
 
 def test_rule_initialization():
     """Test basic rule initialization."""
-    rule = DummyRule("R001", "Test rule", RuleResult.PASSED)
+    rule = DummyRule1(RuleResult.PASSED)
     assert rule.rule_id == "R001"
     assert rule.description == "Test rule"
 
 
 def test_rule_check():
     """Test rule check functionality."""
-    rule = DummyRule("R001", "Test rule", RuleResult.PASSED)
+    rule = DummyRule1(RuleResult.PASSED)
     mock_repo = MagicMock()
     result = rule.check(mock_repo)
     assert result.result == RuleResult.PASSED
@@ -105,7 +107,7 @@ def test_rule_set_initialization():
 def test_rule_set_add_rule():
     """Test adding a rule to a rule set."""
     rule_set = RuleSet("RS001", "Test rule set")
-    rule = DummyRule("R001", "Test rule", RuleResult.PASSED)
+    rule = DummyRule1(RuleResult.PASSED)
     rule_set.add_rule(rule)
     rules = list(rule_set.rules())
     assert len(rules) == 1
@@ -116,7 +118,7 @@ def test_rule_set_add_rule_set():
     """Test adding a rule set to another rule set."""
     parent_set = RuleSet("RS001", "Parent rule set")
     child_set = RuleSet("RS002", "Child rule set")
-    rule = DummyRule("R001", "Test rule", RuleResult.PASSED)
+    rule = DummyRule1(RuleResult.PASSED)
     child_set.add_rule(rule)
     parent_set.add_rule_set(child_set)
     rules = list(parent_set.rules())
@@ -129,7 +131,7 @@ def test_rule_class_mutually_exclusive():
     # Create instances of the rules
     rule1 = MutuallyExclusiveRule1()
     rule2 = MutuallyExclusiveRule2()
-    rule3 = DummyRule("R003", "Test Rule 3", RuleResult.PASSED)
+    rule3 = mk_rule("R003", "Test Rule 3", result=RuleResult.PASSED)()
 
     # Test that class-level mutual exclusivity is respected
     assert "R002" in rule1.mutually_exclusive_with
@@ -166,9 +168,9 @@ def test_rule_class_mutually_exclusive_one_directional():
 def test_rule_set_preserves_order():
     """Test that rules and rule sets are returned in the order they were added."""
     # Create test rules with non-alphabetical IDs to ensure order is not by ID
-    rule1 = DummyRule("R002", "Test Rule 2", RuleResult.PASSED)
-    rule2 = DummyRule("R001", "Test Rule 1", RuleResult.PASSED)
-    rule3 = DummyRule("R003", "Test Rule 3", RuleResult.PASSED)
+    rule1 = mk_rule("R002", "Test Rule 2", result=RuleResult.PASSED)()
+    rule2 = mk_rule("R001", "Test Rule 1", result=RuleResult.PASSED)()
+    rule3 = mk_rule("R003", "Test Rule 3", result=RuleResult.PASSED)()
 
     # Create test rule sets
     parent_set = RuleSet("RS001", "Parent Rule Set")

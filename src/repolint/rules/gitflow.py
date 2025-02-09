@@ -9,12 +9,8 @@ from repolint.rules.context import RuleContext
 class GitFlowBranchNamingRule(Rule):
     """Rule that checks if branch names conform to GitFlow conventions."""
 
-    def __init__(self):
-        """Initialize the rule."""
-        super().__init__(
-            rule_id="GF001",
-            description="Branch names must conform to GitFlow conventions",
-        )
+    _id = "GF001"
+    _description = "Branch names must conform to GitFlow conventions"
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if branch names conform to GitFlow conventions.
@@ -101,12 +97,8 @@ class GitFlowBranchNamingRule(Rule):
 class GitFlowDefaultBranchRule(Rule):
     """Rule that checks if 'develop' is the default branch."""
 
-    def __init__(self):
-        """Initialize the rule."""
-        super().__init__(
-            rule_id="GF002",
-            description="Default branch must be 'develop'",
-        )
+    _id = "GF002"
+    _description = "Default branch must be 'develop'"
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if 'develop' is the default branch.

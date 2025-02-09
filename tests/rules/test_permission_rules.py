@@ -1,8 +1,8 @@
 """Tests for permission rules."""
 
-from unittest.mock import MagicMock, PropertyMock
-
+import pytest
 from github.GithubException import GithubException
+from unittest.mock import MagicMock, PropertyMock
 
 from repolint.rules.base import RuleResult
 from repolint.rules.context import RuleContext
@@ -15,6 +15,7 @@ from repolint.rules.permission_rules import (
     SquashMergeDisabledRule,
     RebaseMergeDisabledRule,
     NoClassicBranchProtectionRule,
+    DevelopBranchRulesetRule,
 )
 
 
@@ -689,3 +690,527 @@ def test_no_classic_branch_protection_rule_api_error():
     assert result.result == RuleResult.FAILED
     assert "Failed to check branch protection rules" in result.message
     assert not result.fix_available
+
+
+def test_develop_branch_ruleset_rule_pass(mock_repository):
+    """Test DevelopBranchRulesetRule when develop branch has proper ruleset."""
+    # Create mock ruleset with all required rules
+    mock_rules = []
+    for rule_type in [
+        "creation",
+        "update",
+        "deletion",
+        "required_signatures",
+        "pull_request",
+        "non_fast_forward",
+    ]:
+        mock_rule = MagicMock()
+        mock_rule.type = rule_type
+        if rule_type == "pull_request":
+            mock_rule.parameters = {
+                "required_approving_review_count": 1,
+                "dismiss_stale_reviews_on_push": True,
+                "require_code_owner_review": True,
+                "require_last_push_approval": True,
+                "required_review_thread_resolution": True,
+                "automatic_copilot_code_review_enabled": False,
+                "allowed_merge_methods": ["merge"],
+            }
+        else:
+            mock_rule.parameters = None
+        mock_rules.append(mock_rule)
+
+    mock_ruleset = MagicMock()
+    mock_ruleset.name = "develop protection"
+    mock_ruleset.enforcement = "active"
+    mock_ruleset.conditions = {
+        "ref_name": {"include": ["refs/heads/develop"], "exclude": []}
+    }
+    mock_ruleset.rules = mock_rules
+
+    # Create mock repository
+    mock_repository.get_rulesets.return_value = [mock_ruleset]
+
+    # Create context with mock repository
+    context = RuleContext(mock_repository)
+
+    # Run check
+    rule = DevelopBranchRulesetRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.PASSED
+    assert "Ruleset 'develop protection' properly configured" in result.message
+    assert not result.fix_available
+
+
+def test_develop_branch_ruleset_rule_fail_missing_rules(mock_repository):
+    """Test DevelopBranchRulesetRule when ruleset is missing required rules."""
+    # Create mock ruleset with missing rules
+    mock_rules = []
+    # Only add some of the required rules
+    for rule_type in ["creation", "update"]:
+        mock_rule = MagicMock()
+        mock_rule.type = rule_type
+        mock_rule.parameters = {"enabled": True}
+        mock_rules.append(mock_rule)
+
+    mock_ruleset = MagicMock()
+    mock_ruleset.name = "develop protection"
+    mock_ruleset.enforcement = "active"
+    mock_ruleset.conditions = {
+        "ref_name": {"include": ["refs/heads/develop"], "exclude": []}
+    }
+    mock_ruleset.rules = mock_rules
+
+    # Create mock repository
+    mock_repository.get_rulesets.return_value = [mock_ruleset]
+
+    # Create context with mock repository
+    context = RuleContext(mock_repository)
+
+    # Run check
+    rule = DevelopBranchRulesetRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "Missing rule: restrict deletion" in result.message
+    assert "Missing rule: require signed commits" in result.message
+    assert "Missing rule: require pull request before merging" in result.message
+    assert "Missing rule: block force pushes" in result.message
+    assert result.fix_available
+
+
+def test_develop_branch_ruleset_rule_fail_no_ruleset(mock_repository):
+    """Test DevelopBranchRulesetRule when no develop branch ruleset exists."""
+    # Create mock repository with no rulesets
+    mock_repository.get_rulesets.return_value = []
+
+    # Create context with mock repository
+    context = RuleContext(mock_repository)
+
+    # Run check
+    rule = DevelopBranchRulesetRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "No 'develop protection' ruleset found" in result.message
+    assert result.fix_available
+    assert "Create a ruleset for the develop branch" in result.fix_description
+
+
+def test_develop_branch_ruleset_rule_fail_disabled(mock_repository):
+    """Test DevelopBranchRulesetRule when ruleset exists but is disabled."""
+    # Create mock ruleset that is disabled
+    mock_ruleset = MagicMock()
+    mock_ruleset.name = "develop protection"
+    mock_ruleset.enforcement = "disabled"
+    mock_ruleset.conditions = {
+        "ref_name": {"include": ["refs/heads/develop"], "exclude": []}
+    }
+
+    # Create mock repository
+    mock_repository.get_rulesets.return_value = [mock_ruleset]
+
+    # Create context with mock repository
+    context = RuleContext(mock_repository)
+
+    # Run check
+    rule = DevelopBranchRulesetRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "Ruleset must be enabled" in result.message
+    assert result.fix_available
+    assert "Update ruleset configuration" in result.fix_description
+
+
+def test_develop_branch_ruleset_rule_fail_wrong_branch(mock_repository):
+    """Test DevelopBranchRulesetRule when ruleset doesn't target develop branch."""
+    # Create mock ruleset that targets wrong branch
+    mock_ruleset = MagicMock()
+    mock_ruleset.name = "develop protection"
+    mock_ruleset.enforcement = "active"
+    mock_ruleset.conditions = {
+        "ref_name": {"include": ["refs/heads/main"], "exclude": []}
+    }
+
+    # Create mock repository
+    mock_repository.get_rulesets.return_value = [mock_ruleset]
+
+    # Create context with mock repository
+    context = RuleContext(mock_repository)
+
+    # Run check
+    rule = DevelopBranchRulesetRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "Ruleset must apply to the develop branch" in result.message
+    assert result.fix_available
+    assert "Update ruleset configuration" in result.fix_description
+
+
+def test_develop_branch_ruleset_rule_multiple_rulesets(mock_repository):
+    """Test DevelopBranchRulesetRule when multiple rulesets exist."""
+    # Create mock rulesets
+    mock_ruleset1 = MagicMock()
+    mock_ruleset1.name = "main protection"
+    mock_ruleset1.enforcement = "active"
+
+    # Create mock rules for develop ruleset
+    mock_rules = []
+    for rule_type in [
+        "creation",
+        "update",
+        "deletion",
+        "required_signatures",
+        "pull_request",
+        "non_fast_forward",
+    ]:
+        mock_rule = MagicMock()
+        mock_rule.type = rule_type
+        if rule_type == "pull_request":
+            mock_rule.parameters = {
+                "required_approving_review_count": 1,
+                "dismiss_stale_reviews_on_push": True,
+                "require_code_owner_review": True,
+                "require_last_push_approval": True,
+                "required_review_thread_resolution": True,
+                "automatic_copilot_code_review_enabled": False,
+                "allowed_merge_methods": ["merge"],
+            }
+        else:
+            mock_rule.parameters = None
+        mock_rules.append(mock_rule)
+
+    mock_ruleset2 = MagicMock()
+    mock_ruleset2.name = "develop protection"
+    mock_ruleset2.enforcement = "active"
+    mock_ruleset2.conditions = {
+        "ref_name": {"include": ["refs/heads/develop"], "exclude": []}
+    }
+    mock_ruleset2.rules = mock_rules
+
+    # Create mock repository
+    mock_repository.get_rulesets.return_value = [mock_ruleset1, mock_ruleset2]
+
+    # Create context with mock repository
+    context = RuleContext(mock_repository)
+
+    # Run check
+    rule = DevelopBranchRulesetRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.PASSED
+    assert "Ruleset 'develop protection' properly configured" in result.message
+    assert not result.fix_available
+
+
+def test_develop_branch_ruleset_rule_api_error(mock_repository):
+    """Test DevelopBranchRulesetRule when API call fails."""
+    # Mock API error
+    mock_repository.get_rulesets.side_effect = GithubException(
+        status=404, data={"message": "Repository rulesets not found"}
+    )
+
+    # Create context with mock repository
+    context = RuleContext(mock_repository)
+
+    # Run check
+    rule = DevelopBranchRulesetRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "Repository rulesets not found" in result.message
+    assert result.fix_available
+    assert "Create a ruleset for the develop branch" in result.fix_description
+
+
+def test_develop_branch_ruleset_rule_other_api_error(mock_repository):
+    """Test DevelopBranchRulesetRule when API call fails with unexpected error."""
+    # Mock unexpected API error
+    mock_repository.get_rulesets.side_effect = GithubException(
+        status=500, data={"message": "Internal server error"}
+    )
+
+    # Create context with mock repository
+    context = RuleContext(mock_repository)
+
+    # Run check
+    rule = DevelopBranchRulesetRule()
+
+    # Verify that other API errors are re-raised
+    with pytest.raises(GithubException):
+        rule.check(context)
+
+
+def test_develop_branch_ruleset_rule_fail_additional_rules(mock_repository):
+    """Test DevelopBranchRulesetRule when ruleset has additional rules that are not allowed."""
+    # Create mock ruleset with required and additional rules
+    mock_rules = []
+    # Add required rules
+    for rule_type in [
+        "creation",
+        "update",
+        "deletion",
+        "required_signatures",
+        "required_pull_request",
+        "non_fast_forward",
+    ]:
+        mock_rule = MagicMock()
+        mock_rule.type = rule_type
+        mock_rule.parameters = {"enabled": True}
+        mock_rules.append(mock_rule)
+
+    # Add additional rules that are not allowed
+    for rule_type in ["required_linear_history", "required_deployments"]:
+        mock_rule = MagicMock()
+        mock_rule.type = rule_type
+        mock_rule.parameters = {"enabled": True}
+        mock_rules.append(mock_rule)
+
+    mock_ruleset = MagicMock()
+    mock_ruleset.name = "develop protection"
+    mock_ruleset.enforcement = "active"
+    mock_ruleset.conditions = {
+        "ref_name": {"include": ["refs/heads/develop"], "exclude": []}
+    }
+    mock_ruleset.rules = mock_rules
+
+    # Create mock repository
+    mock_repository.get_rulesets.return_value = [mock_ruleset]
+
+    # Create context with mock repository
+    context = RuleContext(mock_repository)
+
+    # Run check
+    rule = DevelopBranchRulesetRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert (
+        "Additional rules found that are not allowed: required_deployments, required_linear_history"
+        in result.message
+    )
+    assert result.fix_available
+    assert (
+        "Update ruleset configuration for the develop branch" == result.fix_description
+    )
+
+
+def test_develop_branch_ruleset_rule_fail_multiple_branches(mock_repository):
+    """Test DevelopBranchRulesetRule when ruleset applies to multiple branches."""
+    # Create mock ruleset with all required rules
+    mock_rules = []
+    for rule_type in [
+        "creation",
+        "update",
+        "deletion",
+        "required_signatures",
+        "required_pull_request",
+        "non_fast_forward",
+    ]:
+        mock_rule = MagicMock()
+        mock_rule.type = rule_type
+        mock_rule.parameters = {"enabled": True}
+        mock_rules.append(mock_rule)
+
+    mock_ruleset = MagicMock()
+    mock_ruleset.name = "develop protection"
+    mock_ruleset.enforcement = "active"
+    mock_ruleset.conditions = {
+        "ref_name": {
+            "include": [
+                "refs/heads/develop",
+                "refs/heads/main",
+                "refs/heads/feature/*",
+            ],
+            "exclude": [],
+        }
+    }
+    mock_ruleset.rules = mock_rules
+
+    # Create mock repository
+    mock_repository.get_rulesets.return_value = [mock_ruleset]
+
+    # Create context with mock repository
+    context = RuleContext(mock_repository)
+
+    # Run check
+    rule = DevelopBranchRulesetRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert (
+        "Ruleset must only apply to develop branch, but also includes: refs/heads/feature/*, refs/heads/main"
+        in result.message
+    )
+    assert result.fix_available
+
+
+def test_develop_branch_ruleset_rule_fail_excluded_branches(mock_repository):
+    """Test DevelopBranchRulesetRule when ruleset has excluded branches."""
+    # Create mock ruleset with all required rules
+    mock_rules = []
+    for rule_type in [
+        "creation",
+        "update",
+        "deletion",
+        "required_signatures",
+        "pull_request",
+        "non_fast_forward",
+    ]:
+        mock_rule = MagicMock()
+        mock_rule.type = rule_type
+        if rule_type == "pull_request":
+            mock_rule.parameters = {
+                "required_approving_review_count": 1,
+                "dismiss_stale_reviews_on_push": True,
+                "require_code_owner_review": True,
+                "require_last_push_approval": True,
+                "required_review_thread_resolution": True,
+                "automatic_copilot_code_review_enabled": False,
+                "allowed_merge_methods": ["merge"],
+            }
+        else:
+            mock_rule.parameters = None
+        mock_rules.append(mock_rule)
+
+    mock_ruleset = MagicMock()
+    mock_ruleset.name = "develop protection"
+    mock_ruleset.enforcement = "active"
+    mock_ruleset.conditions = {
+        "ref_name": {
+            "include": ["refs/heads/develop"],
+            "exclude": ["refs/heads/feature/*", "refs/heads/hotfix/*"],
+        }
+    }
+    mock_ruleset.rules = mock_rules
+
+    # Create mock repository
+    mock_repository.get_rulesets.return_value = [mock_ruleset]
+
+    # Create context with mock repository
+    context = RuleContext(mock_repository)
+
+    # Run check
+    rule = DevelopBranchRulesetRule()
+    result = rule.check(context)
+
+    # Verify result
+    assert result.result == RuleResult.FAILED
+    assert "Rulesset 'develop protection' not set up correctly:" in result.message
+    assert (
+        "Ruleset must not exclude any branches, but excludes: refs/heads/feature/*, refs/heads/hotfix/*"
+        in result.message
+    )
+    assert result.fix_available
+
+
+def test_develop_branch_ruleset_rule_fix_create(mock_repository):
+    """Test DevelopBranchRulesetRule fix when no ruleset exists."""
+    # Mock that no rulesets exist
+    mock_repository.get_rulesets.return_value = []
+
+    # Create context with mock repository
+    context = RuleContext(mock_repository)
+
+    # Run fix
+    rule = DevelopBranchRulesetRule()
+    success, message = rule.fix(context)
+
+    # Verify result
+    assert success
+    assert "Created new develop branch ruleset" in message
+
+    # Verify that create_ruleset was called with correct arguments
+    mock_repository.create_ruleset.assert_called_once()
+    call_args = mock_repository.create_ruleset.call_args[1]
+    assert call_args["name"] == "develop protection"
+    assert call_args["target"] == "branch"
+    assert call_args["enforcement"] == "active"
+    assert call_args["conditions"]["ref_name"]["include"] == ["refs/heads/develop"]
+    assert call_args["conditions"]["ref_name"]["exclude"] == []
+
+    # Check rules
+    rules = call_args["rules"]
+    assert len(rules) == 6
+    rule_types = {rule["type"] for rule in rules}
+    assert rule_types == {
+        "creation",
+        "update",
+        "deletion",
+        "required_signatures",
+        "pull_request",
+        "non_fast_forward",
+    }
+
+
+def test_develop_branch_ruleset_rule_fix_update(mock_repository):
+    """Test DevelopBranchRulesetRule fix when ruleset exists."""
+    # Create mock existing ruleset
+    mock_ruleset = MagicMock()
+    mock_ruleset.name = "develop protection"
+    mock_repository.get_rulesets.return_value = [mock_ruleset]
+
+    # Create context with mock repository
+    context = RuleContext(mock_repository)
+
+    # Run fix
+    rule = DevelopBranchRulesetRule()
+    success, message = rule.fix(context)
+
+    # Verify result
+    assert success
+    assert "Updated existing develop branch ruleset" in message
+
+    # Verify that update was called with correct arguments
+    mock_ruleset.update.assert_called_once()
+    call_args = mock_ruleset.update.call_args[1]
+    assert call_args["name"] == "develop protection"
+    assert call_args["target"] == "branch"
+    assert call_args["enforcement"] == "active"
+    assert call_args["conditions"]["ref_name"]["include"] == ["refs/heads/develop"]
+    assert call_args["conditions"]["ref_name"]["exclude"] == []
+
+    # Check rules
+    rules = call_args["rules"]
+    assert len(rules) == 6
+    rule_types = {rule["type"] for rule in rules}
+    assert rule_types == {
+        "creation",
+        "update",
+        "deletion",
+        "required_signatures",
+        "pull_request",
+        "non_fast_forward",
+    }
+
+
+def test_develop_branch_ruleset_rule_fix_error(mock_repository):
+    """Test DevelopBranchRulesetRule fix when API call fails."""
+    # Mock API error
+    mock_repository.get_rulesets.side_effect = GithubException(
+        status=500, data={"message": "Internal server error"}
+    )
+
+    # Create context with mock repository
+    context = RuleContext(mock_repository)
+
+    # Run fix
+    rule = DevelopBranchRulesetRule()
+    success, message = rule.fix(context)
+
+    # Verify result
+    assert not success
+    assert "Failed to fix branch ruleset:" in message
+    assert "Internal server error" in message

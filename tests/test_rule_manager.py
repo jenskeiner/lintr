@@ -12,25 +12,12 @@ from repolint.config import BaseRepolintConfig, RuleSetConfig
 class TestRule(Rule):
     """Test rule for testing."""
 
-    def __init__(self, rule_id: str = "TEST001", description: str = "Test rule"):
-        """Initialize the rule."""
-        super().__init__(rule_id=rule_id, description=description)
+    _id = "TEST001"
+    _description = "Test rule"
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Always pass."""
         return RuleCheckResult(RuleResult.PASSED, "Test passed")
-
-
-class ErrorRule(Rule):
-    """Test rule that raises an error during initialization."""
-
-    def __init__(self, rule_id: str, description: str):
-        """Initialize with an error."""
-        raise ValueError("Test initialization error")
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Never called."""
-        return RuleCheckResult(RuleResult.PASSED, "")
 
 
 @pytest.fixture(autouse=True)
@@ -46,8 +33,8 @@ def manager():
     manager = RuleManager()
 
     # Register a rule class
-    manager._rules["TEST001"] = TestRule
-    manager._factory.register_rule_class("TEST001", TestRule)
+    manager._rules[TestRule.rule_id] = TestRule
+    manager._factory.register_rule_class(TestRule.rule_id, TestRule)
 
     return manager
 
@@ -335,8 +322,8 @@ def test_rule_discovery_mixed_success():
 
     # Create a custom rule class that will be registered
     class SuccessRule(Rule):
-        def __init__(self, rule_id: str = "TEST002", description: str = "Success rule"):
-            super().__init__(rule_id=rule_id, description=description)
+        _id = "TEST002"
+        _description = "Success rule"
 
         def check(self, context: RuleContext) -> RuleCheckResult:
             return RuleCheckResult(RuleResult.PASSED, "Success")

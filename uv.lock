@@ -360,8 +360,8 @@ wheels = [
 
 [[package]]
 name = "pygithub"
-version = "2.5.0"
-source = { registry = "https://pypi.org/simple" }
+version = "0.1.dev2351+g3a0c2aa"
+source = { git = "https://github.com/jenskeiner/PyGithub?branch=feature%2Fadd-rules-and-rulesets#3a0c2aaaa9da55538035af6d22c32134788c7f53" }
 dependencies = [
     { name = "deprecated" },
     { name = "pyjwt", extra = ["crypto"] },
@@ -369,10 +369,6 @@ dependencies = [
     { name = "requests" },
     { name = "typing-extensions" },
     { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/16/ce/aa91d30040d9552c274e7ea8bd10a977600d508d579a4bb262b95eccf961/pygithub-2.5.0.tar.gz", hash = "sha256:e1613ac508a9be710920d26eb18b1905ebd9926aa49398e88151c1b526aad3cf", size = 3552804 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/37/05/bfbdbbc5d8aafd8dae9b3b6877edca561fccd8528ef5edc4e7b6d23721b5/PyGithub-2.5.0-py3-none-any.whl", hash = "sha256:b0b635999a658ab8e08720bdd3318893ff20e2275f6446fcf35bf3f44f2c0fd2", size = 375935 },
 ]
 
 [[package]]
@@ -497,7 +493,7 @@ requires-dist = [
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.6.0" },
     { name = "pydantic", specifier = ">=2.5.3" },
     { name = "pydantic-settings", specifier = ">=2.1.0" },
-    { name = "pygithub", specifier = ">=2.5.0" },
+    { name = "pygithub", git = "https://github.com/jenskeiner/PyGithub?branch=feature%2Fadd-rules-and-rulesets" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.4.3" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1.0" },
     { name = "pyyaml", specifier = ">=6.0.1" },

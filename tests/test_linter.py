@@ -1,5 +1,4 @@
 """Tests for core linting functionality."""
-
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,6 +8,7 @@ from repolint.config import BaseRepolintConfig
 from repolint.linter import Linter
 from repolint.rules import Rule, RuleCheckResult, RuleResult, RuleSet
 from repolint.rules.base import RuleContext
+from tests.fixtures import mk_rule
 
 
 def strip_color_codes(text: str) -> str:
@@ -23,128 +23,6 @@ def strip_color_codes(text: str) -> str:
     ]:
         text = text.replace(str(color), "")
     return text
-
-
-class MockRule(Rule):
-    """Mock rule for testing."""
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Return a mock check result."""
-        return RuleCheckResult(
-            result=RuleResult.PASSED, message="Mock rule passed", fix_available=False
-        )
-
-
-class FailingMockRule(Rule):
-    """Mock rule that fails during execution."""
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Raise an exception."""
-        raise Exception("Rule execution failed")
-
-
-class DummyRule(Rule):
-    """Dummy rule with a predefined result."""
-
-    def __init__(self, rule_id: str, description: str, result: RuleResult):
-        super().__init__(rule_id, description)
-        self._result = result
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Return a predefined check result."""
-        return RuleCheckResult(
-            result=self._result, message="Dummy rule result", fix_available=False
-        )
-
-
-class FixableDummyRule(Rule):
-    """Dummy rule with a fix available."""
-
-    def __init__(self, rule_id: str, description: str):
-        super().__init__(rule_id, description)
-        self._fixed = False
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Return a failed result with a fix available."""
-        if self._fixed:
-            return RuleCheckResult(
-                result=RuleResult.PASSED,
-                message="Rule passed after fix",
-                fix_available=False,
-                fix_description="",
-            )
-        return RuleCheckResult(
-            result=RuleResult.FAILED,
-            message="Rule failed but can be fixed",
-            fix_available=True,
-            fix_description="This can be fixed automatically",
-        )
-
-    def fix(self, context: RuleContext) -> tuple[bool, str]:
-        """Apply the fix for this rule."""
-        self._fixed = True
-        return True, "Mock fix applied"
-
-
-class FixErrorDummyRule(Rule):
-    """Dummy rule that simulates fix failures."""
-
-    def __init__(
-        self,
-        rule_id: str,
-        description: str,
-        fix_error: bool = True,
-        recheck_error: bool = False,
-    ):
-        super().__init__(rule_id, description)
-        self._fix_error = fix_error
-        self._recheck_error = recheck_error
-        self._fixed = False
-        self._check_count = 0
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Return a failed result with a fix available."""
-        self._check_count += 1
-
-        # First check always returns failed with fix available
-        if self._check_count == 1:
-            return RuleCheckResult(
-                result=RuleResult.FAILED,
-                message="Rule failed but can be fixed",
-                fix_available=True,
-                fix_description="This can be fixed automatically",
-            )
-
-        # Second check (recheck after fix) may raise an error
-        if self._recheck_error:
-            raise CustomException("Error during recheck after fix")
-
-        # If we get here, return success
-        return RuleCheckResult(
-            result=RuleResult.PASSED,
-            message="Rule passed after fix",
-            fix_available=False,
-            fix_description="",
-        )
-
-    def fix(self, context: RuleContext) -> tuple[bool, str]:
-        """Apply the fix for this rule."""
-        if self._fix_error:
-            raise CustomException("Error during fix")
-        self._fixed = True
-        return True, "Mock fix applied"
-
-
-class ErrorDummyRule(Rule):
-    """Dummy rule that raises a custom exception."""
-
-    def __init__(self, rule_id: str, description: str, error_message: str):
-        super().__init__(rule_id, description)
-        self._error_message = error_message
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Raise a custom exception."""
-        raise CustomException(self._error_message)
 
 
 class CustomException(Exception):
@@ -183,7 +61,7 @@ def mock_config():
 def mock_rule_set():
     """Create a mock rule set."""
     rule_set = RuleSet("default", "Default rule set")
-    rule_set.add_rule(MockRule("R001", "Test rule"))
+    rule_set.add_rule(mk_rule("R001", "Test rule")())
     return rule_set
 
 
@@ -201,9 +79,9 @@ def test_rule_set_rules_ordering():
     """Test that rules are returned in order of addition."""
     # Create a rule set with rules in non-alphabetical order
     rule_set = RuleSet("test", "Test rule set")
-    rule_set.add_rule(MockRule("R002", "Second rule"))
-    rule_set.add_rule(MockRule("R001", "First rule"))
-    rule_set.add_rule(MockRule("R003", "Third rule"))
+    rule_set.add_rule(mk_rule("R002", "Second rule")())
+    rule_set.add_rule(mk_rule("R001", "First rule")())
+    rule_set.add_rule(mk_rule("R003", "Third rule")())
 
     # Get rules and verify order
     rules = list(rule_set.rules())
@@ -219,11 +97,11 @@ def test_rule_set_rules_uniqueness():
     grandchild = RuleSet("grandchild", "Grandchild rule set")
 
     # Add rules to each level
-    parent.add_rule(MockRule("R001", "First rule - parent"))
-    child.add_rule(MockRule("R001", "First rule - child"))  # Duplicate ID
-    child.add_rule(MockRule("R002", "Second rule - child"))
-    grandchild.add_rule(MockRule("R002", "Second rule - grandchild"))  # Duplicate ID
-    grandchild.add_rule(MockRule("R003", "Third rule - grandchild"))
+    parent.add_rule(mk_rule("R001", "First rule - parent")())
+    child.add_rule(mk_rule("R001", "First rule - child")())  # Duplicate ID
+    child.add_rule(mk_rule("R002", "Second rule - child")())
+    grandchild.add_rule(mk_rule("R002", "Second rule - grandchild")())  # Duplicate ID
+    grandchild.add_rule(mk_rule("R003", "Third rule - grandchild")())
 
     # Link rule sets
     child.add_rule_set(grandchild)
@@ -315,7 +193,7 @@ def test_check_repository_success(mock_repo, mock_config, mock_rule_set):
     # Verify results
     assert "R001" in results
     assert results["R001"].result == RuleResult.PASSED
-    assert results["R001"].message == "Mock rule passed"
+    assert results["R001"].message == "Test passed"
     assert not results["R001"].fix_available
 
 
@@ -323,7 +201,7 @@ def test_check_repository_rule_error(mock_repo, mock_config):
     """Test handling of rule execution errors."""
     # Create a rule set with a failing rule
     rule_set = RuleSet("test", "Test rule set")
-    rule_set.add_rule(FailingMockRule("R001", "Failing test rule"))
+    rule_set.add_rule(mk_rule("R001", "Failing test rule", Exception("Rule failed"))())
 
     # Create linter and check repository
     linter = Linter(mock_config)
@@ -369,17 +247,35 @@ def test_lint_repositories_success(
     repo_results = results["test-repo"]
     assert "R001" in repo_results
     assert repo_results["R001"].result == RuleResult.PASSED
-    assert repo_results["R001"].message == "Mock rule passed"
+    assert repo_results["R001"].message == "Test passed"
     assert not repo_results["R001"].fix_available
 
 
 def test_lint_repositories_output_formatting(mock_repo, mock_config, capsys):
     """Test output formatting of lint results."""
     # Create rules with different results
-    passing_rule = MockRule("R001", "Passing rule")
-    failing_rule = DummyRule("R002", "Failing rule", RuleResult.FAILED)
-    skipped_rule = DummyRule("R003", "Skipped rule", RuleResult.SKIPPED)
-    fixable_rule = DummyRule("R004", "Fixable rule", RuleResult.FAILED)
+    passing_rule = mk_rule("R001", "Passing rule")()
+    failing_rule = mk_rule(
+        "R002",
+        "Failing rule",
+        RuleCheckResult(
+            result=RuleResult.FAILED, message="Dummy rule result", fix_available=False
+        ),
+    )()
+    skipped_rule = mk_rule(
+        "R003",
+        "Skipped rule",
+        RuleCheckResult(
+            result=RuleResult.SKIPPED, message="Dummy rule result", fix_available=False
+        ),
+    )()
+    fixable_rule = mk_rule(
+        "R004",
+        "Fixable rule",
+        RuleCheckResult(
+            result=RuleResult.FAILED, message="Dummy rule result", fix_available=False
+        ),
+    )()
 
     # Create a rule set with all types of rules
     rule_set = RuleSet("test", "Test rule set")
@@ -418,7 +314,18 @@ def test_lint_repositories_output_formatting_with_fix(mock_repo, mock_config, ca
     """Test output formatting of lint results with a fixable rule."""
     # Create a rule set with a fixable rule
     rule_set = RuleSet("test", "Test rule set")
-    rule_set.add_rule(FixableDummyRule("R001", "Fixable rule"))
+    rule_set.add_rule(
+        mk_rule(
+            "R001",
+            "Fixable rule",
+            result=RuleCheckResult(
+                result=RuleResult.FAILED,
+                message="Rule failed but can be fixed",
+                fix_available=True,
+                fix_description="This can be fixed automatically",
+            ),
+        )()
+    )
 
     # Configure mock config to use our test rule set
     mock_config.default_rule_set = "test"
@@ -451,7 +358,7 @@ def test_lint_repositories_custom_error_message(mock_repo, mock_config, capsys):
 
     # Create a rule set with an error-raising rule
     rule_set = RuleSet("test", "Test rule set")
-    rule_set.add_rule(ErrorDummyRule("R001", "Error rule", error_message))
+    rule_set.add_rule(mk_rule("R001", "Error rule", result=Exception(error_message))())
 
     # Configure mock config to use our test rule set
     mock_config.default_rule_set = "test"
@@ -530,7 +437,16 @@ def test_lint_repositories_fix_interaction(
 ):
     """Test interactive and non-interactive fix modes."""
     # Create a rule set with a fixable rule
-    rule = FixableDummyRule("test.rule", "Test rule")
+    rule = mk_rule(
+        "test.rule",
+        "Test rule",
+        result=RuleCheckResult(
+            result=RuleResult.FAILED,
+            message="Rule failed but can be fixed",
+            fix_available=True,
+            fix_description="This can be fixed automatically",
+        ),
+    )()
     rule_set = RuleSet("test", "Test rule set")
     rule_set.add_rule(rule)
 
@@ -564,9 +480,29 @@ def test_lint_repositories_fix_interaction(
 
 def test_lint_repositories_fix_error(mock_repo, mock_config, capsys):
     """Test handling of errors during fix application."""
+
+    class R(Rule):
+        _id = "R001"
+        _description = "Test rule"
+
+        def __init__(self):
+            super().__init__()
+            self._check_count = 0
+
+        def check(self, context: RuleContext) -> RuleCheckResult:
+            return RuleCheckResult(
+                result=RuleResult.FAILED,
+                message="Rule failed but can be fixed",
+                fix_available=True,
+                fix_description="This can be fixed automatically",
+            )
+
+        def fix(self, context: RuleContext) -> tuple[bool, str]:
+            raise CustomException("Error during fix")
+
     # Setup rule set with a rule that fails during fix
     rule_set = RuleSet("test", "Test rule set")
-    rule_set.add_rule(FixErrorDummyRule("R001", "Test rule", fix_error=True))
+    rule_set.add_rule(R())
 
     # Setup rule manager
     mock_manager = MagicMock()
@@ -586,11 +522,35 @@ def test_lint_repositories_fix_error(mock_repo, mock_config, capsys):
 
 def test_lint_repositories_recheck_error(mock_repo, mock_config, capsys):
     """Test handling of errors during recheck after fix."""
+
+    class R(Rule):
+        _id = "R001"
+        _description = "Test rule"
+
+        def __init__(self):
+            super().__init__()
+            self._check_count = 0
+
+        def check(self, context: RuleContext) -> RuleCheckResult:
+            self._check_count += 1
+
+            # First check always returns failed with fix available
+            if self._check_count == 1:
+                return RuleCheckResult(
+                    result=RuleResult.FAILED,
+                    message="Rule failed but can be fixed",
+                    fix_available=True,
+                    fix_description="This can be fixed automatically",
+                )
+
+            raise CustomException("Error during recheck after fix")
+
+        def fix(self, context: RuleContext) -> tuple[bool, str]:
+            return True, "Mock fix applied"
+
     # Setup rule set with a rule that fails during recheck
     rule_set = RuleSet("test", "Test rule set")
-    rule_set.add_rule(
-        FixErrorDummyRule("R001", "Test rule", fix_error=False, recheck_error=True)
-    )
+    rule_set.add_rule(R())
 
     # Setup rule manager
     mock_manager = MagicMock()
@@ -614,6 +574,9 @@ def test_lint_repositories_fix_error_with_failed_fix(mock_repo, mock_config, cap
 
     # Create a rule that returns success=False from fix
     class FailedFixRule(Rule):
+        _id = "R001"
+        _description = "Test rule"
+
         def check(self, context: RuleContext) -> RuleCheckResult:
             return RuleCheckResult(
                 result=RuleResult.FAILED,
@@ -627,7 +590,7 @@ def test_lint_repositories_fix_error_with_failed_fix(mock_repo, mock_config, cap
 
     # Setup rule set with our test rule
     rule_set = RuleSet("test", "Test rule set")
-    rule_set.add_rule(FailedFixRule("R001", "Test rule"))
+    rule_set.add_rule(FailedFixRule())
 
     # Setup rule manager
     mock_manager = MagicMock()
@@ -649,8 +612,10 @@ def test_lint_repositories_fix_with_all_rule_results(mock_repo, mock_config, cap
     """Test handling of all possible rule results after fix."""
 
     class MultiResultRule(Rule):
-        def __init__(self, rule_id: str, description: str, result: RuleResult):
-            super().__init__(rule_id, description)
+        _id = "R001"
+        _description = "Test rule"
+
+        def __init__(self, result: RuleResult):
             self._result = result
             self._fixed = False
 
@@ -676,7 +641,7 @@ def test_lint_repositories_fix_with_all_rule_results(mock_repo, mock_config, cap
     for result in [RuleResult.PASSED, RuleResult.FAILED, RuleResult.SKIPPED]:
         # Setup rule set with a rule that returns our test result
         rule_set = RuleSet("test", "Test rule set")
-        rule_set.add_rule(MultiResultRule("R001", "Test rule", result))
+        rule_set.add_rule(MultiResultRule(result))
 
         # Setup rule manager
         mock_manager = MagicMock()
@@ -703,7 +668,16 @@ def test_lint_repositories_no_fix_prompt_without_fix_flag(
 ):
     """Test that fix prompts are not shown when --fix is not provided."""
     # Create a rule set with a fixable rule
-    rule = FixableDummyRule("test.rule", "Test rule")
+    rule = mk_rule(
+        "test.rule",
+        "Test rule",
+        result=RuleCheckResult(
+            result=RuleResult.FAILED,
+            message="Rule failed but can be fixed",
+            fix_available=True,
+            fix_description="This can be fixed automatically",
+        ),
+    )()
     rule_set = RuleSet("test", "Test rule set")
     rule_set.add_rule(rule)
 

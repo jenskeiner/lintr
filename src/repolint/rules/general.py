@@ -9,12 +9,8 @@ from repolint.rules.context import RuleContext
 class PreserveRepositoryRule(Rule):
     """Rule that checks if 'Preserve this repository' is enabled."""
 
-    def __init__(self):
-        """Initialize the rule."""
-        super().__init__(
-            rule_id="R011",
-            description="Repository must have 'Preserve this repository' enabled",
-        )
+    _id = "R011"
+    _description = "Repository must have 'Preserve this repository' enabled"
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if 'Preserve this repository' is enabled for the repository.
@@ -72,12 +68,8 @@ class PreserveRepositoryRule(Rule):
 class DiscussionsDisabledRule(Rule):
     """Rule that checks if Discussions are disabled."""
 
-    def __init__(self):
-        """Initialize the rule."""
-        super().__init__(
-            rule_id="R012",
-            description="Repository must have Discussions disabled",
-        )
+    _id = "R012"
+    _description = "Repository must have Discussions disabled"
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if Discussions are disabled for the repository.
@@ -135,12 +127,8 @@ class DiscussionsDisabledRule(Rule):
 class ProjectsDisabledRule(Rule):
     """Rule that checks if Projects are disabled."""
 
-    def __init__(self):
-        """Initialize the rule."""
-        super().__init__(
-            rule_id="R013",
-            description="Repository must have Projects disabled",
-        )
+    _id = "R013"
+    _description = "Repository must have Projects disabled"
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if Projects are disabled for the repository.

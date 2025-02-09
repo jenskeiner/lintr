@@ -227,7 +227,7 @@ We are at Phase 2 of the project.
     - The rule must accumulate all violations of rules in a list so a comprehensive error message can be returned.
     - The rule is not auto-fixable.
   - [x] 2.3.2: Add a rule that checks that `develop` is the default branch. This rule is auto-fixable.
-  - [] 2.3.3: Add a rule that checks that the `develop` branch has a branch ruleset set up. The rule set must:
+  - [x] 2.3.3: Add a rule that checks that the `develop` branch has a branch ruleset set up. The rule set must:
     - have the name `develop protection`
     - must have the owner in the bypass list
     - be enabled
@@ -235,7 +235,7 @@ We are at Phase 2 of the project.
     - restrict creations
     - restrict updates
     - restrict deletions
-    - require a pull reequest before merging
+    - require a pull request before merging
     - require status checks to pass
     - block force pushes
 - [] 2.4: Create usage and developer documentation.

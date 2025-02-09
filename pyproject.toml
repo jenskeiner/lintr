@@ -9,7 +9,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 dependencies = [
-    "PyGithub>=2.5.0",
+    "PyGithub",
     "pydantic>=2.5.3",
     "pydantic-settings>=2.1.0",
     "PyYAML>=6.0.1",
@@ -37,6 +37,9 @@ dev = [
 requires = ["hatchling>=1.21.1"]
 build-backend = "hatchling.build"
 
+[tool.uv.sources]
+PyGithub = { git = "https://github.com/jenskeiner/PyGithub", branch = "feature/add-rules-and-rulesets" }
+
 [tool.hatch.build]
 packages = ["src/repolint"]
 
@@ -48,7 +51,7 @@ path = "src"
 install-deps = true
 
 [tool.pytest.ini_options]
-addopts = "--cov=repolint --cov-report=term-missing --cov-report=html"
+#addopts = "--cov=repolint --cov-report=term-missing --cov-report=html"
 testpaths = ["tests"]
 
 [project.scripts]
@@ -72,6 +75,8 @@ auto_merge_disabled = "repolint.rules.branch_rules:AutoMergeDisabledRule"
 gitflow_branch_naming = "repolint.rules.gitflow:GitFlowBranchNamingRule"
 gitflow_default_branch = "repolint.rules.gitflow:GitFlowDefaultBranchRule"
 no_classic_branch_protection = "repolint.rules.permission_rules:NoClassicBranchProtectionRule"
+develop_branch_ruleset = "repolint.rules.permission_rules:DevelopBranchRulesetRule"
+main_branch_ruleset = "repolint.rules.permission_rules:MainBranchRulesetRule"
 
 [project.entry-points."repolint.rule_sets"]
 default = "repolint.rules.default_rule_set:get_default_rule_set"

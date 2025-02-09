@@ -1,13 +1,14 @@
 """Tests for the CLI interface."""
 
+import tempfile
+from pathlib import Path
+
 import pytest
+import yaml
 
 from repolint.cli import main
 from repolint.rules.base import Rule, RuleSet, RuleCheckResult, RuleResult
-from tests.fixtures import TestRule, TestRuleSet
-import tempfile
-from pathlib import Path
-import yaml
+from tests.fixtures import mk_rule, TestRuleSet
 
 
 @pytest.fixture
@@ -124,8 +125,8 @@ def test_cli_list_rules(capsys, monkeypatch):
     """Test list command with --rules option comprehensively."""
     # Mock rule manager to return test rules
     test_rules = {
-        "R001": TestRule("R001", "Check branch protection"),
-        "R002": TestRule("R002", "Check repository visibility"),
+        "R001": mk_rule("R001", "Check branch protection")(),
+        "R002": mk_rule("R002", "Check repository visibility")(),
     }
 
     def mock_get_all_rules(self):
@@ -528,8 +529,8 @@ def test_cli_lint_interactive_fix(capsys, mock_config, mock_github, monkeypatch)
 
     # Mock a rule that always needs fixing
     class MockRule(Rule):
-        def __init__(self):
-            super().__init__("TEST001", "Test rule")
+        _id = "TEST001"
+        _description = "Test rule"
 
         def check(self, context):
             return RuleCheckResult(
@@ -601,8 +602,8 @@ def test_cli_lint_fix_error(capsys, mock_config, mock_github, monkeypatch):
 
     # Mock rule that raises an exception during fix
     class FailingFixRule(Rule):
-        def __init__(self):
-            super().__init__("R001", "Rule with failing fix")
+        _id = "R001"
+        _description = "Rule with failing fix"
 
         def check(self, context):
             return RuleCheckResult(
@@ -668,8 +669,8 @@ def test_cli_lint_fix_failure(capsys, mock_config, mock_github, monkeypatch):
 
     # Mock rule that returns failure from fix
     class FailingFixRule(Rule):
-        def __init__(self):
-            super().__init__("R001", "Rule with failing fix")
+        _id = "R001"
+        _description = "Rule with failing fix"
 
         def check(self, context):
             return RuleCheckResult(

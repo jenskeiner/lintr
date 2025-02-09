@@ -10,11 +10,8 @@ from repolint.rules.context import RuleContext
 class DefaultBranchExistsRule(Rule):
     """Rule that checks if a repository has a default branch."""
 
-    def __init__(self):
-        """Initialize the rule."""
-        super().__init__(
-            rule_id="R001", description="Repository must have a default branch"
-        )
+    _id = "R001"
+    _description = "Repository must have a default branch"
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if the repository has a default branch.
@@ -57,12 +54,8 @@ class DefaultBranchExistsRule(Rule):
 class WebCommitSignoffRequiredRule(Rule):
     """Rule that checks if web commit signoff is required for a repository."""
 
-    def __init__(self):
-        """Initialize the rule."""
-        super().__init__(
-            rule_id="R004",
-            description="Repository must require signoff on web-based commits",
-        )
+    _id = "R004"
+    _description = "Repository must require signoff on web-based commits"
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if the repository requires signoff on web-based commits.
@@ -119,12 +112,8 @@ class WebCommitSignoffRequiredRule(Rule):
 class DeleteBranchOnMergeRule(Rule):
     """Rule that checks if delete_branch_on_merge is enabled for a repository."""
 
-    def __init__(self):
-        """Initialize the rule."""
-        super().__init__(
-            rule_id="R017",
-            description="Repository must have delete_branch_on_merge enabled",
-        )
+    _id = "R017"
+    _description = "Repository must have delete_branch_on_merge enabled"
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if the repository has delete_branch_on_merge enabled.
@@ -179,12 +168,8 @@ class DeleteBranchOnMergeRule(Rule):
 class AutoMergeDisabledRule(Rule):
     """Rule that checks if auto merge is disabled for a repository."""
 
-    def __init__(self):
-        """Initialize the rule."""
-        super().__init__(
-            rule_id="R018",
-            description="Repository must have auto merge disabled",
-        )
+    _id = "R018"
+    _description = "Repository must have auto merge disabled"
 
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if the repository has auto merge disabled.

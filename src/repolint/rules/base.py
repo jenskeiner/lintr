@@ -1,13 +1,109 @@
 """Base classes for rules and rule sets."""
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, ABCMeta
+from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum
-from typing import Union
-from collections.abc import Iterator
+from typing import TypeVar
+from typing import Union, Generic
 
+from pydantic import BaseModel
 
 from repolint.rules.context import RuleContext
+
+
+class BaseRuleConfig(BaseModel):
+    """Abstract base rule configuration model."""
+
+    pass
+
+
+ConfigT = TypeVar("ConfigT", bound=BaseRuleConfig)
+
+_generic_base = None
+
+
+# Metaclass to enforce _config presence and type checking
+class RuleMeta(ABCMeta):
+    def __new__(mcs, name: str, bases: tuple, namespace: dict):
+        cls = super().__new__(mcs, name, bases, namespace)
+
+        # Skip validation for the base class itself
+        if ABC in bases:
+            return cls
+
+        # Get the expected config type from generic parameters
+        expected_config_type = BaseRuleConfig
+        s = [cls] if cls != _generic_base and issubclass(cls, _generic_base) else []
+        while s:
+            klass = s.pop()
+            if (
+                klass != _generic_base
+                and issubclass(klass, _generic_base)
+                and hasattr(klass, "__orig_bases__")
+            ):
+                for orig_base in klass.__orig_bases__:
+                    if hasattr(orig_base, "__origin__") and issubclass(
+                        orig_base.__origin__, _generic_base
+                    ):
+                        t = orig_base.__args__[0]
+                        if issubclass(t, expected_config_type):
+                            expected_config_type = t
+                if klass != _generic_base:
+                    s.extend(
+                        [
+                            base
+                            for base in klass.__bases__
+                            if base != _generic_base and issubclass(base, _generic_base)
+                        ]
+                    )
+
+        if expected_config_type is None:
+            expected_config_type = type(_generic_base._config)
+
+        # If no _config is defined, inherit from parent
+        if "_config" not in namespace:
+            for base in bases:
+                if hasattr(base, "_config"):
+                    cls._config = base._config
+                    break
+
+        # Validate _config existence and type
+        if not hasattr(cls, "_config"):
+            raise TypeError(f"Class {name} must define a '_config' class attribute")
+
+        if expected_config_type and not isinstance(cls._config, expected_config_type):
+            raise TypeError(
+                f"Config in {name} must be an instance of {expected_config_type}"
+            )
+
+        if "_id" not in namespace:
+            raise TypeError(f"Class {name} must define a '_id' class attribute")
+
+        if not isinstance(cls._id, str):
+            raise TypeError(
+                f"Class {name} must define a '_id' class attribute as a string"
+            )
+
+        if "_description" not in namespace:
+            raise TypeError(
+                f"Class {name} must define a '_description' class attribute"
+            )
+
+        if not isinstance(cls._description, str):
+            raise TypeError(
+                f"Class {name} must define a '_description' class attribute as a string"
+            )
+
+        return cls
+
+    @property
+    def rule_id(cls) -> str:
+        return cls._id
+
+    @property
+    def description(cls) -> str:
+        return cls._description
 
 
 class RuleResult(Enum):
@@ -28,21 +124,39 @@ class RuleCheckResult:
     fix_description: str | None = None
 
 
-class Rule(ABC):
+class Rule(Generic[ConfigT], ABC, metaclass=RuleMeta):  #
     """Base class for all rules."""
+
+    _config = BaseRuleConfig()
 
     # Class-level set of rule IDs that this rule is mutually exclusive with
     mutually_exclusive_with: set[str] = set()
 
-    def __init__(self, rule_id: str, description: str):
-        """Initialize a rule.
+    def __init__(self, config: ConfigT | None = None) -> None:
+        """
+        Initialize with optional config override.
 
         Args:
             rule_id: Unique identifier for the rule (e.g., 'R001').
             description: Human-readable description of what the rule checks.
+            config: If provided, this config instance will be used instead
+                of the class-level default config.
         """
-        self.rule_id = rule_id
-        self.description = description
+        if config is not None:
+            self._config = config
+
+    @property
+    def config(self) -> ConfigT:
+        """Get the configuration (instance-specific or class default)."""
+        return self._config
+
+    @property
+    def rule_id(self) -> str:
+        return type(self).rule_id
+
+    @property
+    def description(self) -> str:
+        return type(self).description
 
     @abstractmethod
     def check(self, context: RuleContext) -> RuleCheckResult:
@@ -71,6 +185,9 @@ class Rule(ABC):
             or why the fix failed.
         """
         pass
+
+
+_generic_base = Rule
 
 
 class RuleSet:
