@@ -5,10 +5,10 @@ import colorama
 from colorama import Fore, Style
 from github.Repository import Repository
 
-from repolint.config import BaseRepolintConfig
-from repolint.rule_manager import RuleManager
-from repolint.rules import RuleCheckResult, RuleResult, RuleSet
-from repolint.rules.context import RuleContext
+from lintr.config import BaseLintrConfig, RepositoryConfig
+from lintr.rule_manager import RuleManager
+from lintr.rules import RuleCheckResult, RuleResult, RuleSet
+from lintr.rules.context import RuleContext
 
 # Initialize colorama for cross-platform color support
 colorama.init()
@@ -19,7 +19,7 @@ class Linter:
 
     def __init__(
         self,
-        config: BaseRepolintConfig,
+        config: BaseLintrConfig,
         dry_run: bool = False,
         non_interactive: bool = False,
         fix: bool = False,
@@ -27,7 +27,7 @@ class Linter:
         """Initialize the linter.
 
         Args:
-            config: Repolint configuration.
+            config: Lintr configuration.
             dry_run: If True, no changes will be made.
             non_interactive: If True, apply fixes without prompting for confirmation.
             fix: If True, attempt to fix issues automatically.
@@ -36,7 +36,7 @@ class Linter:
         self._dry_run = dry_run
         self._non_interactive = non_interactive
         self._fix = fix
-        self._rule_manager = RuleManager()
+        self._rule_manager = RuleManager(config.rules)
 
         # Load rule sets from configuration
         self._rule_manager.load_rule_sets_from_config(config)
@@ -53,7 +53,7 @@ class Linter:
         return RuleContext(repository=repository, dry_run=self._dry_run)
 
     def get_rule_set_for_repository(
-        self, repository: Repository
+        self, repository_config: RepositoryConfig | None
     ) -> tuple[str, RuleSet] | None:
         """Get the rule set to use for a repository.
 
@@ -68,11 +68,12 @@ class Linter:
             Tuple of (rule set ID, rule set) if found, None otherwise.
         """
         # Check for repository-specific rule set
-        if repository.name in self._config.repository_rule_sets:
-            rule_set_id = self._config.repository_rule_sets[repository.name]
-            rule_set = self._rule_manager.get_rule_set(rule_set_id)
-            if rule_set:
-                return rule_set_id, rule_set
+        if repository_config:
+            rule_set_id = repository_config.ruleset
+            if rule_set_id:
+                rule_set = self._rule_manager.get_rule_set(rule_set_id)
+                if rule_set:
+                    return rule_set_id, rule_set
 
         # Fall back to default rule set
         if self._config.default_rule_set:
@@ -83,7 +84,10 @@ class Linter:
         return None
 
     def check_repository(
-        self, repository: Repository, rule_set: RuleSet
+        self,
+        repository: Repository,
+        rule_set: RuleSet,
+        custom_rules_config: dict[str, dict],
     ) -> dict[str, RuleCheckResult]:
         """Check a repository against all rules in a rule set.
 
@@ -98,7 +102,11 @@ class Linter:
         results = {}
 
         for rule in rule_set.rules():
-            rule = rule()
+            rule_config = custom_rules_config.get(rule.rule_id, None)
+            if rule_config:
+                rule = rule(type(rule._config).model_validate(rule_config))
+            else:
+                rule = rule()
             result = None
             try:
                 result = rule.check(context)
@@ -197,8 +205,10 @@ class Linter:
         results = {}
 
         for repo in repositories:
+            # Get the config for the repository.
+            repo_config = self._config.repository_rule_sets.get(repo.name)
             # Get rule set for repository
-            rule_set_info = self.get_rule_set_for_repository(repo)
+            rule_set_info = self.get_rule_set_for_repository(repo_config)
             if not rule_set_info:
                 print(f"{Fore.YELLOW}- {repo.name} (no rule set){Style.RESET_ALL}")
                 results[repo.name] = {"error": "No rule set found for repository"}
@@ -209,7 +219,7 @@ class Linter:
 
             # Run all rules in the rule set
             try:
-                rule_results = self.check_repository(repo, rule_set)
+                rule_results = self.check_repository(repo, rule_set, repo_config.rules)
                 results[repo.name] = rule_results
             except Exception as e:
                 print(f"{Fore.RED}  Error: {str(e)}{Style.RESET_ALL}")

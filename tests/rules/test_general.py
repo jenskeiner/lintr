@@ -4,11 +4,11 @@ from unittest.mock import MagicMock, PropertyMock
 
 from github.GithubException import GithubException
 
-from repolint.rules.base import RuleResult
-from repolint.rules.context import RuleContext
-from repolint.rules.general import PreserveRepositoryRule
-from repolint.rules.general import DiscussionsDisabledRule
-from repolint.rules.general import ProjectsDisabledRule
+from lintr.rules.base import RuleResult
+from lintr.rules.context import RuleContext
+from lintr.rules.general import PreserveRepositoryRule
+from lintr.rules.general import DiscussionsDisabledRule
+from lintr.rules.general import ProjectsDisabledRule
 
 
 def test_preserve_repository_rule_pass():

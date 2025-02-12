@@ -1,12 +1,12 @@
-"""Command-line interface for Repolint."""
+"""Command-line interface for Lintr."""
 
 import argparse
 import shutil
 import sys
 from pathlib import Path
 
-from repolint import __version__
-from repolint.config import create_config_class
+from lintr import __version__
+from lintr.config import create_config_class
 
 # Path to the default configuration template
 DEFAULT_CONFIG_TEMPLATE = Path(__file__).parent / "templates" / "default_config.yml"
@@ -15,12 +15,10 @@ DEFAULT_CONFIG_TEMPLATE = Path(__file__).parent / "templates" / "default_config.
 def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser for the CLI."""
     parser = argparse.ArgumentParser(
-        description="Repolint - A tool to lint and enforce consistent settings across GitHub repositories.",
-        prog="repolint",
+        description="Lintr - A tool to lint and enforce consistent settings across GitHub repositories.",
+        prog="lintr",
     )
-    parser.add_argument(
-        "--version", action="version", version=f"repolint {__version__}"
-    )
+    parser.add_argument("--version", action="version", version=f"lintr {__version__}")
 
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
@@ -29,7 +27,7 @@ def create_parser() -> argparse.ArgumentParser:
         "lint", help="Lint repositories according to configured rules"
     )
     lint_parser.add_argument(
-        "--config", help="Path to configuration file", default=".repolint.yml"
+        "--config", help="Path to configuration file", default=".lintr.yml"
     )
     lint_parser.add_argument(
         "--fix", action="store_true", help="Attempt to fix issues automatically"
@@ -66,7 +64,7 @@ def create_parser() -> argparse.ArgumentParser:
         "init", help="Initialize a new configuration file"
     )
     init_parser.add_argument(
-        "--output", help="Path to write configuration file", default=".repolint.yml"
+        "--output", help="Path to write configuration file", default=".lintr.yml"
     )
 
     return parser
@@ -79,12 +77,12 @@ def handle_lint(args: argparse.Namespace) -> None:
         config_path = Path(args.config)
         if not config_path.exists():
             print(f"Error: Configuration file not found: {args.config}")
-            print("Run 'repolint init' to create a new configuration file")
+            print("Run 'lintr init' to create a new configuration file")
             sys.exit(1)
 
         # Load and validate configuration from all sources
-        RepolintConfig = create_config_class(config_path)
-        config = RepolintConfig()
+        LintrConfig = create_config_class(config_path)
+        config = LintrConfig()
 
         # Validate GitHub token
         if not config.github_token:
@@ -92,7 +90,7 @@ def handle_lint(args: argparse.Namespace) -> None:
             print("Either:")
             print("  1. Set it in your configuration file")
             print("  2. Set the GITHUB_TOKEN environment variable")
-            print("  3. Set the REPOLINT_GITHUB_TOKEN environment variable")
+            print("  3. Set the LINTR_GITHUB_TOKEN environment variable")
             sys.exit(1)
 
         # Show what we're about to do
@@ -107,8 +105,8 @@ def handle_lint(args: argparse.Namespace) -> None:
             print("Dry-run mode is enabled - no changes will be made")
 
         # Create GitHub client with configuration
-        from repolint.gh import GitHubClient, GitHubConfig
-        from repolint.linter import Linter
+        from lintr.gh import GitHubClient, GitHubConfig
+        from lintr.linter import Linter
 
         github_config = GitHubConfig(
             token=config.github_token,
@@ -146,7 +144,7 @@ def handle_lint(args: argparse.Namespace) -> None:
 
 def handle_list(args: argparse.Namespace) -> None:
     """Handle the list command."""
-    from repolint.rule_manager import RuleManager
+    from lintr.rule_manager import RuleManager
 
     try:
         # Get singleton instance
@@ -207,7 +205,7 @@ def handle_init(args: argparse.Namespace) -> None:
         print("1. Edit the configuration file to set your GitHub token")
         print("2. Configure the repositories you want to check")
         print("3. Adjust rule sets and settings as needed")
-        print("\nRun 'repolint list --rules' to see available rules")
+        print("\nRun 'lintr list --rules' to see available rules")
     except Exception as e:
         print(f"Error creating configuration file: {e}")
         sys.exit(1)

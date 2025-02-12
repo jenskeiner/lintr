@@ -1,6 +1,6 @@
 """Tests for empty rule set."""
 
-from repolint.rules.empty_rule_set import get_empty_rule_set
+from lintr.rules.empty_rule_set import get_empty_rule_set
 
 
 def test_empty_rule_set_init():

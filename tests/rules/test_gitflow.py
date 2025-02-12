@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, PropertyMock
 
 from github.GithubException import GithubException
 
-from repolint.rules.base import RuleResult
-from repolint.rules.context import RuleContext
-from repolint.rules.gitflow import GitFlowBranchNamingRule, GitFlowDefaultBranchRule
+from lintr.rules.base import RuleResult
+from lintr.rules.context import RuleContext
+from lintr.rules.gitflow import GitFlowBranchNamingRule, GitFlowDefaultBranchRule
 
 
 def create_mock_branch(name: str) -> MagicMock:

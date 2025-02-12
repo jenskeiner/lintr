@@ -1,15 +1,15 @@
-# Repolint: Project Plan
+# Lintr: Project Plan
 
 ## Overview
 
-*Repolint* is a Python-based command-line application to lint and enforce consistent settings across a user's GitHub repositories. The application is:
+*Lintr* is a Python-based command-line application to lint and enforce consistent settings across a user's GitHub repositories. The application is:
 - *Convenient*: The CLI interface is very easy to use. The terminal output is richt and pleasant, but concise and very readable.
 - *Comprehensive*: It supports personal and organizational repositories where the user has admin access.
 - *Rule-based*: Pre-defined rules and rule-sets for common project types (e.g., standard Python library packages) are provided.
 - *Powerful*: It supports both linting and autofix capabilities.
 - *Extensible*: Users can define their own rules by implementing a Python class. Rule-sets can be defined through configuration.
 
-This plan outlines the goals and phases for building Repolint.
+This plan outlines the goals and phases for building Lintr.
 
 ## High-Level Architecture
 
@@ -118,7 +118,7 @@ This plan outlines the goals and phases for building Repolint.
 ```
 project-root/
 ├── src/
-│   ├── repolint/
+│   ├── lintr/
 │   │   ├── __init__.py
 │   │   ├── ...
 ├── tests/
@@ -154,7 +154,7 @@ We are at Phase 2 of the project.
   - [x] 1.4.4: Run `pytest` to verify test setup.
 - [x] 1.5: Implement basic CLI with placeholder commands.
   - [x] 1.5.1: Create a `__main__.py` file so the module can be run as a script.
-  - [x] 1.5.2: Add an actual script named `repolint` to the package to run the CLI.
+  - [x] 1.5.2: Add an actual script named `lintr` to the package to run the CLI.
 - [x] 1.6: Implement the `init` command properly to initialize a configuration file.
 - [x] 1.7: Develop core functionality:
   - [x] 1.7.1: GitHub API integration.
@@ -164,8 +164,8 @@ We are at Phase 2 of the project.
 - [x] 1.8 Add true end-to-end tests for real CLI operations.
   - [x] 1.8.1: Add parameterizable fixture to mock configuration for e2e CLI tests.
   - [x] 1.8.2: Add parameterizable fixture to mock GitHub API responses for e2e CLI tests.
-  - [x] 1.8.3: Improve test to verify listing of rules (`repolint --list rules`) to verify output comprehensively.
-  - [x] 1.8.4: Improve test to verify listing of rule-sets (`repolint --list rule-sets`) to verify output comprehensively.
+  - [x] 1.8.3: Improve test to verify listing of rules (`lintr --list rules`) to verify output comprehensively.
+  - [x] 1.8.4: Improve test to verify listing of rule-sets (`lintr --list rule-sets`) to verify output comprehensively.
 - [] 1.9: Create initial rules.
   - [x] 1.9.1: Create a rule that checks if a default branch exists.
   - [x] 1.9.2: Create a rule that checks if the setting "Whether to require contributors to sign off on web-based commits" is enabled (web_commit_signoff_required).
@@ -262,7 +262,7 @@ We can record here that this dependency should not be used in the future and lis
 
 ### GitHub API Integration
 1. When using PyGithub, prefer passing the token directly to the `Github` constructor rather than using `Auth.Token`. This simplifies testing and avoids potential compatibility issues.
-2. When mocking GitHub API responses in tests, mock at the module level (e.g., `repolint.gh.Github`) rather than the package level (`github.Github`) to avoid issues with internal assertions.
+2. When mocking GitHub API responses in tests, mock at the module level (e.g., `lintr.gh.Github`) rather than the package level (`github.Github`) to avoid issues with internal assertions.
 3. For repository list operations, handle both user and organization repositories consistently, applying filtering after fetching the repositories.
 4. When implementing repository enumeration:
    - Keep the GitHub-specific code in a dedicated module (`github.py`) to maintain separation of concerns
@@ -294,9 +294,9 @@ We can record here that this dependency should not be used in the future and lis
 
 ### Rule Discovery and Entry Points
 
-1. When adding new rules, always add an entry point in `pyproject.toml` under `[project.entry-points."repolint.rules"]` so that the rule can be discovered at runtime.
+1. When adding new rules, always add an entry point in `pyproject.toml` under `[project.entry-points."lintr.rules"]` so that the rule can be discovered at runtime.
 2. The entry point key should be a snake_case identifier that describes the rule's purpose (e.g., `wikis_disabled`).
-3. The entry point value should be the fully qualified path to the rule class (e.g., `repolint.rules.permission_rules:WikisDisabledRule`).
+3. The entry point value should be the fully qualified path to the rule class (e.g., `lintr.rules.permission_rules:WikisDisabledRule`).
 4. Remember to add entry points for all rules, even if they are only used in the default rule set.
 5. Entry points allow for dynamic rule discovery and enable users to selectively enable/disable rules in their configuration.
 
@@ -467,7 +467,7 @@ We can record here that this dependency should not be used in the future and lis
 5. When testing error handling in CLI applications:
    - Write test cases for each error condition separately
    - Use `pytest.raises()` to test for expected exceptions like `SystemExit`
-   - Test all possible configuration sources (e.g., for GitHub tokens: config file, GITHUB_TOKEN, REPOLINT_GITHUB_TOKEN)
+   - Test all possible configuration sources (e.g., for GitHub tokens: config file, GITHUB_TOKEN, LINTR_GITHUB_TOKEN)
    - Clean up environment variables in tests to ensure test isolation
 
 ### Testing Coverage Gaps

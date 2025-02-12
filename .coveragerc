@@ -1,6 +1,6 @@
 [run]
 branch = True
-source = src/repolint
+source = src/lintr
 
 [report]
 exclude_lines =
@@ -16,5 +16,5 @@ exclude_lines =
 
 [paths]
 source =
-    src/repolint/
-    */site-packages/repolint/
+    src/lintr/
+    */site-packages/lintr/

@@ -1,6 +1,6 @@
-"""Empty rule set for Repolint."""
+"""Empty rule set for Lintr."""
 
-from repolint.rules.base import RuleSet
+from lintr.rules.base import RuleSet
 
 
 def get_empty_rule_set() -> RuleSet:

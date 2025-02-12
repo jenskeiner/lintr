@@ -5,9 +5,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from colorama import Fore, Style
 
-from repolint.linter import Linter
-from repolint.rules import Rule, RuleCheckResult, RuleResult, RuleSet
-from repolint.rules.base import RuleContext
+from lintr.linter import Linter
+from lintr.rules import Rule, RuleCheckResult, RuleResult, RuleSet
+from lintr.rules.base import RuleContext
 
 
 def strip_color_codes(text: str) -> str:
@@ -466,7 +466,7 @@ def test_lint_repositories_fix_error(repository, config, capsys):
     # Setup rule manager
     mock_manager = MagicMock()
     mock_manager.get_rule_set.return_value = rule_set
-    with patch("repolint.linter.RuleManager", return_value=mock_manager):
+    with patch("lintr.linter.RuleManager", return_value=mock_manager):
         # Run linter in non-interactive mode to trigger fix
         linter = Linter(config, non_interactive=True, fix=True)
         linter.lint_repositories([repository])
@@ -514,7 +514,7 @@ def test_lint_repositories_recheck_error(repository, config, capsys):
     # Setup rule manager
     mock_manager = MagicMock()
     mock_manager.get_rule_set.return_value = rule_set
-    with patch("repolint.linter.RuleManager", return_value=mock_manager):
+    with patch("lintr.linter.RuleManager", return_value=mock_manager):
         # Run linter in non-interactive mode to trigger fix
         linter = Linter(config, non_interactive=True, fix=True)
         linter.lint_repositories([repository])
@@ -554,7 +554,7 @@ def test_lint_repositories_fix_error_with_failed_fix(repository, config, capsys)
     # Setup rule manager
     mock_manager = MagicMock()
     mock_manager.get_rule_set.return_value = rule_set
-    with patch("repolint.linter.RuleManager", return_value=mock_manager):
+    with patch("lintr.linter.RuleManager", return_value=mock_manager):
         # Run linter in non-interactive mode to trigger fix
         linter = Linter(config, non_interactive=True, fix=True)
         linter.lint_repositories([repository])
@@ -609,7 +609,7 @@ def test_lint_repositories_fix_with_all_rule_results(
         # Setup rule manager
         mock_manager = MagicMock()
         mock_manager.get_rule_set.return_value = rule_set
-        with patch("repolint.linter.RuleManager", return_value=mock_manager):
+        with patch("lintr.linter.RuleManager", return_value=mock_manager):
             # Run linter in non-interactive mode to trigger fix
             linter = Linter(config, non_interactive=True, fix=True)
             linter.lint_repositories([repository])

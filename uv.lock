@@ -469,7 +469,7 @@ wheels = [
 ]
 
 [[package]]
-name = "repolint"
+name = "lintr"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

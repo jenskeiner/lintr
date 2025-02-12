@@ -1,11 +1,11 @@
-"""GitHub API integration for Repolint."""
+"""GitHub API integration for Lintr."""
 
 from fnmatch import fnmatch
 
 from github import Github
 from github.Repository import Repository
 from pydantic import BaseModel
-from repolint.config import RepositoryFilter
+from lintr.config import RepositoryFilter
 
 
 class GitHubConfig(BaseModel):

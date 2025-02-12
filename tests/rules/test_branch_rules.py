@@ -3,14 +3,14 @@
 from unittest.mock import MagicMock, PropertyMock
 from github.GithubException import GithubException
 
-from repolint.rules.base import RuleResult
-from repolint.rules.branch_rules import (
+from lintr.rules.base import RuleResult
+from lintr.rules.branch_rules import (
     DefaultBranchExistsRule,
     WebCommitSignoffRequiredRule,
     DeleteBranchOnMergeRule,
     AutoMergeDisabledRule,
 )
-from repolint.rules.context import RuleContext
+from lintr.rules.context import RuleContext
 
 
 def test_default_branch_exists_rule_init():

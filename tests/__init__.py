@@ -1,1 +1,1 @@
-"""Test package for repolint."""
+"""Test package for lintr."""

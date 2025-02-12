@@ -4,9 +4,9 @@ import pytest
 from github.GithubException import GithubException
 from unittest.mock import MagicMock, PropertyMock
 
-from repolint.rules.base import RuleResult
-from repolint.rules.context import RuleContext
-from repolint.rules.permission_rules import (
+from lintr.rules.base import RuleResult
+from lintr.rules.context import RuleContext
+from lintr.rules.permission_rules import (
     SingleOwnerRule,
     NoCollaboratorsRule,
     WikisDisabledRule,

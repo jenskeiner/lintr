@@ -3,9 +3,9 @@
 import importlib.metadata
 from typing import Optional
 
-from repolint.rules import Rule, RuleSet
-from repolint.rules.factories import RuleSetFactory
-from repolint.config import BaseRepolintConfig
+from lintr.rules import Rule, RuleSet
+from lintr.rules.factories import RuleSetFactory
+from lintr.config import BaseLintrConfig, CustomRuleDefinition
 
 
 class RuleManager:
@@ -14,56 +14,65 @@ class RuleManager:
     _instance: Optional["RuleManager"] = None
     _initialized: bool = False
 
-    def __new__(cls) -> "RuleManager":
+    def __new__(cls, *args, **kwargs) -> "RuleManager":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
+            cls._instance.__init__(*args, **kwargs)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self, custom_rules: dict[str, CustomRuleDefinition] = {}):
         if not RuleManager._initialized:
             self._rules: dict[str, type[Rule]] = {}
             self._rule_sets: dict[str, RuleSet] = {}
             self._factory = RuleSetFactory()
             self._discover_rules()
+            self._add_custom_rules(custom_rules)
             self._discover_rule_sets()
-
             RuleManager._initialized = True
 
     def _discover_rules(self) -> None:
         """Discover all available rules from entry points."""
         # In Python 3.13, entry_points() returns a dict-like object
         entry_points = importlib.metadata.entry_points()
-        rule_entry_points = entry_points.select(group="repolint.rules")
+        rule_entry_points = entry_points.select(group="lintr.rules")
 
         for entry_point in rule_entry_points:
             try:
                 # Load the rule class or factory
-                rule_class_or_factory = entry_point.load()
-
-                # Try to get a rule instance to determine its ID
-                if isinstance(rule_class_or_factory, type) and issubclass(
-                    rule_class_or_factory, Rule
-                ):
-                    # Direct rule class
-                    rule_class = rule_class_or_factory
-                    temp_rule = rule_class()
-                else:
-                    # Factory function or class
-                    temp_rule = rule_class_or_factory()
-                    rule_class = type(temp_rule)
-
-                rule_id = temp_rule.rule_id
-                self._rules[rule_id] = rule_class
-                self._factory.register_rule_class(rule_id, rule_class)
+                rule_cls: type[Rule] = entry_point.load()
+                self._rules[rule_cls.rule_id] = rule_cls
+                self._factory.register_rule_class(rule_cls.rule_id, rule_cls)
             except Exception as e:
                 # Log warning about invalid entry point
                 print(f"Warning: Failed to load rule {entry_point.name}: {e}")
+
+    def _add_custom_rules(self, custom_rules: dict[str, CustomRuleDefinition]) -> None:
+        for rule_id, rule_definition in custom_rules.items():
+            try:
+                # Lookup the base class.
+                base_cls = self._rules[rule_definition.base]
+                # Create a new sub-class of base.
+                rule_cls = type(
+                    f"CustomRule{rule_id}",
+                    (base_cls,),
+                    {
+                        "_id": rule_id,
+                        "_description": rule_definition.description,
+                        "_config": type(base_cls._config).model_validate(
+                            rule_definition.config
+                        ),
+                    },
+                )
+                self._rules[rule_id] = rule_cls
+                self._factory.register_rule_class(rule_id, rule_cls)
+            except Exception as e:
+                raise Exception(f"Failed to create custom rule {rule_id}: {e}") from e
 
     def _discover_rule_sets(self) -> None:
         """Discover all available rule sets from entry points."""
         # In Python 3.13, entry_points() returns a dict-like object
         entry_points = importlib.metadata.entry_points()
-        rule_set_entry_points = entry_points.select(group="repolint.rule_sets")
+        rule_set_entry_points = entry_points.select(group="lintr.rule_sets")
 
         for entry_point in rule_set_entry_points:
             try:
@@ -74,11 +83,11 @@ class RuleManager:
                 # Log warning about invalid entry point
                 print(f"Warning: Failed to load rule set {entry_point.name}: {e}")
 
-    def load_rule_sets_from_config(self, config: BaseRepolintConfig) -> None:
+    def load_rule_sets_from_config(self, config: BaseLintrConfig) -> None:
         """Load rule sets from configuration.
 
         Args:
-            config: Repolint configuration.
+            config: Lintr configuration.
 
         Raises:
             ValueError: If a rule set configuration is invalid.

@@ -2,9 +2,9 @@
 
 import pytest
 
-from repolint.rules.base import Rule, RuleCheckResult, RuleResult, RuleSet
-from repolint.rules.context import RuleContext
-from repolint.rules.factories import RuleSetFactory
+from lintr.rules.base import Rule, RuleCheckResult, RuleResult, RuleSet
+from lintr.rules.context import RuleContext
+from lintr.rules.factories import RuleSetFactory
 
 
 class TestRule(Rule):

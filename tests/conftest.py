@@ -12,7 +12,7 @@ import pytest
 import yaml
 from _pytest.monkeypatch import MonkeyPatch
 
-from repolint.rules.base import Rule, RuleResult, RuleCheckResult, RuleContext
+from lintr.rules.base import Rule, RuleResult, RuleCheckResult, RuleContext
 
 
 @pytest.fixture(autouse=True)
@@ -42,8 +42,8 @@ def env(monkeypatch: MonkeyPatch) -> None:
     It should be used instead of directly manipulating environment variables.
     """
     # Set default test environment
-    monkeypatch.setenv("REPOLINT_GITHUB_TOKEN", "env-var-token")
-    monkeypatch.setenv("REPOLINT_DEFAULT_RULE_SET", "env-var-ruleset")
+    monkeypatch.setenv("LINTR_GITHUB_TOKEN", "env-var-token")
+    monkeypatch.setenv("LINTR_DEFAULT_RULE_SET", "env-var-ruleset")
 
 
 @pytest.fixture
@@ -61,8 +61,8 @@ def env_file() -> Generator[Path, None, None]:
     """
     env_file = Path(".env")
     env_file.write_text(
-        "REPOLINT_GITHUB_TOKEN=env-file-token\n"
-        "REPOLINT_DEFAULT_RULE_SET=env-file-ruleset\n"
+        "LINTR_GITHUB_TOKEN=env-file-token\n"
+        "LINTR_DEFAULT_RULE_SET=env-file-ruleset\n"
     )
     yield env_file
     env_file.unlink()
@@ -129,7 +129,7 @@ def config(monkeypatch: MonkeyPatch) -> Generator[Any, None, None]:
 
     # Mock the create_config_class function to return our mock class
     monkeypatch.setattr(
-        "repolint.config.create_config_class", lambda *args, **kwargs: mock_config_class
+        "lintr.config.create_config_class", lambda *args, **kwargs: mock_config_class
     )
 
     yield mock_config
@@ -175,7 +175,7 @@ def mock_github(monkeypatch):
                 MockRepository("test-repo-2", private=True, archived=True),
             ]
 
-    monkeypatch.setattr("repolint.gh.GitHubClient", MockGitHubClient)
+    monkeypatch.setattr("lintr.gh.GitHubClient", MockGitHubClient)
     return MockGitHubClient
 
 
@@ -234,7 +234,7 @@ def rule_cls() -> (
 @pytest.fixture
 def rule_manager():
     """Create a mock rule manager."""
-    with patch("repolint.linter.RuleManager") as mock_manager_class:
+    with patch("lintr.linter.RuleManager") as mock_manager_class:
         # Setup mock rule manager
         mock_manager = MagicMock()
         mock_manager_class.return_value = mock_manager

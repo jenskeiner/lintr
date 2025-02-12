@@ -171,7 +171,7 @@ cython_debug/
 .pypirc
 
 # Configuration file.
-.repolint.yml
+.lintr.yml
 
 docs/api.github.com/
 

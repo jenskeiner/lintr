@@ -3,8 +3,8 @@
 
 from github.GithubException import GithubException
 
-from repolint.rules.base import Rule, RuleCheckResult, RuleResult
-from repolint.rules.context import RuleContext
+from lintr.rules.base import Rule, RuleCheckResult, RuleResult
+from lintr.rules.context import RuleContext
 
 
 class DefaultBranchExistsRule(Rule):

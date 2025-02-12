@@ -1,11 +1,11 @@
 """Tests for default rule set."""
 
-from repolint.rules.default_rule_set import get_default_rule_set
-from repolint.rules.branch_rules import (
+from lintr.rules.default_rule_set import get_default_rule_set
+from lintr.rules.branch_rules import (
     DefaultBranchExistsRule,
     WebCommitSignoffRequiredRule,
 )
-from repolint.rules.permission_rules import (
+from lintr.rules.permission_rules import (
     SingleOwnerRule,
     NoCollaboratorsRule,
     WikisDisabledRule,

@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from repolint.cli import main
-from repolint.rules.base import Rule, RuleSet, RuleCheckResult, RuleResult
+from lintr.cli import main
+from lintr.rules.base import Rule, RuleSet, RuleCheckResult, RuleResult
 
 
 def test_cli_version(capsys):
@@ -14,7 +14,7 @@ def test_cli_version(capsys):
         main(["--version"])
     assert exc_info.value.code == 0
     captured = capsys.readouterr()
-    assert "repolint" in captured.out.lower()
+    assert "lintr" in captured.out.lower()
     assert "0.1.0" in captured.out
 
 
@@ -54,10 +54,10 @@ def test_cli_list_no_options(capsys, monkeypatch):
         return {}
 
     monkeypatch.setattr(
-        "repolint.rule_manager.RuleManager.get_all_rules", mock_get_all_rules
+        "lintr.rule_manager.RuleManager.get_all_rules", mock_get_all_rules
     )
     monkeypatch.setattr(
-        "repolint.rule_manager.RuleManager.get_all_rule_sets", mock_get_all_rule_sets
+        "lintr.rule_manager.RuleManager.get_all_rule_sets", mock_get_all_rule_sets
     )
 
     assert main(["list"]) == 0
@@ -77,7 +77,7 @@ def test_cli_list_rules(capsys, monkeypatch, rule_cls):  # noqa: F811
         return test_rules
 
     monkeypatch.setattr(
-        "repolint.rule_manager.RuleManager.get_all_rules", mock_get_all_rules
+        "lintr.rule_manager.RuleManager.get_all_rules", mock_get_all_rules
     )
 
     # Run command
@@ -106,7 +106,7 @@ def test_cli_list_rules_empty(capsys, monkeypatch):
         return {}
 
     monkeypatch.setattr(
-        "repolint.rule_manager.RuleManager.get_all_rules", mock_get_all_rules
+        "lintr.rule_manager.RuleManager.get_all_rules", mock_get_all_rules
     )
 
     assert main(["list", "--rules"]) == 0
@@ -127,7 +127,7 @@ def test_cli_list_rule_sets(capsys, monkeypatch):
         return test_rule_sets
 
     monkeypatch.setattr(
-        "repolint.rule_manager.RuleManager.get_all_rule_sets", mock_get_all_rule_sets
+        "lintr.rule_manager.RuleManager.get_all_rule_sets", mock_get_all_rule_sets
     )
 
     # Run command
@@ -156,7 +156,7 @@ def test_cli_list_rule_sets_empty(capsys, monkeypatch):
         return {}
 
     monkeypatch.setattr(
-        "repolint.rule_manager.RuleManager.get_all_rule_sets", mock_get_all_rule_sets
+        "lintr.rule_manager.RuleManager.get_all_rule_sets", mock_get_all_rule_sets
     )
 
     assert main(["list", "--rule-sets"]) == 0
@@ -167,7 +167,7 @@ def test_cli_list_rule_sets_empty(capsys, monkeypatch):
 
 def test_cli_init_basic(capsys):
     """Test basic init command."""
-    output_file = Path(".repolint.test.yml")
+    output_file = Path(".lintr.test.yml")
     if output_file.exists():
         output_file.unlink()
 
@@ -285,13 +285,13 @@ def test_cli_lint_config_not_found(capsys):
 
     captured = capsys.readouterr()
     assert f"Error: Configuration file not found: {non_existent_config}" in captured.out
-    assert "Run 'repolint init' to create a new configuration file" in captured.out
+    assert "Run 'lintr init' to create a new configuration file" in captured.out
 
 
 def test_cli_lint_no_github_token(capsys, config_file, monkeypatch, env):
     """Test lint command with no GitHub token configured."""
     # Remove tokens from environment
-    monkeypatch.delenv("REPOLINT_GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("LINTR_GITHUB_TOKEN", raising=False)
 
     # Create a temporary config without tokens
     config_file.set(
@@ -309,7 +309,7 @@ def test_cli_lint_no_github_token(capsys, config_file, monkeypatch, env):
 
     captured = capsys.readouterr()
     assert (
-        "Error loading configuration: 1 validation error for RepolintConfig\ngithub_token"
+        "Error loading configuration: 1 validation error for LintrConfig\ngithub_token"
         in captured.out
     )
 
@@ -332,7 +332,7 @@ def test_cli_list_rules_error(capsys, monkeypatch):
         raise Exception("Failed to load rules")
 
     monkeypatch.setattr(
-        "repolint.rule_manager.RuleManager.get_all_rules", mock_get_all_rules_error
+        "lintr.rule_manager.RuleManager.get_all_rules", mock_get_all_rules_error
     )
 
     with pytest.raises(SystemExit) as exc_info:
@@ -349,7 +349,7 @@ def test_cli_list_rule_sets_error(capsys, monkeypatch):
         raise Exception("Failed to load rule sets")
 
     monkeypatch.setattr(
-        "repolint.rule_manager.RuleManager.get_all_rule_sets",
+        "lintr.rule_manager.RuleManager.get_all_rule_sets",
         mock_get_all_rule_sets_error,
     )
 
@@ -396,7 +396,7 @@ def test_cli_init_permission_error_copy(capsys, monkeypatch):
 def test_cli_main_no_args(capsys, monkeypatch):
     """Test main function when no args are provided (using sys.argv)."""
     # Mock sys.argv to be empty
-    monkeypatch.setattr("sys.argv", ["repolint"])
+    monkeypatch.setattr("sys.argv", ["lintr"])
 
     # Call main without args to trigger sys.argv[1:] usage
     result = main()
@@ -432,7 +432,7 @@ def test_cli_main_command_not_in_handlers(monkeypatch, capsys):
             print("Mock help message")
 
     # Mock create_parser to return our mock parser
-    monkeypatch.setattr("repolint.cli.create_parser", lambda: MockParser())
+    monkeypatch.setattr("lintr.cli.create_parser", lambda: MockParser())
 
     result = main(["nonexistent"])
 
@@ -472,7 +472,7 @@ def test_cli_lint_interactive_fix(capsys, config_file, mock_github, monkeypatch)
         def get_repositories(self):
             return [MockRepo()]
 
-    monkeypatch.setattr("repolint.gh.GitHubClient", MockGitHubClientWithRepo)
+    monkeypatch.setattr("lintr.gh.GitHubClient", MockGitHubClientWithRepo)
 
     # Mock a rule that always needs fixing
     class MockRule(Rule):
@@ -512,7 +512,7 @@ def test_cli_lint_interactive_fix(capsys, config_file, mock_github, monkeypatch)
         def get_rule_set(self, rule_set_id):
             return self._rule_sets.get(rule_set_id)
 
-    monkeypatch.setattr("repolint.linter.RuleManager", MockRuleManager)
+    monkeypatch.setattr("lintr.linter.RuleManager", MockRuleManager)
 
     # First test: User accepts the fix
     def mock_input_yes(prompt):
@@ -585,7 +585,7 @@ def test_cli_lint_fix_error(capsys, config_file, mock_github, monkeypatch):
         def get_rule_set(self, rule_set_id):
             return self._rule_sets.get(rule_set_id)
 
-    monkeypatch.setattr("repolint.linter.RuleManager", MockRuleManager)
+    monkeypatch.setattr("lintr.linter.RuleManager", MockRuleManager)
 
     # Create config with fix enabled
     config = {
@@ -654,7 +654,7 @@ def test_cli_lint_fix_failure(capsys, config_file, mock_github, monkeypatch):
         def get_rule_set(self, rule_set_id):
             return self._rule_sets.get(rule_set_id)
 
-    monkeypatch.setattr("repolint.linter.RuleManager", MockRuleManager)
+    monkeypatch.setattr("lintr.linter.RuleManager", MockRuleManager)
 
     # Create config with fix enabled
     config = {
@@ -704,7 +704,7 @@ def test_cli_lint_github_access_error(capsys, config_file, env, monkeypatch):
         def get_repositories(self):
             raise MockGitHubError("Failed to access GitHub API")
 
-    monkeypatch.setattr("repolint.gh.GitHubClient", MockGitHubClient)
+    monkeypatch.setattr("lintr.gh.GitHubClient", MockGitHubClient)
 
     # Run lint command
     with pytest.raises(SystemExit) as exc_info:

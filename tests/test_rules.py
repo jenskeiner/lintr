@@ -3,8 +3,8 @@
 from unittest.mock import MagicMock
 
 from abc import ABC
-from repolint.rules import Rule, RuleCheckResult, RuleResult, RuleSet
-from repolint.rules.context import RuleContext
+from lintr.rules import Rule, RuleCheckResult, RuleResult, RuleSet
+from lintr.rules.context import RuleContext
 
 
 class DummyRule(Rule, ABC):

@@ -1,11 +1,11 @@
-"""Default rule set for Repolint."""
+"""Default rule set for Lintr."""
 
-from repolint.rules.base import RuleSet
-from repolint.rules.branch_rules import (
+from lintr.rules.base import RuleSet
+from lintr.rules.branch_rules import (
     DefaultBranchExistsRule,
     WebCommitSignoffRequiredRule,
 )
-from repolint.rules.permission_rules import (
+from lintr.rules.permission_rules import (
     SingleOwnerRule,
     NoCollaboratorsRule,
     WikisDisabledRule,

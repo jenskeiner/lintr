@@ -1,5 +1,5 @@
 [project]
-name = "repolint"
+name = "lintr"
 version = "0.1.0"
 description = "A Python-based command-line application to lint and enforce consistent settings across GitHub repositories"
 authors = [
@@ -41,42 +41,42 @@ build-backend = "hatchling.build"
 PyGithub = { git = "https://github.com/jenskeiner/PyGithub", branch = "feature/add-rules-and-rulesets" }
 
 [tool.hatch.build]
-packages = ["src/repolint"]
+packages = ["src/lintr"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/repolint"]
+packages = ["src/lintr"]
 
 [tool.hatch.build.targets.editable]
 path = "src"
 install-deps = true
 
 [tool.pytest.ini_options]
-#addopts = "--cov=repolint --cov-report=term-missing --cov-report=html"
+#addopts = "--cov=lintr --cov-report=term-missing --cov-report=html"
 testpaths = ["tests"]
 
 [project.scripts]
-repolint = "repolint.cli:main"
+lintr = "lintr.cli:main"
 
-[project.entry-points."repolint.rules"]
-default_branch_exists = "repolint.rules.branch_rules:DefaultBranchExistsRule"
-web_commit_signoff_required = "repolint.rules.branch_rules:WebCommitSignoffRequiredRule"
-single_owner = "repolint.rules.permission_rules:SingleOwnerRule"
-no_collaborators = "repolint.rules.permission_rules:NoCollaboratorsRule"
-wikis_disabled = "repolint.rules.permission_rules:WikisDisabledRule"
-issues_disabled = "repolint.rules.permission_rules:IssuesDisabledRule"
-preserve_repository = "repolint.rules.general:PreserveRepositoryRule"
-discussions_disabled = "repolint.rules.general:DiscussionsDisabledRule"
-projects_disabled = "repolint.rules.general:ProjectsDisabledRule"
-merge_commits_allowed = "repolint.rules.permission_rules:MergeCommitsAllowedRule"
-squash_merge_disabled = "repolint.rules.permission_rules:SquashMergeDisabledRule"
-rebase_merge_disabled = "repolint.rules.permission_rules:RebaseMergeDisabledRule"
-delete_branch_on_merge = "repolint.rules.branch_rules:DeleteBranchOnMergeRule"
-auto_merge_disabled = "repolint.rules.branch_rules:AutoMergeDisabledRule"
-gitflow_branch_naming = "repolint.rules.gitflow:GitFlowBranchNamingRule"
-gitflow_default_branch = "repolint.rules.gitflow:GitFlowDefaultBranchRule"
-no_classic_branch_protection = "repolint.rules.permission_rules:NoClassicBranchProtectionRule"
-develop_branch_ruleset = "repolint.rules.permission_rules:DevelopBranchRulesetRule"
-main_branch_ruleset = "repolint.rules.permission_rules:MainBranchRulesetRule"
+[project.entry-points."lintr.rules"]
+default_branch_exists = "lintr.rules.branch_rules:DefaultBranchExistsRule"
+web_commit_signoff_required = "lintr.rules.branch_rules:WebCommitSignoffRequiredRule"
+single_owner = "lintr.rules.permission_rules:SingleOwnerRule"
+no_collaborators = "lintr.rules.permission_rules:NoCollaboratorsRule"
+wikis_disabled = "lintr.rules.permission_rules:WikisDisabledRule"
+issues_disabled = "lintr.rules.permission_rules:IssuesDisabledRule"
+preserve_repository = "lintr.rules.general:PreserveRepositoryRule"
+discussions_disabled = "lintr.rules.general:DiscussionsDisabledRule"
+projects_disabled = "lintr.rules.general:ProjectsDisabledRule"
+merge_commits_allowed = "lintr.rules.permission_rules:MergeCommitsAllowedRule"
+squash_merge_disabled = "lintr.rules.permission_rules:SquashMergeDisabledRule"
+rebase_merge_disabled = "lintr.rules.permission_rules:RebaseMergeDisabledRule"
+delete_branch_on_merge = "lintr.rules.branch_rules:DeleteBranchOnMergeRule"
+auto_merge_disabled = "lintr.rules.branch_rules:AutoMergeDisabledRule"
+gitflow_branch_naming = "lintr.rules.gitflow:GitFlowBranchNamingRule"
+gitflow_default_branch = "lintr.rules.gitflow:GitFlowDefaultBranchRule"
+no_classic_branch_protection = "lintr.rules.permission_rules:NoClassicBranchProtectionRule"
+develop_branch_ruleset = "lintr.rules.permission_rules:DevelopBranchRulesetRule"
+main_branch_ruleset = "lintr.rules.permission_rules:MainBranchRulesetRule"
 
-[project.entry-points."repolint.rule_sets"]
-default = "repolint.rules.default_rule_set:get_default_rule_set"
+[project.entry-points."lintr.rule_sets"]
+default = "lintr.rules.default_rule_set:get_default_rule_set"

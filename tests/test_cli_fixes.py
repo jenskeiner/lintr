@@ -3,7 +3,7 @@
 import argparse
 from unittest.mock import MagicMock, patch
 
-from repolint.cli import handle_lint
+from lintr.cli import handle_lint
 
 
 def test_fix_option_is_passed_to_linter(config_file):
@@ -22,8 +22,8 @@ def test_fix_option_is_passed_to_linter(config_file):
 
     mock_linter = MagicMock()
 
-    with patch("repolint.gh.GitHubClient", return_value=mock_client), patch(
-        "repolint.linter.Linter", return_value=mock_linter
+    with patch("lintr.gh.GitHubClient", return_value=mock_client), patch(
+        "lintr.linter.Linter", return_value=mock_linter
     ) as mock_linter_class:
         # Run the command
         handle_lint(args)

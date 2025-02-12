@@ -1,4 +1,4 @@
-"""Configuration management for repolint."""
+"""Configuration management for lintr."""
 
 from pathlib import Path
 
@@ -27,23 +27,41 @@ class RuleSetConfig(BaseModel):
     rule_sets: list[str] = Field(default_factory=list)
 
 
-class BaseRepolintConfig(BaseSettings):
-    """Base configuration for repolint."""
+class CustomRuleDefinition(BaseModel):
+    base: str
+    description: str
+    config: dict
+
+
+class RepositoryConfig(BaseModel):
+    ruleset: str | None = None
+    rules: dict[str, dict] = Field(default_factory=dict)
+
+
+class BaseLintrConfig(BaseSettings):
+    """Base configuration for lintr."""
 
     github_token: str = Field()
-    default_rule_set: str = Field(default="empty")
+
     repository_filter: RepositoryFilter = Field(
         default_factory=RepositoryFilter,
     )
+
+    # Custom rules.
+    rules: dict[str, CustomRuleDefinition]
+
     rule_sets: dict[str, RuleSetConfig] = Field(
         default_factory=dict,
     )
-    repository_rule_sets: dict[str, str] = Field(
+
+    default_rule_set: str = Field(default="empty")
+
+    repository_rule_sets: dict[str, RepositoryConfig] = Field(
         default_factory=dict,
     )
 
     model_config = SettingsConfigDict(
-        env_prefix="REPOLINT_",
+        env_prefix="LINTR_",
         env_file=".env",
         env_file_encoding="utf-8",
         env_nested_delimiter="__",
@@ -53,7 +71,7 @@ class BaseRepolintConfig(BaseSettings):
     )
 
 
-def create_config_class(yaml_file: Path | None = None) -> type[BaseRepolintConfig]:
+def create_config_class(yaml_file: Path | None = None) -> type[BaseLintrConfig]:
     """Create a configuration class with a specific YAML file path.
 
     Args:
@@ -68,8 +86,8 @@ def create_config_class(yaml_file: Path | None = None) -> type[BaseRepolintConfi
     if yaml_file and not yaml_file.exists():
         raise FileNotFoundError(f"Config file not found: {yaml_file}")
 
-    class RepolintConfig(BaseRepolintConfig):
-        """Configuration for repolint."""
+    class LintrConfig(BaseLintrConfig):
+        """Configuration for lintr."""
 
         @classmethod
         def settings_customise_sources(
@@ -109,4 +127,4 @@ def create_config_class(yaml_file: Path | None = None) -> type[BaseRepolintConfi
                     ) from e
             return (init_settings, env_settings, dotenv_settings)
 
-    return RepolintConfig
+    return LintrConfig

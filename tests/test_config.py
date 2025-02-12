@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from repolint.config import RepositoryFilter, RuleSetConfig, create_config_class
+from lintr.config import RepositoryFilter, RuleSetConfig, create_config_class
 
 
 def test_repository_filter_defaults():
@@ -38,17 +38,17 @@ def test_source_priority(env, env_file, config_file, monkeypatch):
     3. YAML config file
     """
     # Create config with all sources
-    RepolintConfig = create_config_class(yaml_file=config_file.path)
-    config = RepolintConfig()
+    LintrConfig = create_config_class(yaml_file=config_file.path)
+    config = LintrConfig()
 
     # 1. Environment variables should take precedence over both .env and yaml
     assert config.github_token == "env-var-token"
     assert config.default_rule_set == "env-var-ruleset"
 
     # 2. Remove env vars to test .env file precedence over yaml
-    monkeypatch.delenv("REPOLINT_GITHUB_TOKEN")
-    monkeypatch.delenv("REPOLINT_DEFAULT_RULE_SET")
-    config = RepolintConfig()
+    monkeypatch.delenv("LINTR_GITHUB_TOKEN")
+    monkeypatch.delenv("LINTR_DEFAULT_RULE_SET")
+    config = LintrConfig()
     assert config.github_token == "env-file-token"
     assert config.default_rule_set == "env-file-ruleset"
 
@@ -72,21 +72,21 @@ def test_invalid_config_file(monkeypatch):
         f.flush()
 
         with pytest.raises(ValidationError):
-            RepolintConfig = create_config_class(yaml_file=Path(f.name))
-            RepolintConfig()
+            LintrConfig = create_config_class(yaml_file=Path(f.name))
+            LintrConfig()
 
 
 def test_missing_required_fields():
     """Test error when required fields are missing."""
-    RepolintConfig = create_config_class()
+    LintrConfig = create_config_class()
     with pytest.raises(ValidationError):
-        RepolintConfig()
+        LintrConfig()
 
 
 def test_defaults():
-    """Test default values in RepolintConfig."""
-    RepolintConfig = create_config_class()
-    config = RepolintConfig(github_token="test-token")
+    """Test default values in LintrConfig."""
+    LintrConfig = create_config_class()
+    config = LintrConfig(github_token="test-token")
 
     assert config.default_rule_set == "empty"  # Default value
     assert isinstance(config.repository_filter, RepositoryFilter)

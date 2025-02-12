@@ -9,7 +9,7 @@ from typing import Union, Generic
 
 from pydantic import BaseModel
 
-from repolint.rules.context import RuleContext
+from lintr.rules.context import RuleContext
 
 
 class BaseRuleConfig(BaseModel):

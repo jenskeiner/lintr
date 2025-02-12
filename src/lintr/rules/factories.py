@@ -1,7 +1,7 @@
 """Factories for creating rule sets programmatically."""
 
 
-from repolint.rules.base import Rule, RuleSet
+from lintr.rules.base import Rule, RuleSet
 
 
 class RuleSetFactory:
@@ -59,7 +59,7 @@ class RuleSetFactory:
 
         # Add nested rule sets
         if nested_rule_set_ids:
-            from repolint.rule_manager import RuleManager
+            from lintr.rule_manager import RuleManager
 
             rule_manager = RuleManager()
             for nested_id in nested_rule_set_ids:

@@ -1,5 +1,5 @@
-# Repolint Configuration File
-# This file configures how repolint checks your GitHub repositories
+# Lintr Configuration File
+# This file configures how lintr checks your GitHub repositories
 
 # GitHub configuration
 github_token: null  # Set your token here or use GITHUB_TOKEN environment variable

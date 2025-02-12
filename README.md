@@ -1,4 +1,4 @@
-# Repolint
+# Lintr
 
 A Python-based command-line application to lint and enforce consistent settings across GitHub repositories.
 

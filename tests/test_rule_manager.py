@@ -3,10 +3,10 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from repolint.rule_manager import RuleManager
-from repolint.rules.base import Rule, RuleCheckResult, RuleResult, RuleSet
-from repolint.rules.context import RuleContext
-from repolint.config import BaseRepolintConfig, RuleSetConfig
+from lintr.rule_manager import RuleManager
+from lintr.rules.base import Rule, RuleCheckResult, RuleResult, RuleSet
+from lintr.rules.context import RuleContext
+from lintr.config import BaseLintrConfig, RuleSetConfig
 
 
 class TestRule(Rule):
@@ -66,8 +66,8 @@ def test_rule_set_discovery():
 
     with patch("importlib.metadata.entry_points") as mock_entry_points:
         mock_entry_points.return_value.select.side_effect = lambda group: {
-            "repolint.rules": [],
-            "repolint.rule_sets": [mock_entry_point1, mock_entry_point2],
+            "lintr.rules": [],
+            "lintr.rule_sets": [mock_entry_point1, mock_entry_point2],
         }[group]
 
         manager = RuleManager()
@@ -85,7 +85,7 @@ def test_rule_manager_load_rule_sets_from_config(manager):
         mock_entry_points.return_value.select.return_value = []
 
         # Create a config with rule sets
-        config = BaseRepolintConfig(
+        config = BaseLintrConfig(
             github_token="dummy",
             rule_sets={
                 "RS001": RuleSetConfig(
@@ -228,7 +228,7 @@ def test_rule_set_config_validation(manager):
         mock_entry_points.return_value.select.return_value = []
 
         # Create a config with various edge cases
-        config = BaseRepolintConfig(
+        config = BaseLintrConfig(
             github_token="dummy",
             rule_sets={
                 # Empty rule set with no rules or nested sets

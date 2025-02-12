@@ -7,8 +7,8 @@ from json import dumps
 
 from github.GithubException import GithubException
 
-from repolint.rules.base import Rule, RuleCheckResult, RuleResult, BaseRuleConfig
-from repolint.rules.context import RuleContext
+from lintr.rules.base import Rule, RuleCheckResult, RuleResult, BaseRuleConfig
+from lintr.rules.context import RuleContext
 
 
 class SingleOwnerRule(Rule):
@@ -519,17 +519,12 @@ class NoClassicBranchProtectionRule(Rule):
             return False, f"Failed to remove classic branch protection rules: {str(e)}"
 
 
-class BranchRulesetRule(Rule, abc.ABC):
+class BranchRulesetRuleConfig(BaseRuleConfig):
     ruleset_name: str
     branch_name: str
 
-    def __init__(
-        self, ruleset_name: str, branch_name: str, config: BaseRuleConfig | None = None
-    ):
-        super().__init__(config)
-        self.ruleset_name = ruleset_name
-        self.branch_name = branch_name
 
+class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if the branch has a proper branch ruleset set up.
 
@@ -545,14 +540,16 @@ class BranchRulesetRule(Rule, abc.ABC):
             rulesets = repo.get_rulesets()
 
             # Find the relevant ruleset
-            ruleset = next((r for r in rulesets if r.name == self.ruleset_name), None)
+            ruleset = next(
+                (r for r in rulesets if r.name == self._config.ruleset_name), None
+            )
 
             if not ruleset:
                 return RuleCheckResult(
                     result=RuleResult.FAILED,
-                    message=f"No '{self.ruleset_name}' ruleset found",
+                    message=f"No '{self._config.ruleset_name}' ruleset found",
                     fix_available=True,
-                    fix_description=f"Create a ruleset for the {self.branch_name} branch",
+                    fix_description=f"Create a ruleset for the {self._config.branch_name} branch",
                 )
 
             # Check ruleset configuration
@@ -567,22 +564,22 @@ class BranchRulesetRule(Rule, abc.ABC):
             included_refs = set(ref_name_conditions.get("include", []))
             excluded_refs = set(ref_name_conditions.get("exclude", []))
 
-            expected_ref = f"refs/heads/{self.branch_name}"
+            expected_ref = f"refs/heads/{self._config.branch_name}"
             if included_refs != {expected_ref}:
                 if not included_refs:
                     violations.append(
-                        f"Ruleset must include the {self.branch_name} branch"
+                        f"Ruleset must include the {self._config.branch_name} branch"
                     )
                 elif len(included_refs) > 1:
                     other_refs = sorted(
                         ref for ref in included_refs if ref != expected_ref
                     )
                     violations.append(
-                        f"Ruleset must only apply to {self.branch_name} branch, but also includes: {', '.join(other_refs)}"
+                        f"Ruleset must only apply to {self._config.branch_name} branch, but also includes: {', '.join(other_refs)}"
                     )
                 elif expected_ref not in included_refs:
                     violations.append(
-                        f"Ruleset must apply to the {self.branch_name} branch"
+                        f"Ruleset must apply to the {self._config.branch_name} branch"
                     )
 
             if excluded_refs:
@@ -654,16 +651,16 @@ class BranchRulesetRule(Rule, abc.ABC):
 
             if violations:
                 violations = [
-                    f"Rulesset '{self.ruleset_name}' not set up correctly:"
+                    f"Rulesset '{self._config.ruleset_name}' not set up correctly:"
                 ] + [f"      - {x}" for x in violations]
 
             return RuleCheckResult(
                 result=RuleResult.PASSED if not violations else RuleResult.FAILED,
                 message="\n".join(violations)
                 if violations
-                else f"Ruleset '{self.ruleset_name}' properly configured",
+                else f"Ruleset '{self._config.ruleset_name}' properly configured",
                 fix_available=bool(violations),
-                fix_description=f"Update ruleset configuration for the {self.branch_name} branch"
+                fix_description=f"Update ruleset configuration for the {self._config.branch_name} branch"
                 if violations
                 else None,
             )
@@ -674,7 +671,7 @@ class BranchRulesetRule(Rule, abc.ABC):
                     result=RuleResult.FAILED,
                     message="Repository rulesets not found",
                     fix_available=True,
-                    fix_description=f"Create a ruleset for the {self.branch_name} branch",
+                    fix_description=f"Create a ruleset for the {self._config.branch_name} branch",
                 )
             raise
 
@@ -694,16 +691,18 @@ class BranchRulesetRule(Rule, abc.ABC):
             rulesets = context.repository.get_rulesets()
 
             # Find existing ruleset targeting the branch
-            ruleset = next((r for r in rulesets if r.name == self.ruleset_name), None)
+            ruleset = next(
+                (r for r in rulesets if r.name == self._config.ruleset_name), None
+            )
 
             # Define the ruleset configuration
             ruleset_config = {
-                "name": self.ruleset_name,
+                "name": self._config.ruleset_name,
                 "target": "branch",
                 "enforcement": "active",
                 "conditions": {
                     "ref_name": {
-                        "include": [f"refs/heads/{self.branch_name}"],
+                        "include": [f"refs/heads/{self._config.branch_name}"],
                         "exclude": [],
                     }
                 },
@@ -741,11 +740,14 @@ class BranchRulesetRule(Rule, abc.ABC):
             if ruleset:
                 # Update existing ruleset
                 ruleset.update(**ruleset_config)
-                return True, f"Updated existing {self.branch_name} branch ruleset"
+                return (
+                    True,
+                    f"Updated existing {self._config.branch_name} branch ruleset",
+                )
             else:
                 # Create new ruleset
                 context.repository.create_ruleset(**ruleset_config)
-                return True, f"Created new {self.branch_name} branch ruleset"
+                return True, f"Created new {self._config.branch_name} branch ruleset"
 
         except GithubException as e:
             return False, f"Failed to fix branch ruleset: {str(e)}"
@@ -756,10 +758,9 @@ class DevelopBranchRulesetRule(BranchRulesetRule):
 
     _id = "GF003"
     _description = "Develop branch must have a proper ruleset configured"
-
-    def __init__(self, config: BaseRuleConfig | None = None):
-        """Initialize the rule."""
-        super().__init__(ruleset_name="develop protection", branch_name="develop")
+    _config = BranchRulesetRuleConfig(
+        ruleset_name="develop protection", branch_name="develop"
+    )
 
 
 class MainBranchRulesetRule(BranchRulesetRule):
@@ -767,7 +768,6 @@ class MainBranchRulesetRule(BranchRulesetRule):
 
     _id = "GF004"
     _description = "Main branch must have a proper ruleset configured"
-
-    def __init__(self, config: BaseRuleConfig | None = None):
-        """Initialize the rule."""
-        super().__init__(ruleset_name="main protection", branch_name="main")
+    _config = BranchRulesetRuleConfig(
+        ruleset_name="main protection", branch_name="main"
+    )
