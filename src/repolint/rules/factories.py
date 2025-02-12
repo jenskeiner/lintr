@@ -54,7 +54,7 @@ class RuleSetFactory:
                 rule_class = self._rule_classes.get(rule_id)
                 if not rule_class:
                     raise ValueError(f"Rule class with ID {rule_id} not registered")
-                rule = rule_class()
+                rule = rule_class
                 rule_set.add_rule(rule)
 
         # Add nested rule sets

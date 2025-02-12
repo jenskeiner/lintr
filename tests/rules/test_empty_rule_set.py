@@ -6,7 +6,7 @@ from repolint.rules.empty_rule_set import get_empty_rule_set
 def test_empty_rule_set_init():
     """Test initialization of empty rule set."""
     rule_set = get_empty_rule_set()
-    assert rule_set.rule_set_id == "empty"
+    assert rule_set.id == "empty"
     assert "empty" in rule_set.description.lower()
 
 

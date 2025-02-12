@@ -24,16 +24,16 @@ def get_default_rule_set() -> RuleSet:
         Default rule set instance.
     """
     rule_set = RuleSet(
-        rule_set_id="default",
+        id="default",
         description="Default rule set with basic repository checks",
     )
 
     # Add basic repository checks
-    rule_set.add_rule(DefaultBranchExistsRule())
-    rule_set.add_rule(WebCommitSignoffRequiredRule())
-    rule_set.add_rule(SingleOwnerRule())
-    rule_set.add_rule(NoCollaboratorsRule())
-    rule_set.add_rule(WikisDisabledRule())
-    rule_set.add_rule(IssuesDisabledRule())
+    rule_set.add_rule(DefaultBranchExistsRule)
+    rule_set.add_rule(WebCommitSignoffRequiredRule)
+    rule_set.add_rule(SingleOwnerRule)
+    rule_set.add_rule(NoCollaboratorsRule)
+    rule_set.add_rule(WikisDisabledRule)
+    rule_set.add_rule(IssuesDisabledRule)
 
     return rule_set

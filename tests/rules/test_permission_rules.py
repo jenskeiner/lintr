@@ -93,17 +93,17 @@ def test_single_owner_rule_fail_api_error():
     assert not result.fix_available
 
 
-def test_no_collaborators_rule_pass(mock_repository, config):
+def test_no_collaborators_rule_pass(repository, config):
     """Test NoCollaboratorsRule when repository has no collaborators."""
     # Create rule
     rule = NoCollaboratorsRule()
 
     # Mock collaborators
-    mock_repository.get_collaborators.return_value = []
-    mock_repository.owner.login = "test-user"
+    repository.get_collaborators.return_value = []
+    repository.owner.login = "test-user"
 
     # Create context
-    context = RuleContext(mock_repository, config)
+    context = RuleContext(repository, config)
 
     # Run check
     result = rule.check(context)
@@ -114,7 +114,7 @@ def test_no_collaborators_rule_pass(mock_repository, config):
     assert not result.fix_available
 
 
-def test_no_collaborators_rule_fail(mock_repository, config):
+def test_no_collaborators_rule_fail(repository, config):
     """Test NoCollaboratorsRule when repository has other collaborators."""
     # Create rule
     rule = NoCollaboratorsRule()
@@ -130,11 +130,11 @@ def test_no_collaborators_rule_fail(mock_repository, config):
     ]
 
     # Mock repository
-    mock_repository.get_collaborators.return_value = collaborators
-    mock_repository.owner.login = "test-user"
+    repository.get_collaborators.return_value = collaborators
+    repository.owner.login = "test-user"
 
     # Create context
-    context = RuleContext(mock_repository, config)
+    context = RuleContext(repository, config)
 
     # Run check
     result = rule.check(context)
@@ -146,7 +146,7 @@ def test_no_collaborators_rule_fail(mock_repository, config):
     assert "Remove collaborators" in result.fix_description
 
 
-def test_no_collaborators_rule_fix(mock_repository, config):
+def test_no_collaborators_rule_fix(repository, config):
     """Test NoCollaboratorsRule fix functionality."""
     # Create rule
     rule = NoCollaboratorsRule()
@@ -162,12 +162,12 @@ def test_no_collaborators_rule_fix(mock_repository, config):
     ]
 
     # Mock repository
-    mock_repository.get_collaborators.return_value = collaborators
-    mock_repository.owner.login = "test-user"
-    mock_repository.remove_from_collaborators = MagicMock()
+    repository.get_collaborators.return_value = collaborators
+    repository.owner.login = "test-user"
+    repository.remove_from_collaborators = MagicMock()
 
     # Create context
-    context = RuleContext(mock_repository, config)
+    context = RuleContext(repository, config)
 
     # Run fix
     success, message = rule.fix(context)
@@ -176,19 +176,19 @@ def test_no_collaborators_rule_fix(mock_repository, config):
     assert success
     assert "Removed collaborators" in message
     assert "other-user" in message
-    mock_repository.remove_from_collaborators.assert_called_once_with("other-user")
+    repository.remove_from_collaborators.assert_called_once_with("other-user")
 
 
-def test_no_collaborators_rule_api_error(mock_repository, config):
+def test_no_collaborators_rule_api_error(repository, config):
     """Test NoCollaboratorsRule when API call fails."""
     # Create rule
     rule = NoCollaboratorsRule()
 
     # Mock API error
-    mock_repository.get_collaborators.side_effect = Exception("API error")
+    repository.get_collaborators.side_effect = Exception("API error")
 
     # Create context
-    context = RuleContext(mock_repository, config)
+    context = RuleContext(repository, config)
 
     # Run check
     result = rule.check(context)
@@ -692,7 +692,7 @@ def test_no_classic_branch_protection_rule_api_error():
     assert not result.fix_available
 
 
-def test_develop_branch_ruleset_rule_pass(mock_repository):
+def test_develop_branch_ruleset_rule_pass(repository):
     """Test DevelopBranchRulesetRule when develop branch has proper ruleset."""
     # Create mock ruleset with all required rules
     mock_rules = []
@@ -729,10 +729,10 @@ def test_develop_branch_ruleset_rule_pass(mock_repository):
     mock_ruleset.rules = mock_rules
 
     # Create mock repository
-    mock_repository.get_rulesets.return_value = [mock_ruleset]
+    repository.get_rulesets.return_value = [mock_ruleset]
 
     # Create context with mock repository
-    context = RuleContext(mock_repository)
+    context = RuleContext(repository)
 
     # Run check
     rule = DevelopBranchRulesetRule()
@@ -744,7 +744,7 @@ def test_develop_branch_ruleset_rule_pass(mock_repository):
     assert not result.fix_available
 
 
-def test_develop_branch_ruleset_rule_fail_missing_rules(mock_repository):
+def test_develop_branch_ruleset_rule_fail_missing_rules(repository):
     """Test DevelopBranchRulesetRule when ruleset is missing required rules."""
     # Create mock ruleset with missing rules
     mock_rules = []
@@ -764,10 +764,10 @@ def test_develop_branch_ruleset_rule_fail_missing_rules(mock_repository):
     mock_ruleset.rules = mock_rules
 
     # Create mock repository
-    mock_repository.get_rulesets.return_value = [mock_ruleset]
+    repository.get_rulesets.return_value = [mock_ruleset]
 
     # Create context with mock repository
-    context = RuleContext(mock_repository)
+    context = RuleContext(repository)
 
     # Run check
     rule = DevelopBranchRulesetRule()
@@ -782,13 +782,13 @@ def test_develop_branch_ruleset_rule_fail_missing_rules(mock_repository):
     assert result.fix_available
 
 
-def test_develop_branch_ruleset_rule_fail_no_ruleset(mock_repository):
+def test_develop_branch_ruleset_rule_fail_no_ruleset(repository):
     """Test DevelopBranchRulesetRule when no develop branch ruleset exists."""
     # Create mock repository with no rulesets
-    mock_repository.get_rulesets.return_value = []
+    repository.get_rulesets.return_value = []
 
     # Create context with mock repository
-    context = RuleContext(mock_repository)
+    context = RuleContext(repository)
 
     # Run check
     rule = DevelopBranchRulesetRule()
@@ -801,7 +801,7 @@ def test_develop_branch_ruleset_rule_fail_no_ruleset(mock_repository):
     assert "Create a ruleset for the develop branch" in result.fix_description
 
 
-def test_develop_branch_ruleset_rule_fail_disabled(mock_repository):
+def test_develop_branch_ruleset_rule_fail_disabled(repository):
     """Test DevelopBranchRulesetRule when ruleset exists but is disabled."""
     # Create mock ruleset that is disabled
     mock_ruleset = MagicMock()
@@ -812,10 +812,10 @@ def test_develop_branch_ruleset_rule_fail_disabled(mock_repository):
     }
 
     # Create mock repository
-    mock_repository.get_rulesets.return_value = [mock_ruleset]
+    repository.get_rulesets.return_value = [mock_ruleset]
 
     # Create context with mock repository
-    context = RuleContext(mock_repository)
+    context = RuleContext(repository)
 
     # Run check
     rule = DevelopBranchRulesetRule()
@@ -828,7 +828,7 @@ def test_develop_branch_ruleset_rule_fail_disabled(mock_repository):
     assert "Update ruleset configuration" in result.fix_description
 
 
-def test_develop_branch_ruleset_rule_fail_wrong_branch(mock_repository):
+def test_develop_branch_ruleset_rule_fail_wrong_branch(repository):
     """Test DevelopBranchRulesetRule when ruleset doesn't target develop branch."""
     # Create mock ruleset that targets wrong branch
     mock_ruleset = MagicMock()
@@ -839,10 +839,10 @@ def test_develop_branch_ruleset_rule_fail_wrong_branch(mock_repository):
     }
 
     # Create mock repository
-    mock_repository.get_rulesets.return_value = [mock_ruleset]
+    repository.get_rulesets.return_value = [mock_ruleset]
 
     # Create context with mock repository
-    context = RuleContext(mock_repository)
+    context = RuleContext(repository)
 
     # Run check
     rule = DevelopBranchRulesetRule()
@@ -855,7 +855,7 @@ def test_develop_branch_ruleset_rule_fail_wrong_branch(mock_repository):
     assert "Update ruleset configuration" in result.fix_description
 
 
-def test_develop_branch_ruleset_rule_multiple_rulesets(mock_repository):
+def test_develop_branch_ruleset_rule_multiple_rulesets(repository):
     """Test DevelopBranchRulesetRule when multiple rulesets exist."""
     # Create mock rulesets
     mock_ruleset1 = MagicMock()
@@ -897,10 +897,10 @@ def test_develop_branch_ruleset_rule_multiple_rulesets(mock_repository):
     mock_ruleset2.rules = mock_rules
 
     # Create mock repository
-    mock_repository.get_rulesets.return_value = [mock_ruleset1, mock_ruleset2]
+    repository.get_rulesets.return_value = [mock_ruleset1, mock_ruleset2]
 
     # Create context with mock repository
-    context = RuleContext(mock_repository)
+    context = RuleContext(repository)
 
     # Run check
     rule = DevelopBranchRulesetRule()
@@ -912,15 +912,15 @@ def test_develop_branch_ruleset_rule_multiple_rulesets(mock_repository):
     assert not result.fix_available
 
 
-def test_develop_branch_ruleset_rule_api_error(mock_repository):
+def test_develop_branch_ruleset_rule_api_error(repository):
     """Test DevelopBranchRulesetRule when API call fails."""
     # Mock API error
-    mock_repository.get_rulesets.side_effect = GithubException(
+    repository.get_rulesets.side_effect = GithubException(
         status=404, data={"message": "Repository rulesets not found"}
     )
 
     # Create context with mock repository
-    context = RuleContext(mock_repository)
+    context = RuleContext(repository)
 
     # Run check
     rule = DevelopBranchRulesetRule()
@@ -933,15 +933,15 @@ def test_develop_branch_ruleset_rule_api_error(mock_repository):
     assert "Create a ruleset for the develop branch" in result.fix_description
 
 
-def test_develop_branch_ruleset_rule_other_api_error(mock_repository):
+def test_develop_branch_ruleset_rule_other_api_error(repository):
     """Test DevelopBranchRulesetRule when API call fails with unexpected error."""
     # Mock unexpected API error
-    mock_repository.get_rulesets.side_effect = GithubException(
+    repository.get_rulesets.side_effect = GithubException(
         status=500, data={"message": "Internal server error"}
     )
 
     # Create context with mock repository
-    context = RuleContext(mock_repository)
+    context = RuleContext(repository)
 
     # Run check
     rule = DevelopBranchRulesetRule()
@@ -951,7 +951,7 @@ def test_develop_branch_ruleset_rule_other_api_error(mock_repository):
         rule.check(context)
 
 
-def test_develop_branch_ruleset_rule_fail_additional_rules(mock_repository):
+def test_develop_branch_ruleset_rule_fail_additional_rules(repository):
     """Test DevelopBranchRulesetRule when ruleset has additional rules that are not allowed."""
     # Create mock ruleset with required and additional rules
     mock_rules = []
@@ -985,10 +985,10 @@ def test_develop_branch_ruleset_rule_fail_additional_rules(mock_repository):
     mock_ruleset.rules = mock_rules
 
     # Create mock repository
-    mock_repository.get_rulesets.return_value = [mock_ruleset]
+    repository.get_rulesets.return_value = [mock_ruleset]
 
     # Create context with mock repository
-    context = RuleContext(mock_repository)
+    context = RuleContext(repository)
 
     # Run check
     rule = DevelopBranchRulesetRule()
@@ -1006,7 +1006,7 @@ def test_develop_branch_ruleset_rule_fail_additional_rules(mock_repository):
     )
 
 
-def test_develop_branch_ruleset_rule_fail_multiple_branches(mock_repository):
+def test_develop_branch_ruleset_rule_fail_multiple_branches(repository):
     """Test DevelopBranchRulesetRule when ruleset applies to multiple branches."""
     # Create mock ruleset with all required rules
     mock_rules = []
@@ -1039,10 +1039,10 @@ def test_develop_branch_ruleset_rule_fail_multiple_branches(mock_repository):
     mock_ruleset.rules = mock_rules
 
     # Create mock repository
-    mock_repository.get_rulesets.return_value = [mock_ruleset]
+    repository.get_rulesets.return_value = [mock_ruleset]
 
     # Create context with mock repository
-    context = RuleContext(mock_repository)
+    context = RuleContext(repository)
 
     # Run check
     rule = DevelopBranchRulesetRule()
@@ -1057,7 +1057,7 @@ def test_develop_branch_ruleset_rule_fail_multiple_branches(mock_repository):
     assert result.fix_available
 
 
-def test_develop_branch_ruleset_rule_fail_excluded_branches(mock_repository):
+def test_develop_branch_ruleset_rule_fail_excluded_branches(repository):
     """Test DevelopBranchRulesetRule when ruleset has excluded branches."""
     # Create mock ruleset with all required rules
     mock_rules = []
@@ -1097,10 +1097,10 @@ def test_develop_branch_ruleset_rule_fail_excluded_branches(mock_repository):
     mock_ruleset.rules = mock_rules
 
     # Create mock repository
-    mock_repository.get_rulesets.return_value = [mock_ruleset]
+    repository.get_rulesets.return_value = [mock_ruleset]
 
     # Create context with mock repository
-    context = RuleContext(mock_repository)
+    context = RuleContext(repository)
 
     # Run check
     rule = DevelopBranchRulesetRule()
@@ -1116,13 +1116,13 @@ def test_develop_branch_ruleset_rule_fail_excluded_branches(mock_repository):
     assert result.fix_available
 
 
-def test_develop_branch_ruleset_rule_fix_create(mock_repository):
+def test_develop_branch_ruleset_rule_fix_create(repository):
     """Test DevelopBranchRulesetRule fix when no ruleset exists."""
     # Mock that no rulesets exist
-    mock_repository.get_rulesets.return_value = []
+    repository.get_rulesets.return_value = []
 
     # Create context with mock repository
-    context = RuleContext(mock_repository)
+    context = RuleContext(repository)
 
     # Run fix
     rule = DevelopBranchRulesetRule()
@@ -1133,8 +1133,8 @@ def test_develop_branch_ruleset_rule_fix_create(mock_repository):
     assert "Created new develop branch ruleset" in message
 
     # Verify that create_ruleset was called with correct arguments
-    mock_repository.create_ruleset.assert_called_once()
-    call_args = mock_repository.create_ruleset.call_args[1]
+    repository.create_ruleset.assert_called_once()
+    call_args = repository.create_ruleset.call_args[1]
     assert call_args["name"] == "develop protection"
     assert call_args["target"] == "branch"
     assert call_args["enforcement"] == "active"
@@ -1155,15 +1155,15 @@ def test_develop_branch_ruleset_rule_fix_create(mock_repository):
     }
 
 
-def test_develop_branch_ruleset_rule_fix_update(mock_repository):
+def test_develop_branch_ruleset_rule_fix_update(repository):
     """Test DevelopBranchRulesetRule fix when ruleset exists."""
     # Create mock existing ruleset
     mock_ruleset = MagicMock()
     mock_ruleset.name = "develop protection"
-    mock_repository.get_rulesets.return_value = [mock_ruleset]
+    repository.get_rulesets.return_value = [mock_ruleset]
 
     # Create context with mock repository
-    context = RuleContext(mock_repository)
+    context = RuleContext(repository)
 
     # Run fix
     rule = DevelopBranchRulesetRule()
@@ -1196,15 +1196,15 @@ def test_develop_branch_ruleset_rule_fix_update(mock_repository):
     }
 
 
-def test_develop_branch_ruleset_rule_fix_error(mock_repository):
+def test_develop_branch_ruleset_rule_fix_error(repository):
     """Test DevelopBranchRulesetRule fix when API call fails."""
     # Mock API error
-    mock_repository.get_rulesets.side_effect = GithubException(
+    repository.get_rulesets.side_effect = GithubException(
         status=500, data={"message": "Internal server error"}
     )
 
     # Create context with mock repository
-    context = RuleContext(mock_repository)
+    context = RuleContext(repository)
 
     # Run fix
     rule = DevelopBranchRulesetRule()

@@ -7,26 +7,6 @@ from repolint.gh import GitHubClient, GitHubConfig
 
 
 @pytest.fixture
-def mock_repo():
-    """Create a mock GitHub repository."""
-    repo = MagicMock()
-    repo.name = "test-repo"
-    repo.default_branch = "main"
-    repo.description = "Test repository"
-    repo.homepage = "https://example.com"
-    repo.private = False
-    repo.archived = False
-    repo.has_issues = True
-    repo.has_projects = True
-    repo.has_wiki = True
-    repo.allow_squash_merge = True
-    repo.allow_merge_commit = True
-    repo.allow_rebase_merge = True
-    repo.delete_branch_on_merge = True
-    return repo
-
-
-@pytest.fixture
 def github_config():
     """Create a GitHub configuration."""
     return GitHubConfig(token="test-token")
@@ -41,12 +21,12 @@ def test_github_config_validation():
     assert config.include_archived is False
 
 
-def test_get_user_repositories(github_config, mock_repo):
+def test_get_user_repositories(github_config, repository):
     """Test getting user repositories."""
     with patch("repolint.gh.Github") as mock_github_class:
         # Setup mock
         mock_user = MagicMock()
-        mock_user.get_repos.return_value = [mock_repo]
+        mock_user.get_repos.return_value = [repository]
         mock_github = MagicMock()
         mock_github.get_user.return_value = mock_user
         mock_github_class.return_value = mock_github
@@ -60,7 +40,7 @@ def test_get_user_repositories(github_config, mock_repo):
         mock_github_class.assert_called_once()
 
 
-def test_get_org_repositories(mock_repo):
+def test_get_org_repositories(repository):
     """Test getting organization repositories."""
     with patch("repolint.gh.Github") as mock_github_class:
         # Setup config with org
@@ -68,7 +48,7 @@ def test_get_org_repositories(mock_repo):
 
         # Setup mock
         mock_org = MagicMock()
-        mock_org.get_repos.return_value = [mock_repo]
+        mock_org.get_repos.return_value = [repository]
         mock_github = MagicMock()
         mock_github.get_organization.return_value = mock_org
         mock_github_class.return_value = mock_github
@@ -83,14 +63,14 @@ def test_get_org_repositories(mock_repo):
         mock_github_class.assert_called_once()
 
 
-def test_get_repository_settings(github_config, mock_repo):
+def test_get_repository_settings(github_config, repository):
     """Test getting repository settings."""
     with patch("repolint.gh.Github") as mock_github_class:
         mock_github = MagicMock()
         mock_github_class.return_value = mock_github
 
         client = GitHubClient(github_config)
-        settings = client.get_repository_settings(mock_repo)
+        settings = client.get_repository_settings(repository)
 
         assert settings["name"] == "test-repo"
         assert settings["default_branch"] == "main"
@@ -108,7 +88,7 @@ def test_get_repository_settings(github_config, mock_repo):
         mock_github_class.assert_called_once()
 
 
-def test_repository_filtering_with_include_patterns(github_config, mock_repo):
+def test_repository_filtering_with_include_patterns(github_config, repository):
     """Test repository filtering with include patterns."""
     # Create additional mock repos
     mock_repo2 = MagicMock()
@@ -127,7 +107,7 @@ def test_repository_filtering_with_include_patterns(github_config, mock_repo):
     with patch("repolint.gh.Github") as mock_github_class:
         # Setup mock
         mock_user = MagicMock()
-        mock_user.get_repos.return_value = [mock_repo, mock_repo2, mock_repo3]
+        mock_user.get_repos.return_value = [repository, mock_repo2, mock_repo3]
         mock_github = MagicMock()
         mock_github.get_user.return_value = mock_user
         mock_github_class.return_value = mock_github
@@ -144,7 +124,7 @@ def test_repository_filtering_with_include_patterns(github_config, mock_repo):
         assert "demo-app" not in repo_names
 
 
-def test_repository_filtering_with_exclude_patterns(github_config, mock_repo):
+def test_repository_filtering_with_exclude_patterns(github_config, repository):
     """Test repository filtering with exclude patterns."""
     # Create additional mock repos
     mock_repo2 = MagicMock()
@@ -163,7 +143,7 @@ def test_repository_filtering_with_exclude_patterns(github_config, mock_repo):
     with patch("repolint.gh.Github") as mock_github_class:
         # Setup mock
         mock_user = MagicMock()
-        mock_user.get_repos.return_value = [mock_repo, mock_repo2, mock_repo3]
+        mock_user.get_repos.return_value = [repository, mock_repo2, mock_repo3]
         mock_github = MagicMock()
         mock_github.get_user.return_value = mock_user
         mock_github_class.return_value = mock_github
@@ -177,7 +157,7 @@ def test_repository_filtering_with_exclude_patterns(github_config, mock_repo):
         assert repos[0].name == "demo-app"
 
 
-def test_repository_filtering_with_both_patterns(github_config, mock_repo):
+def test_repository_filtering_with_both_patterns(github_config, repository):
     """Test repository filtering with both include and exclude patterns."""
     # Create additional mock repos
     mock_repo2 = MagicMock()
@@ -203,7 +183,7 @@ def test_repository_filtering_with_both_patterns(github_config, mock_repo):
         # Setup mock
         mock_user = MagicMock()
         mock_user.get_repos.return_value = [
-            mock_repo,
+            repository,
             mock_repo2,
             mock_repo3,
             mock_repo4,
@@ -225,7 +205,7 @@ def test_repository_filtering_with_both_patterns(github_config, mock_repo):
         assert "demo-app" not in repo_names
 
 
-def test_repository_filtering_with_empty_patterns(github_config, mock_repo):
+def test_repository_filtering_with_empty_patterns(github_config, repository):
     """Test that empty pattern lists don't affect filtering."""
     # Create additional mock repos
     mock_repo2 = MagicMock()
@@ -245,7 +225,7 @@ def test_repository_filtering_with_empty_patterns(github_config, mock_repo):
     with patch("repolint.gh.Github") as mock_github_class:
         # Setup mock
         mock_user = MagicMock()
-        mock_user.get_repos.return_value = [mock_repo, mock_repo2, mock_repo3]
+        mock_user.get_repos.return_value = [repository, mock_repo2, mock_repo3]
         mock_github = MagicMock()
         mock_github.get_user.return_value = mock_user
         mock_github_class.return_value = mock_github
@@ -262,15 +242,15 @@ def test_repository_filtering_with_empty_patterns(github_config, mock_repo):
         assert "demo-app" in repo_names
 
 
-def test_include_organisation_repositories(github_config, mock_repo):
+def test_include_organisation_repositories(github_config, repository):
     """Test including organisation repositories."""
     with patch("repolint.gh.Github") as mock_github_class:
         # Test with include_organisations=True
         mock_org = MagicMock()
-        mock_org.get_repos.return_value = [mock_repo]
+        mock_org.get_repos.return_value = [repository]
 
         mock_user = MagicMock()
-        mock_user.get_repos.return_value = [mock_repo]
+        mock_user.get_repos.return_value = [repository]
         mock_user.get_orgs.return_value = [mock_org]
 
         mock_github = MagicMock()
@@ -291,7 +271,7 @@ def test_include_organisation_repositories(github_config, mock_repo):
         mock_github_class.reset_mock()
         mock_github = MagicMock()
         mock_user = MagicMock()
-        mock_user.get_repos.return_value = [mock_repo]
+        mock_user.get_repos.return_value = [repository]
         mock_github.get_user.return_value = mock_user
         mock_github_class.return_value = mock_github
 

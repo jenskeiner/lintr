@@ -193,19 +193,27 @@ _generic_base = Rule
 class RuleSet:
     """A collection of rules that can be applied together."""
 
-    def __init__(self, rule_set_id: str, description: str):
+    def __init__(self, id: str, description: str):
         """Initialize a rule set.
 
         Args:
-            rule_set_id: Unique identifier for the rule set (e.g., 'RS001').
+            id: Unique identifier for the rule set (e.g., 'RS001').
             description: Human-readable description of what the rule set checks.
         """
-        self.rule_set_id = rule_set_id
-        self.description = description
+        self._id = id
+        self._description = description
         # Store both rules and rule sets in a single list, maintaining order
-        self._items: list[Union[Rule, "RuleSet"]] = []
+        self._items: list[Union[type[Rule], "RuleSet"]] = []
 
-    def add_rule(self, rule: Rule) -> None:
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def description(self) -> str:
+        return self._description
+
+    def add_rule(self, rule: type[Rule]) -> None:
         """Add a rule to this rule set.
 
         Args:
@@ -228,7 +236,7 @@ class RuleSet:
         """
         self._items.append(rule_set)
 
-    def rules(self) -> Iterator[Rule]:
+    def rules(self) -> Iterator[type[Rule]]:
         """Get all rules in this rule set, including those from nested rule sets.
 
         Rules are returned in the order they were added, with nested rule set rules
@@ -239,10 +247,10 @@ class RuleSet:
         """
         rules = []
         for item in self._items:
-            if isinstance(item, Rule):
-                rules.append(item)
-            else:  # RuleSet
+            if isinstance(item, RuleSet):
                 rules.extend(item.rules())
+            else:  # Rule
+                rules.append(item)
 
         def remove_dupes(rules):
             seen = set()
@@ -255,7 +263,7 @@ class RuleSet:
 
         yield from rules
 
-    def effective_rules(self) -> Iterator[Rule]:
+    def effective_rules(self) -> Iterator[type[Rule]]:
         """Get all rules in this rule set with mutually exclusive rules removed.
 
         Rules are processed in reverse order (last added first). For each rule,
@@ -279,7 +287,7 @@ class RuleSet:
                     id, set()
                 ) | {rule.rule_id}
 
-        def filter_exclusive_rules(rules: list[Rule]) -> Iterator[Rule]:
+        def filter_exclusive_rules(rules: list[type[Rule]]) -> Iterator[type[Rule]]:
             """Filter out mutually exclusive rules.
 
             For each rule (processed from the end), removes any earlier rules

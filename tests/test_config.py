@@ -38,7 +38,7 @@ def test_source_priority(env, env_file, config_file, monkeypatch):
     3. YAML config file
     """
     # Create config with all sources
-    RepolintConfig = create_config_class(yaml_file=config_file)
+    RepolintConfig = create_config_class(yaml_file=config_file.path)
     config = RepolintConfig()
 
     # 1. Environment variables should take precedence over both .env and yaml

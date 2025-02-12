@@ -12,6 +12,6 @@ def get_empty_rule_set() -> RuleSet:
     Returns:
         Empty rule set instance.
     """
-    rule_set = RuleSet(rule_set_id="empty", description="Empty rule set with no rules")
+    rule_set = RuleSet(id="empty", description="Empty rule set with no rules")
 
     return rule_set

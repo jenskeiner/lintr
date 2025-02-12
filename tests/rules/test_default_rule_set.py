@@ -17,7 +17,7 @@ def test_get_default_rule_set():
     """Test creating the default rule set."""
     rule_set = get_default_rule_set()
 
-    assert rule_set.rule_set_id == "default"
+    assert rule_set.id == "default"
     assert "Default rule set" in rule_set.description
 
     # Verify that the rule set contains all expected rules
@@ -25,9 +25,9 @@ def test_get_default_rule_set():
     assert len(rules) == 6
 
     # Verify that rules are in the expected order
-    assert isinstance(rules[0], DefaultBranchExistsRule)
-    assert isinstance(rules[1], WebCommitSignoffRequiredRule)
-    assert isinstance(rules[2], SingleOwnerRule)
-    assert isinstance(rules[3], NoCollaboratorsRule)
-    assert isinstance(rules[4], WikisDisabledRule)
-    assert isinstance(rules[5], IssuesDisabledRule)
+    assert rules[0] is DefaultBranchExistsRule
+    assert rules[1] is WebCommitSignoffRequiredRule
+    assert rules[2] is SingleOwnerRule
+    assert rules[3] is NoCollaboratorsRule
+    assert rules[4] is WikisDisabledRule
+    assert rules[5] is IssuesDisabledRule

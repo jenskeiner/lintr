@@ -1,67 +1,11 @@
 """Tests for the CLI interface."""
 
-import tempfile
 from pathlib import Path
 
 import pytest
-import yaml
 
 from repolint.cli import main
 from repolint.rules.base import Rule, RuleSet, RuleCheckResult, RuleResult
-from tests.fixtures import mk_rule, TestRuleSet
-
-
-@pytest.fixture
-def mock_config():
-    """Create a temporary configuration file with given content."""
-
-    def _create_config(content: dict) -> Path:
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
-            yaml.dump(content, f)
-            return Path(f.name)
-
-    yield _create_config
-    # Clean up any created files
-    for file in Path(".").glob("*.yml"):
-        if file.is_file() and "tmp" in str(file):
-            file.unlink()
-
-
-@pytest.fixture
-def mock_github(monkeypatch):
-    """Mock GitHub API responses."""
-
-    class MockRepository:
-        def __init__(self, name, private=False, archived=False):
-            self.name = name
-            self.private = private
-            self.archived = archived
-
-    class MockGitHubClient:
-        def __init__(self, *args, **kwargs):
-            pass
-
-        def get_repositories(self):
-            return [
-                MockRepository("test-repo-1", private=False, archived=False),
-                MockRepository("test-repo-2", private=True, archived=True),
-            ]
-
-    monkeypatch.setattr("repolint.gh.GitHubClient", MockGitHubClient)
-    return MockGitHubClient
-
-
-@pytest.fixture
-def mock_config_file(mock_config):
-    """Create a default configuration file."""
-    config = {
-        "github_token": "test-token",
-        "default_rule_set": "default",
-        "repository_filter": {"include_patterns": [], "exclude_patterns": []},
-        "rule_sets": {},
-        "repository_rule_sets": {},
-    }
-    return mock_config(config)
 
 
 def test_cli_version(capsys):
@@ -81,18 +25,18 @@ def test_cli_no_args(capsys):
     assert "usage:" in captured.out.lower()
 
 
-def test_cli_lint_basic(capsys, env, mock_github, mock_config_file):
+def test_cli_lint_basic(capsys, env, mock_github, config_file):
     """Test basic lint command."""
-    result = main(["lint", "--config", str(mock_config_file)])
+    result = main(["lint", "--config", str(config_file.path)])
     assert result == 0
     captured = capsys.readouterr()
-    assert str(mock_config_file) in captured.out
+    assert str(config_file.path) in captured.out
     assert "Found 2 repositories" in captured.out
 
 
-def test_cli_lint_with_options(capsys, env, mock_github, mock_config_file):
+def test_cli_lint_with_options(capsys, env, mock_github, config_file):
     """Test lint command with options."""
-    result = main(["lint", "--config", str(mock_config_file), "--fix", "--dry-run"])
+    result = main(["lint", "--config", str(config_file.path), "--fix", "--dry-run"])
     assert result == 0
     captured = capsys.readouterr()
     assert "auto-fix is enabled" in captured.out.lower()
@@ -121,12 +65,12 @@ def test_cli_list_no_options(capsys, monkeypatch):
     assert "Please specify --rules and/or --rule-sets" in captured.out
 
 
-def test_cli_list_rules(capsys, monkeypatch):
+def test_cli_list_rules(capsys, monkeypatch, rule_cls):  # noqa: F811
     """Test list command with --rules option comprehensively."""
     # Mock rule manager to return test rules
     test_rules = {
-        "R001": mk_rule("R001", "Check branch protection")(),
-        "R002": mk_rule("R002", "Check repository visibility")(),
+        "R001": rule_cls("R001", "Check branch protection")(),
+        "R002": rule_cls("R002", "Check repository visibility")(),
     }
 
     def mock_get_all_rules(self):
@@ -175,8 +119,8 @@ def test_cli_list_rule_sets(capsys, monkeypatch):
     """Test list command with --rule-sets option."""
     # Mock rule manager to return test rule sets
     test_rule_sets = {
-        "RS001": TestRuleSet("RS001", "Basic repository checks"),
-        "RS002": TestRuleSet("RS002", "Security checks"),
+        "RS001": RuleSet("RS001", "Basic repository checks"),
+        "RS002": RuleSet("RS002", "Security checks"),
     }
 
     def mock_get_all_rule_sets(self):
@@ -238,71 +182,73 @@ def test_cli_init_basic(capsys):
             output_file.unlink()
 
 
-def test_cli_lint_with_config(capsys, mock_config, mock_github):
+def test_cli_lint_with_config(capsys, config_file, mock_github):
     """Test lint command with custom configuration."""
-    config = {
-        "github_token": "test-token",
-        "default_rule_set": "test-ruleset",
-        "repository_filter": {
-            "include_patterns": ["test-repo-*"],
-            "exclude_patterns": ["test-repo-excluded"],
-        },
-        "rule_sets": {"test-ruleset": {"name": "test-ruleset", "rules": ["R001"]}},
-        "repository_rule_sets": {},
-    }
-    config_path = mock_config(config)
+    config_file.set(
+        {
+            "github_token": "test-token",
+            "default_rule_set": "test-ruleset",
+            "repository_filter": {
+                "include_patterns": ["test-repo-*"],
+                "exclude_patterns": ["test-repo-excluded"],
+            },
+            "rule_sets": {"test-ruleset": {"name": "test-ruleset", "rules": ["R001"]}},
+            "repository_rule_sets": {},
+        }
+    )
 
-    result = main(["lint", "--config", str(config_path)])
+    result = main(["lint", "--config", str(config_file.path)])
     assert result == 0
 
     captured = capsys.readouterr()
-    assert str(config_path) in captured.out
+    assert str(config_file.path) in captured.out
     assert "Found 2 repositories" in captured.out
 
 
-def test_cli_lint_with_default_config(capsys, mock_config_file, mock_github):
+def test_cli_lint_with_default_config(capsys, config_file, mock_github):
     """Test lint command with default test configuration."""
-    result = main(["lint", "--config", str(mock_config_file)])
+    result = main(["lint", "--config", str(config_file.path)])
     assert result == 0
 
     captured = capsys.readouterr()
-    assert str(mock_config_file) in captured.out
+    assert str(config_file.path) in captured.out
     assert "Found 2 repositories" in captured.out
 
 
-def test_cli_lint_with_mock_github(capsys, mock_config, env, mock_github):
+def test_cli_lint_with_mock_github(capsys, config_file, env, mock_github):
     """Test lint command with mocked GitHub API responses."""
     # Define mock repository data
 
     # Define mock settings for each repository
 
     # Create test configuration
-    config = {
-        "github_token": "env-token",
-        "default_rule_set": "default",
-        "repository_filter": {
-            "include_patterns": ["test-repo-*"],
-            "exclude_patterns": [],
-        },
-        "rule_sets": {"test-ruleset": {"name": "test-ruleset", "rules": ["R001"]}},
-        "repository_rule_sets": {},
-    }
-    config_path = mock_config(config)
+    config_file.set(
+        {
+            "github_token": "env-token",
+            "default_rule_set": "default",
+            "repository_filter": {
+                "include_patterns": ["test-repo-*"],
+                "exclude_patterns": [],
+            },
+            "rule_sets": {"test-ruleset": {"name": "test-ruleset", "rules": ["R001"]}},
+            "repository_rule_sets": {},
+        }
+    )
 
     # Run lint command
-    result = main(["lint", "--config", str(config_path)])
+    result = main(["lint", "--config", str(config_file.path)])
     assert result == 0
 
     # Verify output
     captured = capsys.readouterr()
-    assert str(config_path) in captured.out
+    assert str(config_file.path) in captured.out
     assert "Found 2 repositories" in captured.out
 
 
-def test_cli_lint_with_non_interactive(capsys, mock_config_file, mock_github, env):
+def test_cli_lint_with_non_interactive(capsys, config_file, mock_github, env):
     """Test lint command with --non-interactive option."""
     # Create a mock config file with a GitHub token
-    mock_config_file.write_text(
+    config_file.set(
         """
 github_token: env-token
 rule_sets:
@@ -314,7 +260,7 @@ rule_sets:
     )
 
     # Run lint command with --fix and --non-interactive
-    args = ["lint", "--fix", "--non-interactive", "--config", str(mock_config_file)]
+    args = ["lint", "--fix", "--non-interactive", "--config", str(config_file.path)]
     main(args)
 
     # Verify output messages
@@ -342,13 +288,13 @@ def test_cli_lint_config_not_found(capsys):
     assert "Run 'repolint init' to create a new configuration file" in captured.out
 
 
-def test_cli_lint_no_github_token(capsys, mock_config, monkeypatch, env):
+def test_cli_lint_no_github_token(capsys, config_file, monkeypatch, env):
     """Test lint command with no GitHub token configured."""
     # Remove tokens from environment
     monkeypatch.delenv("REPOLINT_GITHUB_TOKEN", raising=False)
 
     # Create a temporary config without tokens
-    config_path = mock_config(
+    config_file.set(
         {
             "default_rule_set": "default",
             "repository_filter": {"include_patterns": [], "exclude_patterns": []},
@@ -358,7 +304,7 @@ def test_cli_lint_no_github_token(capsys, mock_config, monkeypatch, env):
     )
 
     with pytest.raises(SystemExit) as exc_info:
-        main(["lint", "--config", str(config_path)])
+        main(["lint", "--config", str(config_file.path)])
     assert exc_info.value.code == 1
 
     captured = capsys.readouterr()
@@ -468,7 +414,7 @@ def test_cli_main_unknown_command(capsys):
     assert exc_info.value.code == 2
     captured = capsys.readouterr()
     assert "invalid choice: 'unknown-command'" in captured.err
-    assert "choose from 'lint', 'list', 'init'" in captured.err
+    assert "choose from lint, list, init" in captured.err
 
 
 def test_cli_main_command_not_in_handlers(monkeypatch, capsys):
@@ -497,22 +443,23 @@ def test_cli_main_command_not_in_handlers(monkeypatch, capsys):
     )  # Help shouldn't be shown for unknown command
 
 
-def test_cli_lint_interactive_fix(capsys, mock_config, mock_github, monkeypatch):
+def test_cli_lint_interactive_fix(capsys, config_file, mock_github, monkeypatch):
     """Test lint command with interactive fix prompts."""
     # Create config with a test rule set
-    config = {
-        "github_token": "token",
-        "default_rule_set": "test",
-        "repository_filter": {"include_patterns": [], "exclude_patterns": []},
-        "rule_sets": {
-            "test": {
-                "name": "Test Rule Set",
-                "rules": ["TEST001"],
-            }
-        },
-        "repository_rule_sets": {},
-    }
-    config_path = mock_config(config)
+    config_file.set(
+        {
+            "github_token": "token",
+            "default_rule_set": "test",
+            "repository_filter": {"include_patterns": [], "exclude_patterns": []},
+            "rule_sets": {
+                "test": {
+                    "name": "Test Rule Set",
+                    "rules": ["TEST001"],
+                }
+            },
+            "repository_rule_sets": {},
+        }
+    )
 
     # Mock a repository that needs fixing
     class MockRepo:
@@ -558,7 +505,7 @@ def test_cli_lint_interactive_fix(capsys, mock_config, mock_github, monkeypatch)
         def create_rule_set(self, rule_set_id, description, rule_ids):
             rule_set = RuleSet(rule_set_id, description)
             for rule_id in rule_ids:
-                rule = self._rules[rule_id]()
+                rule = self._rules[rule_id]
                 rule_set.add_rule(rule)
             return rule_set
 
@@ -575,7 +522,7 @@ def test_cli_lint_interactive_fix(capsys, mock_config, mock_github, monkeypatch)
 
     monkeypatch.setattr("builtins.input", mock_input_yes)
 
-    result = main(["lint", "--fix", "--config", str(config_path)])
+    result = main(["lint", "--fix", "--config", str(config_file.path)])
     assert result == 0
 
     captured = capsys.readouterr()
@@ -589,7 +536,7 @@ def test_cli_lint_interactive_fix(capsys, mock_config, mock_github, monkeypatch)
 
     monkeypatch.setattr("builtins.input", mock_input_no)
 
-    result = main(["lint", "--fix", "--config", str(config_path)])
+    result = main(["lint", "--fix", "--config", str(config_file.path)])
     assert result == 0
 
     captured = capsys.readouterr()
@@ -597,7 +544,7 @@ def test_cli_lint_interactive_fix(capsys, mock_config, mock_github, monkeypatch)
     assert "Fix skipped" in captured.out
 
 
-def test_cli_lint_fix_error(capsys, mock_config, mock_github, monkeypatch):
+def test_cli_lint_fix_error(capsys, config_file, mock_github, monkeypatch):
     """Test lint command when fix application raises an exception."""
 
     # Mock rule that raises an exception during fix
@@ -631,7 +578,7 @@ def test_cli_lint_fix_error(capsys, mock_config, mock_github, monkeypatch):
         def create_rule_set(self, rule_set_id, description, rule_ids):
             rule_set = RuleSet(rule_set_id, description)
             for rule_id in rule_ids:
-                rule = self._rules[rule_id]()
+                rule = self._rules[rule_id]
                 rule_set.add_rule(rule)
             return rule_set
 
@@ -653,10 +600,12 @@ def test_cli_lint_fix_error(capsys, mock_config, mock_github, monkeypatch):
         },
         "repository_rule_sets": {},
     }
-    config_file = mock_config(config)
+    config_file.set(config)
 
     # Run lint with fix
-    result = main(["lint", "--fix", "--config", str(config_file), "--non-interactive"])
+    result = main(
+        ["lint", "--fix", "--config", str(config_file.path), "--non-interactive"]
+    )
     assert result == 0
 
     # Verify output shows fix error
@@ -664,7 +613,7 @@ def test_cli_lint_fix_error(capsys, mock_config, mock_github, monkeypatch):
     assert "Fix error: Fix failed with test error" in captured.out
 
 
-def test_cli_lint_fix_failure(capsys, mock_config, mock_github, monkeypatch):
+def test_cli_lint_fix_failure(capsys, config_file, mock_github, monkeypatch):
     """Test lint command when fix returns failure status."""
 
     # Mock rule that returns failure from fix
@@ -698,7 +647,7 @@ def test_cli_lint_fix_failure(capsys, mock_config, mock_github, monkeypatch):
         def create_rule_set(self, rule_set_id, description, rule_ids):
             rule_set = RuleSet(rule_set_id, description)
             for rule_id in rule_ids:
-                rule = self._rules[rule_id]()
+                rule = self._rules[rule_id]
                 rule_set.add_rule(rule)
             return rule_set
 
@@ -720,10 +669,12 @@ def test_cli_lint_fix_failure(capsys, mock_config, mock_github, monkeypatch):
         },
         "repository_rule_sets": {},
     }
-    config_file = mock_config(config)
+    config_file.set(config)
 
     # Run lint with fix
-    result = main(["lint", "--config", str(config_file), "--fix", "--non-interactive"])
+    result = main(
+        ["lint", "--config", str(config_file.path), "--fix", "--non-interactive"]
+    )
     assert result == 0
 
     # Verify output shows fix failure
@@ -731,10 +682,10 @@ def test_cli_lint_fix_failure(capsys, mock_config, mock_github, monkeypatch):
     assert "Fix failed: Fix could not be applied" in captured.out
 
 
-def test_cli_lint_github_access_error(capsys, mock_config, env, monkeypatch):
+def test_cli_lint_github_access_error(capsys, config_file, env, monkeypatch):
     """Test lint command when GitHub API access raises an exception."""
     # Create a test config file
-    config_file = mock_config(
+    config_file.set(
         {
             "repositories": ["test-org/test-repo"],
             "rules": ["test-rule"],
@@ -757,17 +708,17 @@ def test_cli_lint_github_access_error(capsys, mock_config, env, monkeypatch):
 
     # Run lint command
     with pytest.raises(SystemExit) as exc_info:
-        main(["lint", "--config", str(config_file)])
+        main(["lint", "--config", str(config_file.path)])
 
     assert exc_info.value.code == 1
     captured = capsys.readouterr()
     assert "Error accessing GitHub: Failed to access GitHub API" in captured.out
 
 
-def test_cli_lint_config_load_error(capsys, mock_config):
+def test_cli_lint_config_load_error(capsys, config_file):
     """Test lint command when configuration loading raises an exception."""
     # Create an invalid YAML config file
-    config_file = mock_config(
+    config_file.set(
         {
             "repositories": "not-a-list",  # This will cause a validation error
             "rules": ["test-rule"],
@@ -776,7 +727,7 @@ def test_cli_lint_config_load_error(capsys, mock_config):
 
     # Run lint command
     with pytest.raises(SystemExit) as exc_info:
-        main(["lint", "--config", str(config_file)])
+        main(["lint", "--config", str(config_file.path)])
 
     assert exc_info.value.code == 1
     captured = capsys.readouterr()

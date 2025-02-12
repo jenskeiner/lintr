@@ -41,7 +41,7 @@ def test_rule_set_factory_create_rule_set():
     )
 
     assert isinstance(rule_set, RuleSet)
-    assert rule_set.rule_set_id == "RS001"
+    assert rule_set.id == "RS001"
     assert rule_set.description == "Test rule set"
     assert len(list(rule_set.rules())) == 1
 

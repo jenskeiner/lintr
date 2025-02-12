@@ -1,14 +1,13 @@
 """Tests for core linting functionality."""
+from abc import ABC
 from unittest.mock import MagicMock, patch
 
 import pytest
 from colorama import Fore, Style
 
-from repolint.config import BaseRepolintConfig
 from repolint.linter import Linter
 from repolint.rules import Rule, RuleCheckResult, RuleResult, RuleSet
 from repolint.rules.base import RuleContext
-from tests.fixtures import mk_rule
 
 
 def strip_color_codes(text: str) -> str:
@@ -34,54 +33,20 @@ class CustomException(Exception):
 
 
 @pytest.fixture
-def mock_repo():
-    """Create a mock GitHub repository."""
-    repo = MagicMock()
-    repo.name = "test-repo"
-    repo.default_branch = "main"
-    repo.description = "Test repository"
-    repo.homepage = "https://example.com"
-    repo.private = False
-    repo.archived = False
-    return repo
-
-
-@pytest.fixture
-def mock_config():
-    """Create a mock configuration."""
-    config = MagicMock(spec=BaseRepolintConfig)
-    config.default_rule_set = "empty"
-    config.repository_filter = None
-    config.rule_sets = {}
-    config.repository_rule_sets = {}
-    return config
-
-
-@pytest.fixture
-def mock_rule_set():
+def ruleset(rule_cls):
     """Create a mock rule set."""
-    rule_set = RuleSet("default", "Default rule set")
-    rule_set.add_rule(mk_rule("R001", "Test rule")())
-    return rule_set
+    ruleset = RuleSet("default", "Default rule set")
+    ruleset.add_rule(rule_cls("R001", "Test rule"))
+    return ruleset
 
 
-@pytest.fixture
-def mock_rule_manager():
-    """Create a mock rule manager."""
-    with patch("repolint.linter.RuleManager") as mock_manager_class:
-        # Setup mock rule manager
-        mock_manager = MagicMock()
-        mock_manager_class.return_value = mock_manager
-        yield mock_manager
-
-
-def test_rule_set_rules_ordering():
+def test_rule_set_rules_ordering(rule_cls):
     """Test that rules are returned in order of addition."""
     # Create a rule set with rules in non-alphabetical order
     rule_set = RuleSet("test", "Test rule set")
-    rule_set.add_rule(mk_rule("R002", "Second rule")())
-    rule_set.add_rule(mk_rule("R001", "First rule")())
-    rule_set.add_rule(mk_rule("R003", "Third rule")())
+    rule_set.add_rule(rule_cls("R002", "Second rule"))
+    rule_set.add_rule(rule_cls("R001", "First rule"))
+    rule_set.add_rule(rule_cls("R003", "Third rule"))
 
     # Get rules and verify order
     rules = list(rule_set.rules())
@@ -89,7 +54,7 @@ def test_rule_set_rules_ordering():
     assert [r.rule_id for r in rules] == ["R002", "R001", "R003"]
 
 
-def test_rule_set_rules_uniqueness():
+def test_rule_set_rules_uniqueness(rule_cls):
     """Test that duplicate rules are handled correctly."""
     # Create nested rule sets with duplicate rules
     parent = RuleSet("parent", "Parent rule set")
@@ -97,11 +62,11 @@ def test_rule_set_rules_uniqueness():
     grandchild = RuleSet("grandchild", "Grandchild rule set")
 
     # Add rules to each level
-    parent.add_rule(mk_rule("R001", "First rule - parent")())
-    child.add_rule(mk_rule("R001", "First rule - child")())  # Duplicate ID
-    child.add_rule(mk_rule("R002", "Second rule - child")())
-    grandchild.add_rule(mk_rule("R002", "Second rule - grandchild")())  # Duplicate ID
-    grandchild.add_rule(mk_rule("R003", "Third rule - grandchild")())
+    parent.add_rule(rule_cls("R001", "First rule - parent"))
+    child.add_rule(rule_cls("R001", "First rule - child"))  # Duplicate ID
+    child.add_rule(rule_cls("R002", "Second rule - child"))
+    grandchild.add_rule(rule_cls("R002", "Second rule - grandchild"))  # Duplicate ID
+    grandchild.add_rule(rule_cls("R003", "Third rule - grandchild"))
 
     # Link rule sets
     child.add_rule_set(grandchild)
@@ -117,78 +82,74 @@ def test_rule_set_rules_uniqueness():
     assert rules[2].description == "Third rule - grandchild"
 
 
-def test_create_context(mock_repo, mock_config):
+def test_create_context(repository, config):
     """Test creating a rule context."""
-    linter = Linter(mock_config)
-    context = linter.create_context(mock_repo)
+    linter = Linter(config)
+    context = linter.create_context(repository)
     assert isinstance(context, RuleContext)
-    assert context.repository == mock_repo
+    assert context.repository == repository
     assert not context.dry_run
 
 
-def test_get_rule_set_for_repository_default(
-    mock_repo, mock_config, mock_rule_set, mock_rule_manager
-):
+def test_get_rule_set_for_repository_default(repository, config, ruleset, rule_manager):
     """Test getting default rule set for repository."""
     # Setup mock rule manager
-    mock_rule_manager.get_rule_set.return_value = mock_rule_set
+    rule_manager.get_rule_set.return_value = ruleset
 
     # Create linter and get rule set
-    linter = Linter(mock_config)
-    rule_set_info = linter.get_rule_set_for_repository(mock_repo)
+    linter = Linter(config)
+    rule_set_info = linter.get_rule_set_for_repository(repository)
 
     # Verify correct rule set is returned
     assert rule_set_info is not None
     rule_set_id, rule_set = rule_set_info
     assert rule_set_id == "empty"
-    assert rule_set == mock_rule_set
-    mock_rule_manager.get_rule_set.assert_called_once_with("empty")
+    assert rule_set == ruleset
+    rule_manager.get_rule_set.assert_called_once_with("empty")
 
 
 def test_get_rule_set_for_repository_specific(
-    mock_repo, mock_config, mock_rule_set, mock_rule_manager
+    repository, config, ruleset, rule_manager
 ):
     """Test getting repository-specific rule set."""
     # Configure repository-specific rule set
-    mock_config.repository_rule_sets = {"test-repo": "specific"}
-    mock_rule_set.rule_set_id = "specific"
+    config.repository_rule_sets = {"test-repo": "specific"}
+    ruleset._id = "specific"
 
     # Setup mock rule manager
-    mock_rule_manager.get_rule_set.return_value = mock_rule_set
+    rule_manager.get_rule_set.return_value = ruleset
 
     # Create linter and get rule set
-    linter = Linter(mock_config)
-    rule_set_info = linter.get_rule_set_for_repository(mock_repo)
+    linter = Linter(config)
+    rule_set_info = linter.get_rule_set_for_repository(repository)
 
     # Verify correct rule set is returned
     assert rule_set_info is not None
     rule_set_id, rule_set = rule_set_info
     assert rule_set_id == "specific"
-    assert rule_set == mock_rule_set
-    mock_rule_manager.get_rule_set.assert_called_once_with("specific")
+    assert rule_set == ruleset
+    rule_manager.get_rule_set.assert_called_once_with("specific")
 
 
-def test_get_rule_set_for_repository_not_found(
-    mock_repo, mock_config, mock_rule_manager
-):
+def test_get_rule_set_for_repository_not_found(repository, config, rule_manager):
     """Test handling of non-existent rule set."""
     # Setup mock rule manager to return no rule set
-    mock_rule_manager.get_rule_set.return_value = None
+    rule_manager.get_rule_set.return_value = None
 
     # Create linter and get rule set
-    linter = Linter(mock_config)
-    rule_set_info = linter.get_rule_set_for_repository(mock_repo)
+    linter = Linter(config)
+    rule_set_info = linter.get_rule_set_for_repository(repository)
 
     # Verify no rule set is returned
     assert rule_set_info is None
-    mock_rule_manager.get_rule_set.assert_called_once_with("empty")
+    rule_manager.get_rule_set.assert_called_once_with("empty")
 
 
-def test_check_repository_success(mock_repo, mock_config, mock_rule_set):
+def test_check_repository_success(repository, config, ruleset):
     """Test successful repository checking."""
     # Create linter and check repository
-    linter = Linter(mock_config)
-    results = linter.check_repository(mock_repo, mock_rule_set)
+    linter = Linter(config)
+    results = linter.check_repository(repository, ruleset)
 
     # Verify results
     assert "R001" in results
@@ -197,15 +158,15 @@ def test_check_repository_success(mock_repo, mock_config, mock_rule_set):
     assert not results["R001"].fix_available
 
 
-def test_check_repository_rule_error(mock_repo, mock_config):
+def test_check_repository_rule_error(repository, config, rule_cls):
     """Test handling of rule execution errors."""
     # Create a rule set with a failing rule
     rule_set = RuleSet("test", "Test rule set")
-    rule_set.add_rule(mk_rule("R001", "Failing test rule", Exception("Rule failed"))())
+    rule_set.add_rule(rule_cls("R001", "Failing test rule", Exception("Rule failed")))
 
     # Create linter and check repository
-    linter = Linter(mock_config)
-    results = linter.check_repository(mock_repo, rule_set)
+    linter = Linter(config)
+    results = linter.check_repository(repository, rule_set)
 
     # Verify error is reported in results
     assert "R001" in results
@@ -213,34 +174,30 @@ def test_check_repository_rule_error(mock_repo, mock_config):
     assert "Rule execution failed" in results["R001"].message
 
 
-def test_lint_repositories_with_missing_rule_set(
-    mock_repo, mock_config, mock_rule_manager
-):
+def test_lint_repositories_with_missing_rule_set(repository, config, rule_manager):
     """Test linting repositories when rule set is not found."""
     # Setup mock rule manager to return no rule set
-    mock_rule_manager.get_rule_set.return_value = None
+    rule_manager.get_rule_set.return_value = None
 
     # Create linter and lint repositories
-    linter = Linter(mock_config)
-    results = linter.lint_repositories([mock_repo])
+    linter = Linter(config)
+    results = linter.lint_repositories([repository])
 
     # Verify error is reported in results
     assert "test-repo" in results
     assert "error" in results["test-repo"]
     assert "No rule set found" in results["test-repo"]["error"]
-    mock_rule_manager.get_rule_set.assert_called_once_with("empty")
+    rule_manager.get_rule_set.assert_called_once_with("empty")
 
 
-def test_lint_repositories_success(
-    mock_repo, mock_config, mock_rule_set, mock_rule_manager
-):
+def test_lint_repositories_success(repository, config, ruleset, rule_manager):
     """Test successful repository linting."""
     # Setup mock rule manager
-    mock_rule_manager.get_rule_set.return_value = mock_rule_set
+    rule_manager.get_rule_set.return_value = ruleset
 
     # Create linter and lint repositories
-    linter = Linter(mock_config)
-    results = linter.lint_repositories([mock_repo])
+    linter = Linter(config)
+    results = linter.lint_repositories([repository])
 
     # Verify results
     assert "test-repo" in results
@@ -251,31 +208,31 @@ def test_lint_repositories_success(
     assert not repo_results["R001"].fix_available
 
 
-def test_lint_repositories_output_formatting(mock_repo, mock_config, capsys):
+def test_lint_repositories_output_formatting(repository, config, capsys, rule_cls):
     """Test output formatting of lint results."""
     # Create rules with different results
-    passing_rule = mk_rule("R001", "Passing rule")()
-    failing_rule = mk_rule(
+    passing_rule = rule_cls("R001", "Passing rule")
+    failing_rule = rule_cls(
         "R002",
         "Failing rule",
         RuleCheckResult(
             result=RuleResult.FAILED, message="Dummy rule result", fix_available=False
         ),
-    )()
-    skipped_rule = mk_rule(
+    )
+    skipped_rule = rule_cls(
         "R003",
         "Skipped rule",
         RuleCheckResult(
             result=RuleResult.SKIPPED, message="Dummy rule result", fix_available=False
         ),
-    )()
-    fixable_rule = mk_rule(
+    )
+    fixable_rule = rule_cls(
         "R004",
         "Fixable rule",
         RuleCheckResult(
             result=RuleResult.FAILED, message="Dummy rule result", fix_available=False
         ),
-    )()
+    )
 
     # Create a rule set with all types of rules
     rule_set = RuleSet("test", "Test rule set")
@@ -285,37 +242,39 @@ def test_lint_repositories_output_formatting(mock_repo, mock_config, capsys):
     rule_set.add_rule(fixable_rule)
 
     # Configure mock config to use our test rule set
-    mock_config.default_rule_set = "test"
+    config.default_rule_set = "test"
 
     # Setup mock rule manager to return our rule set
-    mock_rule_manager = MagicMock()
-    mock_rule_manager.get_rule_set.return_value = rule_set
+    rule_manager = MagicMock()
+    rule_manager.get_rule_set.return_value = rule_set
 
     # Create linter with mocked rule manager
-    linter = Linter(mock_config)
-    linter._rule_manager = mock_rule_manager
+    linter = Linter(config)
+    linter._rule_manager = rule_manager
 
     # Run linting
-    linter.lint_repositories([mock_repo])
+    linter.lint_repositories([repository])
 
     # Capture output and strip color codes
     captured = capsys.readouterr()
     output_lines = [strip_color_codes(line) for line in captured.out.splitlines()]
 
     # Verify output format
-    assert output_lines[0] == f"- {mock_repo.name} (test)"
+    assert output_lines[0] == f"- {repository.name} (test)"
     assert "✓ R001:" in output_lines[1]  # Passing rule
     assert "✗ R002:" in output_lines[2]  # Failing rule
     assert "- R003:" in output_lines[3]  # Skipped rule
     assert "✗ R004:" in output_lines[4]  # Fixable rule
 
 
-def test_lint_repositories_output_formatting_with_fix(mock_repo, mock_config, capsys):
+def test_lint_repositories_output_formatting_with_fix(
+    repository, config, capsys, rule_cls
+):
     """Test output formatting of lint results with a fixable rule."""
     # Create a rule set with a fixable rule
     rule_set = RuleSet("test", "Test rule set")
     rule_set.add_rule(
-        mk_rule(
+        rule_cls(
             "R001",
             "Fixable rule",
             result=RuleCheckResult(
@@ -324,59 +283,59 @@ def test_lint_repositories_output_formatting_with_fix(mock_repo, mock_config, ca
                 fix_available=True,
                 fix_description="This can be fixed automatically",
             ),
-        )()
+        )
     )
 
     # Configure mock config to use our test rule set
-    mock_config.default_rule_set = "test"
+    config.default_rule_set = "test"
 
     # Setup mock rule manager to return our rule set
-    mock_rule_manager = MagicMock()
-    mock_rule_manager.get_rule_set.return_value = rule_set
+    rule_manager = MagicMock()
+    rule_manager.get_rule_set.return_value = rule_set
 
     # Create linter with mocked rule manager
-    linter = Linter(mock_config)
-    linter._rule_manager = mock_rule_manager
+    linter = Linter(config)
+    linter._rule_manager = rule_manager
 
     # Run linting
-    linter.lint_repositories([mock_repo])
+    linter.lint_repositories([repository])
 
     # Capture output and strip color codes
     captured = capsys.readouterr()
     output_lines = [strip_color_codes(line) for line in captured.out.splitlines()]
 
     # Verify output format
-    assert output_lines[0] == f"- {mock_repo.name} (test)"
+    assert output_lines[0] == f"- {repository.name} (test)"
     assert "✗ R001:" in output_lines[1]  # Failed rule
     assert "⚡" in output_lines[2]  # Fix available
     assert "This can be fixed automatically" in output_lines[2]  # Fix description
 
 
-def test_lint_repositories_custom_error_message(mock_repo, mock_config, capsys):
+def test_lint_repositories_custom_error_message(repository, config, capsys, rule_cls):
     """Test output formatting of lint results with a custom error message."""
     error_message = "Custom error occurred while checking rule"
 
     # Create a rule set with an error-raising rule
     rule_set = RuleSet("test", "Test rule set")
-    rule_set.add_rule(mk_rule("R001", "Error rule", result=Exception(error_message))())
+    rule_set.add_rule(rule_cls("R001", "Error rule", result=Exception(error_message)))
 
     # Configure mock config to use our test rule set
-    mock_config.default_rule_set = "test"
+    config.default_rule_set = "test"
 
     # Setup mock rule manager to return our rule set
-    mock_rule_manager = MagicMock()
-    mock_rule_manager.get_rule_set.return_value = rule_set
+    rule_manager = MagicMock()
+    rule_manager.get_rule_set.return_value = rule_set
 
     # Create linter with mocked rule manager
-    linter = Linter(mock_config)
-    linter._rule_manager = mock_rule_manager
+    linter = Linter(config)
+    linter._rule_manager = rule_manager
 
     # Run linting
-    results = linter.lint_repositories([mock_repo])
+    results = linter.lint_repositories([repository])
 
     # Verify error is correctly captured in results
-    assert "R001" in results[mock_repo.name]
-    result = results[mock_repo.name]["R001"]
+    assert "R001" in results[repository.name]
+    result = results[repository.name]["R001"]
     assert result.result == RuleResult.FAILED
     assert error_message in result.message
     assert not result.fix_available
@@ -384,38 +343,38 @@ def test_lint_repositories_custom_error_message(mock_repo, mock_config, capsys):
     # Verify error output format
     captured = capsys.readouterr()
     output_lines = [strip_color_codes(line) for line in captured.out.splitlines()]
-    assert output_lines[0] == f"- {mock_repo.name} (test)"
+    assert output_lines[0] == f"- {repository.name} (test)"
     assert "Error executing rule R001" in output_lines[1]
     assert error_message in output_lines[1]
     assert "✗ R001:" in output_lines[2]
     assert "Rule execution failed" in output_lines[2]
 
 
-def test_lint_repositories_no_rule_set_found(mock_repo, mock_config, capsys):
+def test_lint_repositories_no_rule_set_found(repository, config, capsys):
     """Test output formatting when no rule set is found."""
     # Configure mock config with non-existent rule set
-    mock_config.default_rule_set = "non-existent"
-    mock_config.repository_rule_sets = {}
+    config.default_rule_set = "non-existent"
+    config.repository_rule_sets = {}
 
     # Setup mock rule manager to return no rule set
-    mock_rule_manager = MagicMock()
-    mock_rule_manager.get_rule_set.return_value = None
+    rule_manager = MagicMock()
+    rule_manager.get_rule_set.return_value = None
 
     # Create linter with mocked rule manager
-    linter = Linter(mock_config)
-    linter._rule_manager = mock_rule_manager
+    linter = Linter(config)
+    linter._rule_manager = rule_manager
 
     # Run linting
-    results = linter.lint_repositories([mock_repo])
+    results = linter.lint_repositories([repository])
 
     # Verify error is correctly captured in results
-    assert "error" in results[mock_repo.name]
-    assert "No rule set found" in results[mock_repo.name]["error"]
+    assert "error" in results[repository.name]
+    assert "No rule set found" in results[repository.name]["error"]
 
     # Verify error output format
     captured = capsys.readouterr()
     output_lines = [strip_color_codes(line) for line in captured.out.splitlines()]
-    assert output_lines[0] == f"- {mock_repo.name} (no rule set)"
+    assert output_lines[0] == f"- {repository.name} (no rule set)"
 
 
 @pytest.mark.parametrize(
@@ -427,17 +386,18 @@ def test_lint_repositories_no_rule_set_found(mock_repo, mock_config, capsys):
     ],
 )
 def test_lint_repositories_fix_interaction(
-    mock_repo,
-    mock_config,
+    repository,
+    config,
     capsys,
     monkeypatch,
     non_interactive,
     user_input,
     expected_fix,
+    rule_cls,
 ):
     """Test interactive and non-interactive fix modes."""
     # Create a rule set with a fixable rule
-    rule = mk_rule(
+    rule = rule_cls(
         "test.rule",
         "Test rule",
         result=RuleCheckResult(
@@ -446,7 +406,8 @@ def test_lint_repositories_fix_interaction(
             fix_available=True,
             fix_description="This can be fixed automatically",
         ),
-    )()
+        fix=lambda context: (True, "Mock fix applied"),
+    )
     rule_set = RuleSet("test", "Test rule set")
     rule_set.add_rule(rule)
 
@@ -459,16 +420,14 @@ def test_lint_repositories_fix_interaction(
     monkeypatch.setattr("builtins.input", mock_input)
 
     # Mock repository name
-    mock_repo.name = "test-repo"
+    repository.name = "test-repo"
 
     # Create linter with mocked components
-    linter = Linter(
-        mock_config, dry_run=False, non_interactive=non_interactive, fix=True
-    )
+    linter = Linter(config, dry_run=False, non_interactive=non_interactive, fix=True)
     linter._rule_manager = rule_manager
 
     # Run linting
-    linter.lint_repositories([mock_repo])
+    linter.lint_repositories([repository])
     captured = capsys.readouterr()
 
     # Verify fix was applied or skipped based on interaction mode and user input
@@ -478,7 +437,7 @@ def test_lint_repositories_fix_interaction(
         assert "Fix skipped" in strip_color_codes(captured.out)
 
 
-def test_lint_repositories_fix_error(mock_repo, mock_config, capsys):
+def test_lint_repositories_fix_error(repository, config, capsys):
     """Test handling of errors during fix application."""
 
     class R(Rule):
@@ -502,15 +461,15 @@ def test_lint_repositories_fix_error(mock_repo, mock_config, capsys):
 
     # Setup rule set with a rule that fails during fix
     rule_set = RuleSet("test", "Test rule set")
-    rule_set.add_rule(R())
+    rule_set.add_rule(R)
 
     # Setup rule manager
     mock_manager = MagicMock()
     mock_manager.get_rule_set.return_value = rule_set
     with patch("repolint.linter.RuleManager", return_value=mock_manager):
         # Run linter in non-interactive mode to trigger fix
-        linter = Linter(mock_config, non_interactive=True, fix=True)
-        linter.lint_repositories([mock_repo])
+        linter = Linter(config, non_interactive=True, fix=True)
+        linter.lint_repositories([repository])
 
         # Check output
         captured = capsys.readouterr()
@@ -520,7 +479,7 @@ def test_lint_repositories_fix_error(mock_repo, mock_config, capsys):
         assert "⚡ Fix error: Error during fix" in output
 
 
-def test_lint_repositories_recheck_error(mock_repo, mock_config, capsys):
+def test_lint_repositories_recheck_error(repository, config, capsys):
     """Test handling of errors during recheck after fix."""
 
     class R(Rule):
@@ -550,15 +509,15 @@ def test_lint_repositories_recheck_error(mock_repo, mock_config, capsys):
 
     # Setup rule set with a rule that fails during recheck
     rule_set = RuleSet("test", "Test rule set")
-    rule_set.add_rule(R())
+    rule_set.add_rule(R)
 
     # Setup rule manager
     mock_manager = MagicMock()
     mock_manager.get_rule_set.return_value = rule_set
     with patch("repolint.linter.RuleManager", return_value=mock_manager):
         # Run linter in non-interactive mode to trigger fix
-        linter = Linter(mock_config, non_interactive=True, fix=True)
-        linter.lint_repositories([mock_repo])
+        linter = Linter(config, non_interactive=True, fix=True)
+        linter.lint_repositories([repository])
 
         # Check output
         captured = capsys.readouterr()
@@ -569,7 +528,7 @@ def test_lint_repositories_recheck_error(mock_repo, mock_config, capsys):
         assert "Fix error: Error during recheck after fix" in output
 
 
-def test_lint_repositories_fix_error_with_failed_fix(mock_repo, mock_config, capsys):
+def test_lint_repositories_fix_error_with_failed_fix(repository, config, capsys):
     """Test handling of failed fixes (non-exception case)."""
 
     # Create a rule that returns success=False from fix
@@ -590,15 +549,15 @@ def test_lint_repositories_fix_error_with_failed_fix(mock_repo, mock_config, cap
 
     # Setup rule set with our test rule
     rule_set = RuleSet("test", "Test rule set")
-    rule_set.add_rule(FailedFixRule())
+    rule_set.add_rule(FailedFixRule)
 
     # Setup rule manager
     mock_manager = MagicMock()
     mock_manager.get_rule_set.return_value = rule_set
     with patch("repolint.linter.RuleManager", return_value=mock_manager):
         # Run linter in non-interactive mode to trigger fix
-        linter = Linter(mock_config, non_interactive=True, fix=True)
-        linter.lint_repositories([mock_repo])
+        linter = Linter(config, non_interactive=True, fix=True)
+        linter.lint_repositories([repository])
 
         # Check output
         captured = capsys.readouterr()
@@ -608,16 +567,14 @@ def test_lint_repositories_fix_error_with_failed_fix(mock_repo, mock_config, cap
         assert "⚡ Fix failed: Fix failed for some reason" in output
 
 
-def test_lint_repositories_fix_with_all_rule_results(mock_repo, mock_config, capsys):
+def test_lint_repositories_fix_with_all_rule_results(
+    repository, config, capsys, rule_cls
+):
     """Test handling of all possible rule results after fix."""
 
-    class MultiResultRule(Rule):
-        _id = "R001"
-        _description = "Test rule"
-
-        def __init__(self, result: RuleResult):
-            self._result = result
-            self._fixed = False
+    class MultiResultRule(Rule, ABC):
+        _result = RuleResult.PASSED
+        _fixed = False
 
         def check(self, context: RuleContext) -> RuleCheckResult:
             if not self._fixed:
@@ -641,15 +598,21 @@ def test_lint_repositories_fix_with_all_rule_results(mock_repo, mock_config, cap
     for result in [RuleResult.PASSED, RuleResult.FAILED, RuleResult.SKIPPED]:
         # Setup rule set with a rule that returns our test result
         rule_set = RuleSet("test", "Test rule set")
-        rule_set.add_rule(MultiResultRule(result))
+
+        class MyRule(MultiResultRule):
+            _id = "R001"
+            _description = "Test rule"
+            _result = result
+
+        rule_set.add_rule(MyRule)
 
         # Setup rule manager
         mock_manager = MagicMock()
         mock_manager.get_rule_set.return_value = rule_set
         with patch("repolint.linter.RuleManager", return_value=mock_manager):
             # Run linter in non-interactive mode to trigger fix
-            linter = Linter(mock_config, non_interactive=True, fix=True)
-            linter.lint_repositories([mock_repo])
+            linter = Linter(config, non_interactive=True, fix=True)
+            linter.lint_repositories([repository])
 
             # Check output
             captured = capsys.readouterr()
@@ -664,11 +627,11 @@ def test_lint_repositories_fix_with_all_rule_results(mock_repo, mock_config, cap
 
 
 def test_lint_repositories_no_fix_prompt_without_fix_flag(
-    mock_repo, mock_config, capsys
+    repository, config, capsys, rule_cls
 ):
     """Test that fix prompts are not shown when --fix is not provided."""
     # Create a rule set with a fixable rule
-    rule = mk_rule(
+    rule = rule_cls(
         "test.rule",
         "Test rule",
         result=RuleCheckResult(
@@ -677,7 +640,7 @@ def test_lint_repositories_no_fix_prompt_without_fix_flag(
             fix_available=True,
             fix_description="This can be fixed automatically",
         ),
-    )()
+    )
     rule_set = RuleSet("test", "Test rule set")
     rule_set.add_rule(rule)
 
@@ -686,19 +649,19 @@ def test_lint_repositories_no_fix_prompt_without_fix_flag(
     rule_manager.get_rule_set.return_value = rule_set
 
     # Mock repository name and context
-    mock_repo.name = "test-repo"
-    mock_repo.empty = True
+    repository.name = "test-repo"
+    repository.empty = True
 
     # Create linter with mocked components (fix=False)
-    linter = Linter(mock_config, dry_run=False, non_interactive=False, fix=False)
+    linter = Linter(config, dry_run=False, non_interactive=False, fix=False)
     linter._rule_manager = rule_manager
 
     # Mock create_context to return a RuleContext
-    context = RuleContext(mock_repo, mock_config)
+    context = RuleContext(repository, config)
     linter.create_context = MagicMock(return_value=context)
 
     # Run linting
-    linter.lint_repositories([mock_repo])
+    linter.lint_repositories([repository])
     captured = capsys.readouterr()
     output = strip_color_codes(captured.out)
 

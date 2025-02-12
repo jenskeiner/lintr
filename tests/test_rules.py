@@ -5,7 +5,6 @@ from unittest.mock import MagicMock
 from abc import ABC
 from repolint.rules import Rule, RuleCheckResult, RuleResult, RuleSet
 from repolint.rules.context import RuleContext
-from .fixtures import mk_rule
 
 
 class DummyRule(Rule, ABC):
@@ -99,26 +98,26 @@ def test_rule_check():
 def test_rule_set_initialization():
     """Test basic rule set initialization."""
     rule_set = RuleSet("RS001", "Test rule set")
-    assert rule_set.rule_set_id == "RS001"
+    assert rule_set.id == "RS001"
     assert rule_set.description == "Test rule set"
     assert len(list(rule_set.rules())) == 0
 
 
-def test_rule_set_add_rule():
+def test_rule_set_add_rule(rule_cls):
     """Test adding a rule to a rule set."""
     rule_set = RuleSet("RS001", "Test rule set")
-    rule = DummyRule1(RuleResult.PASSED)
+    rule = rule_cls("R001", "Test rule")
     rule_set.add_rule(rule)
     rules = list(rule_set.rules())
     assert len(rules) == 1
     assert rule in rules
 
 
-def test_rule_set_add_rule_set():
+def test_rule_set_add_rule_set(rule_cls):
     """Test adding a rule set to another rule set."""
     parent_set = RuleSet("RS001", "Parent rule set")
     child_set = RuleSet("RS002", "Child rule set")
-    rule = DummyRule1(RuleResult.PASSED)
+    rule = rule_cls("R001", "Test rule")
     child_set.add_rule(rule)
     parent_set.add_rule_set(child_set)
     rules = list(parent_set.rules())
@@ -126,12 +125,12 @@ def test_rule_set_add_rule_set():
     assert rule in rules
 
 
-def test_rule_class_mutually_exclusive():
+def test_rule_class_mutually_exclusive(rule_cls):
     """Test class-level mutually exclusive rules."""
     # Create instances of the rules
     rule1 = MutuallyExclusiveRule1()
     rule2 = MutuallyExclusiveRule2()
-    rule3 = mk_rule("R003", "Test Rule 3", result=RuleResult.PASSED)()
+    rule3 = rule_cls("R003", "Test Rule 3", result=RuleResult.PASSED)()
 
     # Test that class-level mutual exclusivity is respected
     assert "R002" in rule1.mutually_exclusive_with
@@ -165,12 +164,12 @@ def test_rule_class_mutually_exclusive_one_directional():
     assert "R003" not in rule2.mutually_exclusive_with
 
 
-def test_rule_set_preserves_order():
+def test_rule_set_preserves_order(rule_cls):
     """Test that rules and rule sets are returned in the order they were added."""
     # Create test rules with non-alphabetical IDs to ensure order is not by ID
-    rule1 = mk_rule("R002", "Test Rule 2", result=RuleResult.PASSED)()
-    rule2 = mk_rule("R001", "Test Rule 1", result=RuleResult.PASSED)()
-    rule3 = mk_rule("R003", "Test Rule 3", result=RuleResult.PASSED)()
+    rule1 = rule_cls("R002", "Test Rule 2", result=RuleResult.PASSED)
+    rule2 = rule_cls("R001", "Test Rule 1", result=RuleResult.PASSED)
+    rule3 = rule_cls("R003", "Test Rule 3", result=RuleResult.PASSED)
 
     # Create test rule sets
     parent_set = RuleSet("RS001", "Parent Rule Set")
@@ -196,10 +195,10 @@ def test_rule_set_effective_rules():
     rule_set = RuleSet("RS001", "Test rule set")
 
     # Add rules in order: R001, R002, R003, R004
-    rule1 = OneDirectionalRule1()  # R003, excludes R004
-    rule2 = OneDirectionalRule2()  # R004
-    rule3 = MutuallyExclusiveRule1()  # R001, excludes R002
-    rule4 = MutuallyExclusiveRule2()  # R002, excludes R001
+    rule1 = OneDirectionalRule1  # R003, excludes R004
+    rule2 = OneDirectionalRule2  # R004
+    rule3 = MutuallyExclusiveRule1  # R001, excludes R002
+    rule4 = MutuallyExclusiveRule2  # R002, excludes R001
 
     # Add rules in specific order to test both one-directional and bi-directional cases
     rule_set.add_rule(rule3)  # R001
@@ -223,10 +222,10 @@ def test_rule_set_effective_rules_nested():
     child_set = RuleSet("RS002", "Child rule set")
 
     # Create rules with mutual exclusivity
-    rule1 = MutuallyExclusiveRule1()  # R001, excludes R002
-    rule2 = MutuallyExclusiveRule2()  # R002, excludes R001
-    rule3 = OneDirectionalRule1()  # R003, excludes R004
-    rule4 = OneDirectionalRule2()  # R004
+    rule1 = MutuallyExclusiveRule1  # R001, excludes R002
+    rule2 = MutuallyExclusiveRule2  # R002, excludes R001
+    rule3 = OneDirectionalRule1  # R003, excludes R004
+    rule4 = OneDirectionalRule2  # R004
 
     # Add rules to both parent and child sets
     parent_set.add_rule(rule1)  # R001

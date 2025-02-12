@@ -2,13 +2,17 @@
 
 import os
 import tempfile
-from pathlib import Path
-from typing import Any
+from collections.abc import Callable
 from collections.abc import Generator
-from unittest.mock import MagicMock
+from pathlib import Path
+from typing import Any, TextIO
+from unittest.mock import MagicMock, patch
 
 import pytest
+import yaml
 from _pytest.monkeypatch import MonkeyPatch
+
+from repolint.rules.base import Rule, RuleResult, RuleCheckResult, RuleContext
 
 
 @pytest.fixture(autouse=True)
@@ -64,11 +68,30 @@ def env_file() -> Generator[Path, None, None]:
     env_file.unlink()
 
 
+class TestConfigFile:
+    def __init__(self, f: TextIO):
+        self._f = f
+
+    @property
+    def path(self) -> Path:
+        return Path(self._f.name)
+
+    def set(self, content: dict | str) -> None:
+        self._f.seek(0)  # Go to beginning of file
+        if isinstance(content, dict):
+            yaml.dump(content, self._f)
+        else:
+            self._f.write(content)
+        self._f.truncate()  # Remove any remaining content
+        self._f.flush()  # Ensure content is written to disk
+
+
 @pytest.fixture
-def config_file() -> Generator[Path | None, None, None]:
+def config_file() -> Generator[TestConfigFile, None, None]:
     """Create a temporary configuration file."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
-        f.write(
+        c = TestConfigFile(f)
+        c.set(
             """
 github_token: yaml-token
 default_rule_set: yaml-ruleset
@@ -85,8 +108,7 @@ rule_sets:
       - "has_readme"
 """
         )
-        f.flush()
-        yield Path(f.name)
+        yield c
         os.unlink(f.name)
 
 
@@ -96,8 +118,8 @@ def config(monkeypatch: MonkeyPatch) -> Generator[Any, None, None]:
     # Create a mock config instance with pre-defined properties
     mock_config = MagicMock()
     mock_config.github_token = "token"
-    mock_config.default_rule_set = "rule-set"
-    mock_config.repository_filter = MagicMock()
+    mock_config.default_rule_set = "empty"
+    mock_config.repository_filter = None
     mock_config.rule_sets = {}
     mock_config.repository_rule_sets = {}
 
@@ -113,26 +135,8 @@ def config(monkeypatch: MonkeyPatch) -> Generator[Any, None, None]:
     yield mock_config
 
 
-@pytest.fixture(autouse=True)
-def temp_working_dir(monkeypatch: MonkeyPatch) -> Generator[Path, None, None]:
-    """Create a temporary empty working directory for each test.
-
-    This fixture is auto-used to ensure that every test runs in a clean directory,
-    preventing interference between tests and avoiding conflicts with existing files.
-
-    The directory is automatically cleaned up after each test.
-
-    Returns:
-        Path to the temporary working directory
-    """
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_dir_path = Path(temp_dir)
-        monkeypatch.chdir(temp_dir_path)
-        yield temp_dir_path
-
-
 @pytest.fixture
-def mock_repository():
+def repository():
     """Create a mock GitHub repository."""
     repo = MagicMock()
     repo.name = "test-repo"
@@ -152,53 +156,86 @@ def mock_repository():
 
 
 @pytest.fixture
-def mock_github(monkeypatch, mock_repository):
-    """Mock GitHub API responses.
+def mock_github(monkeypatch):
+    """Mock GitHub API responses."""
 
-    This fixture provides a flexible mock for GitHub API calls. It can be used
-    in two ways:
-    1. Simple mode: Returns a fixed list of repositories (default)
-    2. Advanced mode: Allows for verifying method calls and customizing behavior
-       by using the unittest.mock functionality
-    """
+    class MockRepository:
+        def __init__(self, name, private=False, archived=False):
+            self.name = name
+            self.private = private
+            self.archived = archived
 
     class MockGitHubClient:
         def __init__(self, *args, **kwargs):
             pass
 
         def get_repositories(self):
-            # Return two repositories by default
             return [
-                mock_repository,
-                MagicMock(
-                    name="test-repo-2",
-                    private=True,
-                    archived=True,
-                    default_branch="master",
-                    has_issues=False,
-                    allow_squash_merge=False,
-                ),
+                MockRepository("test-repo-1", private=False, archived=False),
+                MockRepository("test-repo-2", private=True, archived=True),
             ]
-
-        def get_repository_settings(self, repo):
-            # Return settings based on repository attributes
-            return {
-                "name": repo.name,
-                "default_branch": repo.default_branch,
-                "description": getattr(repo, "description", ""),
-                "homepage": getattr(repo, "homepage", ""),
-                "private": repo.private,
-                "archived": repo.archived,
-                "has_issues": getattr(repo, "has_issues", False),
-                "has_projects": getattr(repo, "has_projects", False),
-                "has_wiki": getattr(repo, "has_wiki", False),
-                "allow_squash_merge": getattr(repo, "allow_squash_merge", False),
-                "allow_merge_commit": getattr(repo, "allow_merge_commit", False),
-                "allow_rebase_merge": getattr(repo, "allow_rebase_merge", False),
-                "delete_branch_on_merge": getattr(
-                    repo, "delete_branch_on_merge", False
-                ),
-            }
 
     monkeypatch.setattr("repolint.gh.GitHubClient", MockGitHubClient)
     return MockGitHubClient
+
+
+@pytest.fixture
+def rule_cls() -> (
+    Callable[
+        [
+            str,
+            str,
+            RuleResult
+            | RuleCheckResult
+            | Exception
+            | Callable[[RuleContext], RuleCheckResult]
+            | None,
+            Callable[[RuleContext], tuple[bool, str]] | None,
+        ],
+        type[Rule],
+    ]
+):
+    def fn(
+        rule_id: str,
+        description: str,
+        result: RuleResult
+        | RuleCheckResult
+        | Exception
+        | Callable[[RuleContext], RuleCheckResult] = RuleCheckResult(
+            RuleResult.PASSED, "Test passed"
+        ),
+        fix: Callable[[RuleContext], tuple[bool, str]] | None = None,
+    ) -> type[Rule]:
+        class R(Rule):
+            _id = rule_id
+            _description = description
+
+            def check(self, context: RuleContext) -> RuleCheckResult:
+                if isinstance(result, RuleResult):
+                    return RuleCheckResult(result, "Test passed")
+                elif isinstance(result, RuleCheckResult):
+                    return result
+                elif isinstance(result, Exception):
+                    raise result
+                else:
+                    return result(context)
+
+            def fix(self, context: RuleContext) -> tuple[bool, str]:
+                if fix is not None:
+                    return fix(context)
+                else:
+                    return super().fix(context)
+
+        return R
+
+    return fn
+
+
+@pytest.fixture
+def rule_manager():
+    """Create a mock rule manager."""
+    with patch("repolint.linter.RuleManager") as mock_manager_class:
+        # Setup mock rule manager
+        mock_manager = MagicMock()
+        mock_manager_class.return_value = mock_manager
+        yield mock_manager

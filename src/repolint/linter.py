@@ -98,6 +98,7 @@ class Linter:
         results = {}
 
         for rule in rule_set.rules():
+            rule = rule()
             result = None
             try:
                 result = rule.check(context)

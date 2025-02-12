@@ -113,14 +113,14 @@ def test_rule_manager_load_rule_sets_from_config(manager):
         # Verify that valid rule sets were created
         rs001 = manager.get_rule_set("RS001")
         assert rs001 is not None
-        assert rs001.rule_set_id == "RS001"
+        assert rs001.id == "RS001"
         assert rs001.description == "Test rule set 1"
         assert len(list(rs001.rules())) == 1
 
         # Verify that nested rule set was created
         rs002 = manager.get_rule_set("RS002")
         assert rs002 is not None
-        assert rs002.rule_set_id == "RS002"
+        assert rs002.id == "RS002"
         assert rs002.description == "Test rule set 2"
         assert len(list(rs002.rules())) == 1  # Inherits rule from RS001
 
@@ -142,7 +142,7 @@ def test_rule_manager_create_rule_set(manager):
         )
 
         assert isinstance(rule_set, RuleSet)
-        assert rule_set.rule_set_id == "RS001"
+        assert rule_set.id == "RS001"
         assert rule_set.description == "Test rule set"
         assert len(list(rule_set.rules())) == 1
 
@@ -216,7 +216,7 @@ def test_rule_set_discovery_mixed_success():
         manager = RuleManager()
 
         # Verify successful rule set was registered
-        assert dummy_rule_set.rule_set_id in manager._rule_sets
+        assert dummy_rule_set.id in manager._rule_sets
 
         # Verify failed rule set was not registered
         assert "test_rule_set_failure" not in manager._rule_sets

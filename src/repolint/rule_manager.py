@@ -69,7 +69,7 @@ class RuleManager:
             try:
                 factory_func = entry_point.load()
                 rule_set = factory_func()  # Call the factory function
-                self._rule_sets[rule_set.rule_set_id] = rule_set
+                self._rule_sets[rule_set.id] = rule_set
             except Exception as e:
                 # Log warning about invalid entry point
                 print(f"Warning: Failed to load rule set {entry_point.name}: {e}")
