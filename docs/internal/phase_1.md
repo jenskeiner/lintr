@@ -1,0 +1,61 @@
+### Phase 1: Initial Setup and Core Features
+- [x] 1.1: Initialize Git repository.
+- [x] 1.2: Set up `uv` for build and packaging.
+  - [x] 1.2.1: Create `pyproject.toml`.
+  - [x] 1.2.2: Add regular and dev dependencies to `pyproject.toml`.
+  - [x] 1.2.3: Initialize Python virtual environment by running `uv sync --all-extras`.
+- [x] 1.3: Setup pre-commit framework.
+  - [x] 1.3.1: Add pe-commit framework as dev dependency and sync it into the project's Python virtual environment.
+  - [x] 1.3.2: Create ` .pre-commit-config.yaml` file. Add the following checks:
+    - `pyupgrade` (for the used Python version): https://github.com/asottile/pyupgrade
+    - `ruff` (linter and formatter): https://github.com/astral-sh/ruff
+- [x] 1.4: Set up `pytest` for unit testing.
+  - [x] 1.4.1: Create `tests/` directory.
+  - [x] 1.4.2: Create dummy test file.
+  - [x] 1.4.3: Ensure test dependencies are in `pyproject.toml`.
+  - [x] 1.4.4: Run `pytest` to verify test setup.
+- [x] 1.5: Implement basic CLI with placeholder commands.
+  - [x] 1.5.1: Create a `__main__.py` file so the module can be run as a script.
+  - [x] 1.5.2: Add an actual script named `lintr` to the package to run the CLI.
+- [x] 1.6: Implement the `init` command properly to initialize a configuration file.
+- [x] 1.7: Develop core functionality:
+  - [x] 1.7.1: GitHub API integration.
+  - [x] 1.7.2: Rules and rule-set base classes implementation. No concrete rules yet.
+  - [x] 1.7.3: Rule Manager implementation. Singleton. Uses entry points to auto-discover rules and rule sets.
+  - [x] 1.7.4: Configuration file parsing.
+- [x] 1.8 Add true end-to-end tests for real CLI operations.
+  - [x] 1.8.1: Add parameterizable fixture to mock configuration for e2e CLI tests.
+  - [x] 1.8.2: Add parameterizable fixture to mock GitHub API responses for e2e CLI tests.
+  - [x] 1.8.3: Improve test to verify listing of rules (`lintr --list rules`) to verify output comprehensively.
+  - [x] 1.8.4: Improve test to verify listing of rule-sets (`lintr --list rule-sets`) to verify output comprehensively.
+- [x] 1.9: Create initial rules.
+  - [x] 1.9.1: Create a rule that checks if a default branch exists.
+  - [x] 1.9.2: Create a rule that checks if the setting "Whether to require contributors to sign off on web-based commits" is enabled (web_commit_signoff_required).
+- [x] 1.10: Create initial rule sets.
+  - [x] 1.10.1: Review rule set discovery logic and ensure rule sets can be created programmatically as well as through configuration.
+  - [x] 1.10.2: Create a minimalistic default rule set.
+- [x] 1.11: Implement the `lint` command to run linting operations.
+  - [x] 1.11.1: Parse and validate the configuration.
+  - [x] 1.11.2: Connect to GitHub and enumerate repositories.
+  - [x] 1.11.3: Apply inclusion and exclusion patterns to determine final list of repositories.
+  - [x] 1.11.4: Iterate over repositories. In the loop body, set up the context to pass to linting rules, but don't actually call them yet.
+  - [x] 1.11.5: Determine which rule set to use for each repository in the loop body.
+  - [x] 1.11.6: Iterate over all rules in the rule set for each repository in the loop body. Consider using a generator pattern to recursively enumerate all rules in a rule set.
+  - [x] 1.11.7: For each rule check on a repository, execute the fix step immediately after, if the --fix CLI option has been passed. Ensure proper terminal output to inform the user.
+  - [x] 1.11.8: Add a --non-interactive CLI option. By default, when not given, applying fixes is interactive, i.e. the user should be prompted before executing each fix. When given, applying fixes should not be interactive.
+  - [x] 1.11.9: Add CLI option --include-organisations. By default, when not given, linting only considers user repositories. When given, linting considers all repositories, including organisation repositories.
+- [x] 1.12: Beautify the linting output.
+  - [x] 1.12.1: For each repository, list the repository name followed by the rule set applied for the repo in parenthesis.
+  - [x] 1.12.2: For each repository, start the line with a hyphen to indicate an itemized list.
+  - [x] 1.12.3: For each repository, print out the result of each rule that gets applied as an itemized list. Indent accordingly.
+  - [x] 1.12.4: Colorize the output where appropriate. E.g. printing a check mark should be green, a cross should be red, etc.
+- [x] 1.13: Mutually exclusive rules and precedence.
+  - [x] 1.13.1: Implement the concept of mutually exclusive rules. A rule may point to other rules that it is mutually exclusive with. The relationship is bi-directional.
+  - [x] 1.13.2: Implement rule precedence in rule sets by adding new `effective_rules()` method. This method should:
+    - Process rules in reverse order (last added first) to respect precedence
+    - Build a dictionary of mutually exclusive relationships for efficient lookup
+    - For each rule being processed, exclude any earlier rules that are mutually exclusive with it
+    - Return an iterator of the effective rules in their original order
+    - Handle the bi-directional nature of mutual exclusivity automatically
+- [x] 1.14: Create a minimal default rule set.
+- [x] 1.15: Output results of linting operations.

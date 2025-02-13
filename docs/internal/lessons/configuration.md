@@ -1,0 +1,9 @@
+- Use Pydantic's `BaseSettings` for configuration that can come from multiple sources (env vars, files).
+- Provide clear error messages that guide users to fix configuration issues
+- When using `pydantic_settings` with environment variables:
+   - Use `json_schema_extra={"env": [...]}` instead of `env=...` to specify environment variable names (deprecated in Pydantic V2).
+   - Set `env_vars_override_env_file=True` to ensure environment variables take precedence over `.env` file.
+   - Use `env_nested_delimiter="__"` to support nested configuration via environment variables.
+-  When implementing configuration file handling:
+   - Provide a well-documented default configuration template with examples and comments. Review it regularly when you have changed the configuration model to ensure configuration file templates exactly match the Pydantic model structure.
+   - Give helpful error messages for common issues like existing files.

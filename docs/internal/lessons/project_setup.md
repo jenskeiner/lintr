@@ -1,0 +1,1 @@
+- Instead of creating custom .gitignore files, use GitHub's official language-specific templates from the [github/gitignore](https://github.com/github/gitignore) repository.

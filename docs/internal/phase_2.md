@@ -1,0 +1,46 @@
+### Phase 2: Testing, Documentation, Rule Build-Out
+- [] 2.1: Analyze and improve test coverage.
+  - [x] 2.1.1: Identify test coverage gaps and note them down in a new file `docs/coverage.md`. Each gap must be uniquely identifiable so we can refer to it in tasks below.
+- [x] 2.2: General Rules build-out.
+  - [x] 2.2.1: Add a rule that checks that the user is the only owner or admin of the repository.
+  - [x] 2.2.2: Add a rule that checks that a repo has no collaborators other than the user itself.
+  - [x] 2.2.3: Add a rule that checks that Wikis are not enabled.
+  - [x] 2.2.4: Add a rule that checks that Issues are not enabled.
+  - [x] 2.2.5: Add a rule that checks that Sponsorships are not enabled.
+  - [x] 2.2.6: Add a rule that checks that "Preserve this repository" is enabled.
+  - [x] 2.2.7: Add a rule that checks that Discussions are not enabled.
+  - [x] 2.2.8: Add a rule that checks that Projects are disabled.
+  - [x] 2.2.9: Add a rule that checks that merge commits are allowed for PRs.
+  - [x] 2.2.10: Add a rule that checks that squash merging is not allowed for PRs.
+  - [x] 2.2.11: Add a rule that checks that rebase merging is not allowed for PRs.
+  - [x] 2.2.12: Add a rule that checks that `delete_branch_on_merge` is enabled.
+  - [x] 2.2.13: Add a rule that checks that `allow_auto_merge` is disabled.
+  - [x] 2.2.14: Add rule to check if classic branch protection rules are still used. Fail the check if used.
+- [] 2.3: GitFlow-related rules (use GFxxx as id, keep in separate source file named `gitflow.py`).
+  - [x] 2.3.1: Add a rule that checks if the branch names conform to GitFlow rules. That is:
+    - There must be branch named `develop`, as well as either `master`or  `main`.
+    - Feature branches start with `feature/`.
+    - Release branches start with `release/`.
+    - Hotfix branches start with `hotfix/`.
+    - Support branches start with `support/`.
+    - There may be other branches that must start with `temp/`.
+    - The rule must accumulate all violations of rules in a list so a comprehensive error message can be returned.
+    - The rule is not auto-fixable.
+  - [x] 2.3.2: Add a rule that checks that `develop` is the default branch. This rule is auto-fixable.
+  - [x] 2.3.3: Add a rule that checks that the `develop` branch has a branch ruleset set up. The rule set must:
+    - have the name `develop protection`
+    - must have the owner in the bypass list
+    - be enabled
+    - target the `develop` branch
+    - restrict creations
+    - restrict updates
+    - restrict deletions
+    - require a pull request before merging
+    - require status checks to pass
+    - block force pushes
+  - [x] 2.3.4: Add a rule similar to that in 2.3.3, but for the 'main' or 'master' branch.
+- [x] 2.4: Configure rule ID and description through class members.
+- [x] 2.5: Add class attribute for rule-specific configuration. use generics to allow concrete sub-classes of the base class to define their own configuration.
+- [x] 2.6: Allow definition of custom rules in configuration file by inheriting from existing rules and overriding their configuration.
+- [x] 2.7: Allow to override rule configuration at the repository level.
+- [] 2.8: Create usage and developer documentation.

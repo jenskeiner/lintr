@@ -1,0 +1,16 @@
+- When using PyGithub, prefer passing the token directly to the `Github` constructor rather than using `Auth.Token`. This simplifies testing and avoids potential compatibility issues.
+- When mocking GitHub API responses in tests, mock at the module level (e.g., `lintr.gh.Github`) rather than the package level (`github.Github`) to avoid issues with internal assertions.
+- For repository list operations, handle both user and organization repositories consistently, applying filtering after fetching the repositories.
+- When implementing repository enumeration:
+   - Keep the GitHub-specific code in a dedicated module (`src/lintr/github.py`) to maintain separation of concerns.
+   - Use proper configuration classes (e.g., `GitHubConfig`) to handle GitHub-specific settings.
+   - Add clear error messages for common issues like invalid tokens or API rate limits.
+- When handling GitHub organization repositories:
+   - Maintain a clear separation between organization-specific mode (single org via `org_name`) and user mode with optional organization inclusion
+   - Use `get_user().get_orgs()` to enumerate all organizations a user has access to
+   - Consider performance implications when including organization repositories, as it requires additional API calls
+   - Test both the positive case (organizations included) and negative case (organizations excluded) with proper mock resets
+   - When fetching user repositories with `get_repos()`, always specify `affiliation="owner"` to get only user-owned repositories, as the default behavior includes all accessible repositories including organization ones
+- When writing rules that interact with the GitHub API:
+   - Always handle `GithubException` to provide meaningful error messages.
+   - Use type checks to ensure API responses match expected types.
