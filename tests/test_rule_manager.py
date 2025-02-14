@@ -329,9 +329,7 @@ def test_rule_discovery_mixed_success():
             return RuleCheckResult(RuleResult.PASSED, "Success")
 
     # Create a mock rule class that matches how rules are registered
-    mock_rule = MagicMock()
-    mock_rule.return_value = SuccessRule()
-    mock_entry_point_success.load.return_value = mock_rule
+    mock_entry_point_success.load.return_value = SuccessRule
 
     mock_entry_point_failure = MagicMock()
     mock_entry_point_failure.name = "test_rule_failure"

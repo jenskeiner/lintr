@@ -48,7 +48,7 @@ class BaseLintrConfig(BaseSettings):
     )
 
     # Custom rules.
-    rules: dict[str, CustomRuleDefinition]
+    rules: dict[str, CustomRuleDefinition] = Field(default_factory=dict)
 
     rule_sets: dict[str, RuleSetConfig] = Field(
         default_factory=dict,

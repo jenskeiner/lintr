@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from colorama import Fore, Style
 
+from lintr.config import RepositoryConfig
 from lintr.linter import Linter
 from lintr.rules import Rule, RuleCheckResult, RuleResult, RuleSet
 from lintr.rules.base import RuleContext
@@ -98,7 +99,7 @@ def test_get_rule_set_for_repository_default(repository, config, ruleset, rule_m
 
     # Create linter and get rule set
     linter = Linter(config)
-    rule_set_info = linter.get_rule_set_for_repository(repository)
+    rule_set_info = linter.get_rule_set_for_repository(None)
 
     # Verify correct rule set is returned
     assert rule_set_info is not None
@@ -113,7 +114,6 @@ def test_get_rule_set_for_repository_specific(
 ):
     """Test getting repository-specific rule set."""
     # Configure repository-specific rule set
-    config.repository_rule_sets = {"test-repo": "specific"}
     ruleset._id = "specific"
 
     # Setup mock rule manager
@@ -121,7 +121,9 @@ def test_get_rule_set_for_repository_specific(
 
     # Create linter and get rule set
     linter = Linter(config)
-    rule_set_info = linter.get_rule_set_for_repository(repository)
+    rule_set_info = linter.get_rule_set_for_repository(
+        RepositoryConfig(ruleset="specific")
+    )
 
     # Verify correct rule set is returned
     assert rule_set_info is not None
@@ -138,7 +140,7 @@ def test_get_rule_set_for_repository_not_found(repository, config, rule_manager)
 
     # Create linter and get rule set
     linter = Linter(config)
-    rule_set_info = linter.get_rule_set_for_repository(repository)
+    rule_set_info = linter.get_rule_set_for_repository(None)
 
     # Verify no rule set is returned
     assert rule_set_info is None

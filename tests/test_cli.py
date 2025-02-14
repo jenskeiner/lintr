@@ -414,7 +414,7 @@ def test_cli_main_unknown_command(capsys):
     assert exc_info.value.code == 2
     captured = capsys.readouterr()
     assert "invalid choice: 'unknown-command'" in captured.err
-    assert "choose from lint, list, init" in captured.err
+    assert "choose from 'lint', 'list', 'init'" in captured.err
 
 
 def test_cli_main_command_not_in_handlers(monkeypatch, capsys):
@@ -492,7 +492,7 @@ def test_cli_lint_interactive_fix(capsys, config_file, mock_github, monkeypatch)
 
     # Mock RuleManager to return our test rule
     class MockRuleManager:
-        def __init__(self):
+        def __init__(self, *args, **kwargs):
             self._rules = {"TEST001": MockRule}
             self._rule_sets = {}
 
@@ -565,7 +565,7 @@ def test_cli_lint_fix_error(capsys, config_file, mock_github, monkeypatch):
 
     # Create test rule set with failing fix rule
     class MockRuleManager:
-        def __init__(self):
+        def __init__(self, *args, **kwargs):
             self._rules = {"R001": FailingFixRule}
             self._rule_sets = {}
 
@@ -634,7 +634,7 @@ def test_cli_lint_fix_failure(capsys, config_file, mock_github, monkeypatch):
 
     # Create test rule set with failing fix rule
     class MockRuleManager:
-        def __init__(self):
+        def __init__(self, *args, **kwargs):
             self._rules = {"R001": FailingFixRule}
             self._rule_sets = {}
 
@@ -688,7 +688,7 @@ def test_cli_lint_github_access_error(capsys, config_file, env, monkeypatch):
     config_file.set(
         {
             "repositories": ["test-org/test-repo"],
-            "rules": ["test-rule"],
+            "rules": {},
             "github_token": "env-token",
         }
     )

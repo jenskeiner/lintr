@@ -122,6 +122,7 @@ def config(monkeypatch: MonkeyPatch) -> Generator[Any, None, None]:
     mock_config.repository_filter = None
     mock_config.rule_sets = {}
     mock_config.repository_rule_sets = {}
+    mock_config.rules = {}
 
     # Create a mock config class that returns our pre-defined config
     mock_config_class = MagicMock()

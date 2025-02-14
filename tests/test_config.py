@@ -6,7 +6,12 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from lintr.config import RepositoryFilter, RuleSetConfig, create_config_class
+from lintr.config import (
+    RepositoryFilter,
+    RuleSetConfig,
+    RepositoryConfig,
+    create_config_class,
+)
 
 
 def test_repository_filter_defaults():
@@ -93,3 +98,134 @@ def test_defaults():
     assert config.repository_filter.include_patterns == []
     assert config.repository_filter.exclude_patterns == []
     assert config.rule_sets == {}
+
+
+def test_custom_rule_definition():
+    """Test defining custom rules by inheriting from existing rules."""
+    LintrConfig = create_config_class()
+    config = LintrConfig(
+        github_token="test-token",
+        rules={
+            "custom_readme": {
+                "base": "has_readme",
+                "description": "Custom readme rule",
+                "config": {"required_sections": ["Installation", "Usage"]},
+            }
+        },
+    )
+
+    assert "custom_readme" in config.rules
+    custom_rule = config.rules["custom_readme"]
+    assert custom_rule.base == "has_readme"
+    assert custom_rule.description == "Custom readme rule"
+    assert custom_rule.config == {"required_sections": ["Installation", "Usage"]}
+
+
+def test_custom_rule_validation():
+    """Test validation of custom rule definitions."""
+    LintrConfig = create_config_class()
+
+    # Test missing required fields
+    with pytest.raises(ValidationError):
+        LintrConfig(
+            github_token="test-token",
+            rules={"invalid_rule": {"description": "Missing base rule"}},
+        )
+
+    # Test invalid base rule format
+    with pytest.raises(ValidationError):
+        LintrConfig(
+            github_token="test-token",
+            rules={
+                "invalid_rule": {
+                    "base": 123,  # Should be string
+                    "description": "Invalid base rule type",
+                    "config": {},
+                }
+            },
+        )
+
+
+def test_repository_specific_rule_config():
+    """Test overriding rule configuration at repository level."""
+    LintrConfig = create_config_class()
+    config = LintrConfig(
+        github_token="test-token",
+        rules={
+            "custom_readme": {
+                "base": "has_readme",
+                "description": "Custom readme rule",
+                "config": {"required_sections": ["Installation", "Usage"]},
+            }
+        },
+        repository_rule_sets={
+            "owner/repo": RepositoryConfig(
+                ruleset="custom",
+                rules={
+                    "custom_readme": {
+                        "required_sections": ["Quick Start"]  # Override default config
+                    }
+                },
+            )
+        },
+    )
+
+    repo_config = config.repository_rule_sets["owner/repo"]
+    assert repo_config.rules["custom_readme"]["required_sections"] == ["Quick Start"]
+
+
+def test_multiple_custom_rules():
+    """Test defining multiple custom rules with different configurations."""
+    LintrConfig = create_config_class()
+    config = LintrConfig(
+        github_token="test-token",
+        rules={
+            "strict_readme": {
+                "base": "has_readme",
+                "description": "Strict readme requirements",
+                "config": {
+                    "required_sections": ["Installation", "Usage", "Contributing"]
+                },
+            },
+            "relaxed_readme": {
+                "base": "has_readme",
+                "description": "Relaxed readme requirements",
+                "config": {"required_sections": ["Installation"]},
+            },
+        },
+    )
+
+    assert len(config.rules) == 2
+    assert "strict_readme" in config.rules
+    assert "relaxed_readme" in config.rules
+    assert config.rules["strict_readme"].config["required_sections"] == [
+        "Installation",
+        "Usage",
+        "Contributing",
+    ]
+    assert config.rules["relaxed_readme"].config["required_sections"] == [
+        "Installation"
+    ]
+
+
+def test_custom_rule_in_ruleset():
+    """Test using custom rules in rule sets."""
+    LintrConfig = create_config_class()
+    config = LintrConfig(
+        github_token="test-token",
+        rules={
+            "custom_readme": {
+                "base": "has_readme",
+                "description": "Custom readme rule",
+                "config": {"required_sections": ["Installation"]},
+            }
+        },
+        rule_sets={
+            "custom_set": RuleSetConfig(
+                name="custom_set", rules=["custom_readme", "has_license"]
+            )
+        },
+    )
+
+    assert "custom_set" in config.rule_sets
+    assert "custom_readme" in config.rule_sets["custom_set"].rules

@@ -87,7 +87,7 @@ class Linter:
         self,
         repository: Repository,
         rule_set: RuleSet,
-        custom_rules_config: dict[str, dict],
+        repository_config: RepositoryConfig | None = None,
     ) -> dict[str, RuleCheckResult]:
         """Check a repository against all rules in a rule set.
 
@@ -102,7 +102,9 @@ class Linter:
         results = {}
 
         for rule in rule_set.rules():
-            rule_config = custom_rules_config.get(rule.rule_id, None)
+            rule_config = (
+                repository_config.rules.get(rule.rule_id) if repository_config else None
+            )
             if rule_config:
                 rule = rule(type(rule._config).model_validate(rule_config))
             else:
@@ -219,7 +221,7 @@ class Linter:
 
             # Run all rules in the rule set
             try:
-                rule_results = self.check_repository(repo, rule_set, repo_config.rules)
+                rule_results = self.check_repository(repo, rule_set, repo_config)
                 results[repo.name] = rule_results
             except Exception as e:
                 print(f"{Fore.RED}  Error: {str(e)}{Style.RESET_ALL}")
