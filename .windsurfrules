@@ -4,7 +4,7 @@ During you interaction with the user, if you find anything reusable in this proj
 you should take note in the lessons section of the internal documentation in the directory `docs/internal/lessons/` so you will not make the same mistake again. Chose the appropriate file or create a
 new one for a new topic. Ensure the files you modify are linked properly from the project plan in `docs/internal/project_plan.md`.
 
-You should also use the `scratchpad.md` file as a scratchpad to organize your thoughts. Especially when you receive a new task, you should first review the content of the scratchpad, the project plan, 
+You should also use the `<project_root>/scratchpad.md` file as a scratchpad to organize your thoughts. Especially when you receive a new task, you should first review the content of the scratchpad, the project plan, 
 and relevant content from the lessons section linked from there, clear old different tasks if necessary, first explain the task, and plan the steps you need to take to complete the task. You can use todo markers to indicate the progress, e.g.
 [X] Task 1
 [ ] Task 2

@@ -7,7 +7,7 @@ from enum import Enum
 from typing import TypeVar
 from typing import Union, Generic
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from lintr.rules.context import RuleContext
 
@@ -15,7 +15,7 @@ from lintr.rules.context import RuleContext
 class BaseRuleConfig(BaseModel):
     """Abstract base rule configuration model."""
 
-    pass
+    model_config = ConfigDict(extra="forbid")
 
 
 ConfigT = TypeVar("ConfigT", bound=BaseRuleConfig)
