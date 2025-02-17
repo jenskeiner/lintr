@@ -414,7 +414,9 @@ def test_cli_main_unknown_command(capsys):
     assert exc_info.value.code == 2
     captured = capsys.readouterr()
     assert "invalid choice: 'unknown-command'" in captured.err
-    assert "choose from 'lint', 'list', 'init'" in captured.err
+    assert ("choose from 'lint', 'list', 'init'" in captured.err) or (
+        "choose from lint, list, init" in captured.err
+    )
 
 
 def test_cli_main_command_not_in_handlers(monkeypatch, capsys):
