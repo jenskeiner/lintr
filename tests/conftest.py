@@ -109,8 +109,7 @@ rule_sets:
 """
         )
         yield c
-        f.close()
-        os.unlink(f.name)
+    os.unlink(f.name)
 
 
 @pytest.fixture
