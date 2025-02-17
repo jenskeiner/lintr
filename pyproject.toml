@@ -26,7 +26,7 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest>=7.4.3",
     "pytest-cov>=4.1.0",
