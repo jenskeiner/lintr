@@ -59,3 +59,4 @@
     - Handle the bi-directional nature of mutual exclusivity automatically
 - [x] 1.14: Create a minimal default rule set.
 - [x] 1.15: Output results of linting operations.
+- [x] 1.16 Set up Dependabot.
