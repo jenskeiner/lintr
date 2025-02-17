@@ -6,6 +6,10 @@
 
 A powerful and flexible GitHub repository settings linter.
 
+<p align="center">
+  <img src="./assets/demo.gif" style="max-width: 400px; width: 100%;" alt="Demo Animation">
+</p>
+
 ## Highlights
 
 - ✅ Enforces consistent repository configurations.
