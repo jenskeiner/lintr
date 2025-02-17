@@ -108,6 +108,7 @@ rule_sets:
       - "has_readme"
 """
         )
+        f.close()
         yield c
         os.unlink(f.name)
 
