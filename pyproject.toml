@@ -1,6 +1,6 @@
 [project]
 name = "lintr"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A Python-based command-line application to lint and enforce consistent settings across GitHub repositories"
 authors = [
     { name = "Jens Keiner", email = "jens.keiner@gmail.com" }
@@ -44,11 +44,15 @@ PyGithub = { git = "https://github.com/jenskeiner/PyGithub", branch = "feature/a
 packages = ["src/lintr"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/lintr"]
+packages = ["lintr"]
 
 [tool.hatch.build.targets.editable]
 path = "src"
 install-deps = true
+
+[tool.hatch.version]
+source = "env"
+variable = "PACKAGE_VERSION"
 
 [tool.pytest.ini_options]
 #addopts = "--cov=lintr --cov-report=term-missing --cov-report=html"
