@@ -13,9 +13,10 @@ env:
   PYTHON_VERSION: "3.13"
 
 jobs:
-  build-and-publish:
+  build-and-publish-testpypi:
     name: Build and publish release candidate Python distribution to TestPyPI.
     runs-on: ubuntu-latest
+    environment: testpypi
     permissions:
       id-token: write
     steps:

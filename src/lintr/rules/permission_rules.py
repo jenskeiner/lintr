@@ -6,6 +6,7 @@ from difflib import unified_diff
 from json import dumps
 
 from github.GithubException import GithubException
+from pydantic import Field
 
 from lintr.rules.base import Rule, RuleCheckResult, RuleResult, BaseRuleConfig
 from lintr.rules.context import RuleContext
@@ -453,14 +454,21 @@ class NoClassicBranchProtectionRule(Rule):
             protected_branches = []
             for branch in branches:
                 if branch.protected:
-                    # Get protection settings to check if they are classic rules
-                    protection = branch.get_protection()
-                    # Classic protection has no required_status_checks and no required_pull_request_reviews
-                    if (
-                        protection.required_status_checks is None
-                        and protection.required_pull_request_reviews is None
-                    ):
-                        protected_branches.append(branch.name)
+                    try:
+                        # Get protection settings to check if they are classic rules
+                        protection = branch.get_protection()
+                        # Classic protection has no required_status_checks and no required_pull_request_reviews
+                        if (
+                            protection.required_status_checks is None
+                            and protection.required_pull_request_reviews is None
+                        ):
+                            protected_branches.append(branch.name)
+                    except GithubException as e0:
+                        if (
+                            e0.status != 404
+                            or e0.data.get("message") != "Branch not protected"
+                        ):
+                            raise
 
             if not protected_branches:
                 return RuleCheckResult(
@@ -522,6 +530,11 @@ class NoClassicBranchProtectionRule(Rule):
 class BranchRulesetRuleConfig(BaseRuleConfig):
     ruleset_name: str
     branch_name: str
+    bypass_actors: list[dict[str, str]] = Field(
+        default_factory=lambda: [
+            {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
+        ]
+    )
 
 
 class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
@@ -563,6 +576,12 @@ class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
             ref_name_conditions = ruleset.conditions.get("ref_name", {})
             included_refs = set(ref_name_conditions.get("include", []))
             excluded_refs = set(ref_name_conditions.get("exclude", []))
+
+            # Check bypass actors.
+            if ruleset.bypass_actors != self.config.bypass_actors:
+                violations.append(
+                    f"Ruleset bypass actors must be set to {self.config.bypass_actors}."
+                )
 
             expected_ref = f"refs/heads/{self._config.branch_name}"
             if included_refs != {expected_ref}:
@@ -706,6 +725,7 @@ class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
                         "exclude": [],
                     }
                 },
+                "bypass_actors": self._config.bypass_actors,
                 "rules": [
                     {
                         "type": "creation",
