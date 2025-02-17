@@ -726,6 +726,9 @@ def test_develop_branch_ruleset_rule_pass(repository):
     mock_ruleset.conditions = {
         "ref_name": {"include": ["refs/heads/develop"], "exclude": []}
     }
+    mock_ruleset.bypass_actors = [
+        {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
+    ]
     mock_ruleset.rules = mock_rules
 
     # Create mock repository
@@ -894,6 +897,9 @@ def test_develop_branch_ruleset_rule_multiple_rulesets(repository):
     mock_ruleset2.conditions = {
         "ref_name": {"include": ["refs/heads/develop"], "exclude": []}
     }
+    mock_ruleset2.bypass_actors = [
+        {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
+    ]
     mock_ruleset2.rules = mock_rules
 
     # Create mock repository
