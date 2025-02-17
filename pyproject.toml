@@ -40,11 +40,8 @@ build-backend = "hatchling.build"
 [tool.uv.sources]
 PyGithub = { git = "https://github.com/jenskeiner/PyGithub", branch = "feature/add-rules-and-rulesets" }
 
-[tool.hatch.build]
-packages = ["src/lintr"]
-
 [tool.hatch.build.targets.wheel]
-packages = ["lintr"]
+packages = ["src/lintr"]
 
 [tool.hatch.build.targets.editable]
 path = "src"
