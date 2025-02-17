@@ -453,14 +453,21 @@ class NoClassicBranchProtectionRule(Rule):
             protected_branches = []
             for branch in branches:
                 if branch.protected:
-                    # Get protection settings to check if they are classic rules
-                    protection = branch.get_protection()
-                    # Classic protection has no required_status_checks and no required_pull_request_reviews
-                    if (
-                        protection.required_status_checks is None
-                        and protection.required_pull_request_reviews is None
-                    ):
-                        protected_branches.append(branch.name)
+                    try:
+                        # Get protection settings to check if they are classic rules
+                        protection = branch.get_protection()
+                        # Classic protection has no required_status_checks and no required_pull_request_reviews
+                        if (
+                            protection.required_status_checks is None
+                            and protection.required_pull_request_reviews is None
+                        ):
+                            protected_branches.append(branch.name)
+                    except GithubException as e0:
+                        if (
+                            e0.status != 404
+                            or e0.data.get("message") != "Branch not protected"
+                        ):
+                            raise
 
             if not protected_branches:
                 return RuleCheckResult(
