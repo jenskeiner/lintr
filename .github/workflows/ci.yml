@@ -32,4 +32,4 @@ jobs:
     - name: Set up Python ${{ matrix.python-version }}
       run: uv python install ${{ matrix.python-version }}
     - name: Run tests.
-      run: uv run pytest
+      run: export PACKAGE_VERSION=0 && uv run pytest
