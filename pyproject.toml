@@ -83,4 +83,5 @@ develop_branch_ruleset = "lintr.rules.permission_rules:DevelopBranchRulesetRule"
 main_branch_ruleset = "lintr.rules.permission_rules:MainBranchRulesetRule"
 
 [project.entry-points."lintr.rule_sets"]
-default = "lintr.rules.default_rule_set:get_default_rule_set"
+default = "lintr.rules.default_ruleset:get_default_ruleset"
+empty = "lintr.rules.empty_ruleset:get_empty_ruleset"

@@ -34,6 +34,15 @@ def empty_env(monkeypatch: MonkeyPatch) -> None:
     # when the test completes
 
 
+@pytest.fixture(autouse=True)
+def reset_rule_manager() -> None:
+    """Reset the rule manager before each test."""
+    from lintr.linter import RuleManager
+
+    yield
+    RuleManager.reset()
+
+
 @pytest.fixture
 def env(monkeypatch: MonkeyPatch) -> None:
     """Set up a controlled test environment with known environment variables.
@@ -43,7 +52,7 @@ def env(monkeypatch: MonkeyPatch) -> None:
     """
     # Set default test environment
     monkeypatch.setenv("LINTR_GITHUB_TOKEN", "env-var-token")
-    monkeypatch.setenv("LINTR_DEFAULT_RULE_SET", "env-var-ruleset")
+    monkeypatch.setenv("LINTR_DEFAULT_RULESET", "env-var-ruleset")
 
 
 @pytest.fixture
@@ -61,8 +70,7 @@ def env_file() -> Generator[Path, None, None]:
     """
     env_file = Path(".env")
     env_file.write_text(
-        "LINTR_GITHUB_TOKEN=env-file-token\n"
-        "LINTR_DEFAULT_RULE_SET=env-file-ruleset\n"
+        "LINTR_GITHUB_TOKEN=env-file-token\n" "LINTR_DEFAULT_RULESET=env-file-ruleset\n"
     )
     yield env_file
     env_file.unlink()
@@ -94,18 +102,22 @@ def config_file() -> Generator[TestConfigFile, None, None]:
         c.set(
             """
 github_token: yaml-token
-default_rule_set: yaml-ruleset
+default_ruleset: basic
 repository_filter:
   include_patterns:
     - "src/*"
     - "tests/*"
   exclude_patterns:
     - "**/temp/*"
-rule_sets:
+rulesets:
   basic:
-    name: basic
+    description: basic
     rules:
-      - "has_readme"
+      - "R001"
+  env-var-ruleset:
+    description: basic
+    rules:
+      - "R001"
 """
         )
         yield c
@@ -118,10 +130,10 @@ def config(monkeypatch: MonkeyPatch) -> Generator[Any, None, None]:
     # Create a mock config instance with pre-defined properties
     mock_config = MagicMock()
     mock_config.github_token = "token"
-    mock_config.default_rule_set = "empty"
+    mock_config.default_ruleset = "empty"
     mock_config.repository_filter = None
-    mock_config.rule_sets = {}
-    mock_config.repository_rule_sets = {}
+    mock_config.rulesets = {}
+    mock_config.repositories = {}
     mock_config.rules = {}
 
     # Create a mock config class that returns our pre-defined config

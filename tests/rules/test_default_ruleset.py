@@ -1,6 +1,6 @@
 """Tests for default rule set."""
 
-from lintr.rules.default_rule_set import get_default_rule_set
+from lintr.rules.default_ruleset import get_default_ruleset
 from lintr.rules.branch_rules import (
     DefaultBranchExistsRule,
     WebCommitSignoffRequiredRule,
@@ -13,9 +13,9 @@ from lintr.rules.permission_rules import (
 )
 
 
-def test_get_default_rule_set():
+def test_get_default_ruleset():
     """Test creating the default rule set."""
-    rule_set = get_default_rule_set()
+    rule_set = get_default_ruleset()
 
     assert rule_set.id == "default"
     assert "Default rule set" in rule_set.description
