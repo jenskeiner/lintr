@@ -1,4 +1,4 @@
- # Lintr
+# Lintr
 
 [![image](https://img.shields.io/pypi/v/lintr.svg)](https://pypi.python.org/pypi/lintr)
 [![image](https://img.shields.io/pypi/l/lintr.svg)](https://pypi.python.org/pypi/lintr)
