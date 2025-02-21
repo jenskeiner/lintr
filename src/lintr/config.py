@@ -42,7 +42,7 @@ class BaseLintrConfig(BaseSettings):
     """Base configuration for lintr."""
 
     github_token: str = Field(
-        validation_alias=AliasChoices("lintr_github_token", "github_token")
+        validation_alias=AliasChoices("github_token", "lintr_github_token")
     )
 
     repository_filter: RepositoryFilter = Field(
