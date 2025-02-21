@@ -67,6 +67,9 @@ def create_parser() -> argparse.ArgumentParser:
         "--output", help="Path to write configuration file", default=".lintr.yml"
     )
 
+    # Help command
+    _ = subparsers.add_parser("help", help="Show this help message and exit")
+
     return parser
 
 
@@ -211,6 +214,12 @@ def handle_init(args: argparse.Namespace) -> None:
         sys.exit(1)
 
 
+def handle_help(args: argparse.Namespace) -> None:
+    """Handle the help command."""
+    parser = create_parser()
+    parser.print_help()
+
+
 def main(args: list[str] | None = None) -> int:
     """Main entry point for the CLI.
 
@@ -235,6 +244,7 @@ def main(args: list[str] | None = None) -> int:
         "lint": handle_lint,
         "list": handle_list,
         "init": handle_init,
+        "help": handle_help,
     }
 
     handler = handlers.get(parsed_args.command)

@@ -765,3 +765,18 @@ def test_cli_init_parent_dir_exists(capsys, tmp_path):
     # Verify success
     assert result == 0
     assert output_file.exists()
+
+
+def test_cli_help_command(capsys):
+    """Test that the help command shows the same output as no arguments."""
+    # Get output with no arguments
+    main([])
+    no_args_output = capsys.readouterr().out
+
+    # Get output with help command
+    main(["help"])
+    help_output = capsys.readouterr().out
+
+    # Both should show help text and be identical
+    assert "usage:" in help_output.lower()
+    assert help_output == no_args_output
