@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import AliasChoices, BaseModel, Field, ValidationError
 from pydantic_core import PydanticCustomError
 from pydantic_settings import (
     BaseSettings,
@@ -41,7 +41,9 @@ class RepositoryConfig(BaseModel):
 class BaseLintrConfig(BaseSettings):
     """Base configuration for lintr."""
 
-    github_token: str = Field()
+    github_token: str = Field(
+        validation_alias=AliasChoices("github_token", "lintr_github_token")
+    )
 
     repository_filter: RepositoryFilter = Field(
         default_factory=RepositoryFilter,
