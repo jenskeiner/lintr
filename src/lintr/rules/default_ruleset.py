@@ -13,7 +13,7 @@ from lintr.rules.permission_rules import (
 )
 
 
-def get_default_rule_set() -> RuleSet:
+def get_default_ruleset() -> RuleSet:
     """Create and return the default rule set.
 
     The default rule set contains a minimal set of rules that should be applied

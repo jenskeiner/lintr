@@ -3,7 +3,7 @@
 from lintr.rules.base import RuleSet
 
 
-def get_empty_rule_set() -> RuleSet:
+def get_empty_ruleset() -> RuleSet:
     """Create and return an empty rule set.
 
     The empty rule set contains no rules and can be used as a starting point

@@ -22,9 +22,8 @@ class RepositoryFilter(BaseModel):
 class RuleSetConfig(BaseModel):
     """Configuration for a rule set."""
 
-    name: str
+    description: str
     rules: list[str] = Field(default_factory=list)
-    rule_sets: list[str] = Field(default_factory=list)
 
 
 class CustomRuleDefinition(BaseModel):
@@ -52,13 +51,13 @@ class BaseLintrConfig(BaseSettings):
     # Custom rules.
     rules: dict[str, CustomRuleDefinition] = Field(default_factory=dict)
 
-    rule_sets: dict[str, RuleSetConfig] = Field(
+    rulesets: dict[str, RuleSetConfig] = Field(
         default_factory=dict,
     )
 
-    default_rule_set: str = Field(default="empty")
+    default_ruleset: str = Field(default="empty")
 
-    repository_rule_sets: dict[str, RepositoryConfig] = Field(
+    repositories: dict[str, RepositoryConfig] = Field(
         default_factory=dict,
     )
 
