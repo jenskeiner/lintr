@@ -53,8 +53,8 @@ pipx install lintr
 {{< /tab >}}
 {{< tab tabID="uv" >}}
 ```bash
-# Using pipx.
-pipx install lintr
+# Using uv.
+uv install lintr
 ```
 {{< /tab >}}
 {{< /tabs >}}
