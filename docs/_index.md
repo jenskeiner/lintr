@@ -123,11 +123,11 @@ default_ruleset: standard
 
 rulesets:
   standard:  # Identifier must be unique across rules and rulesets.
-    name: "standard"
+    description: standard
     rules:  # List of rules and rulesets to include.
-      - "R001"
-      - "R002"
-      - "R003"
+      - R001
+      - R002
+      - R003
 ```
 
 This defines a new ruleset named `standard` and makes it the default for all repositories. It uses pre-defined rules that come with Lintr.
@@ -139,6 +139,101 @@ lintr lint --config lintr.yml
 ```
 
 This will lint all repositories using the `standard` ruleset defined in the configuration file and report any violations.
+
+## Rules
+
+Lintr checks repositories by applying a sequence of rules. Each rule has a relativly narrow focus, like checking if a certain repository setting is set to a certain value.
+For example, there may be a rule to check if the default branch has a certain name, or whether sign off on web-based commits is required. The flexibility and power of Lintr
+come from the combination of multiple rules.
+
+Rules are combined into rulesets. A ruleset is a collection of rules that can be applied to a repository. A ruleset may also contain other rulesets. This is particularly
+convenient to organise related rules into smaller sets from which larger rulesets can be composed. The larger rulesets can then be applied to repositories. This promotes
+sharing of common rules across repositories, but still alows for fine-grained control over individual repositories.
+
+Lintr comes with a range of pre-defined rules. Every rule has a unique identifier and a description. You can find a list of all available rules in the [reference]().
+
+Lintr also provides a few pre-defined rulesets. The most basic one is the `empty` ruleset which contains no rules and is used by default absent any other configuration.
+Like rules, each ruleset also has a unique identifier. You can find a list of all available rulesets in the [reference]().
+
+{{% note %}}
+To avoid confusion, rule and ruleset identifiers must be globally unique. Any rule or ruleset must have an ID distinct from that of any other rule or ruleset.
+{{% /note %}}
+
+### Custom rulesets
+
+Since any GitHub account has specific needs and preferred settings, the pre-defined rulesets are probably not enough to work for you out of the box. Therefore,
+Lintr allows you to define your own rulesets, so you can build up the exact set of checks you want to run on your repopsitories.
+
+To create a custom ruleset, simply define it in the configuration file. Using the above example, this could look as follows:
+
+```yaml
+rulesets:
+  standard:  # Identifier must be unique across rules and rulesets.
+    description: "Standard ruleset"
+    rules:  # List of rules and rulesets to include.
+      - R001
+      - R002
+      - R003
+```
+
+Each ruleset must have a unique identifier (`standard`), an optional description, and a list of rules and rulesets to include.
+
+A more complex example might look like this:
+
+```yaml
+rulesets:
+  standard:
+    description: "Standard ruleset"
+    rules:
+      - R001
+      - R002
+      - R003
+  extended:
+    description: "Extended ruleset"
+    rules:
+      - standard  # Include all rules from the standard ruleset as well.
+      - R004
+      - R005
+      - R006
+```
+
+Here, the ruleset `extended` includes all rules from the `standard` ruleset as well as the rules `R004`, `R005` and `R006`.
+
+### Applying rulesets
+
+We already saw above that the configuration file may define a standard ruleset which by default applies to all repositories.
+However, you may want to apply certain rulesets to specific repositories and just use the default ruleset for the rest. 
+To that end, Lintr allows you to configure a ruleset for each repository in the configuration file as follows:
+
+```yaml
+default_ruleset: standard
+
+rulesets:
+  standard:
+    description: "Standard ruleset"
+    rules:
+      - R001
+      - R002
+      - R003
+  extended:
+    description: "Extended ruleset"
+    rules:
+      - standard
+      - R004
+      - R005
+      - R006
+
+repositories:
+  foo:
+    ruleset: extended
+  bar:
+    ruleset: standard
+```
+
+Lintr will use the ruleset `standard` for repository `foo` and the ruleset `extended` for repository `bar`. It will also use the default ruleset `standard` for all other repositories.
+
+Lintr can be customized further through custom rules and repository-specific rule settings. See the section on [customization](./customization) for more information.
+
 
 ## Features
 
