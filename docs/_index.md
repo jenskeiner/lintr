@@ -95,7 +95,7 @@ ticked.
 
 Once you have retrieved the personal access token, make it available to Lintr by setting the environment variable `GITHUB_TOKEN`:
 ```bash
-export GITHUB_TOKEN="your-token-here"
+set GITHUB_TOKEN="your-token-here"
 ```
 
 {{% warning %}}
@@ -118,26 +118,16 @@ and the rule sets to use. Check the [configuration file reference]() for more de
 Here is an example of a simple `lintr.yml` file:
 
 ```yaml
-default_rule_set: "standard"
-rule_sets:
-  # Basic repository hygiene checks.
-  "standard":  # Identifier must be unique.
+# The default rule set to use.
+default_ruleset: standard
+
+rulesets:
+  standard:  # Identifier must be unique across rules and rulesets.
     name: "standard"
-    rules:  # List of rule identifiers to include.
+    rules:  # List of rules and rulesets to include.
       - "R001"
-      - "R004"
-      - "R005"
-      - "R006"
-      - "R007"
-      - "R012"
-      - "R013"
-      - "R014"
-      - "R015"
-      - "R016"
-      - "R017"
-      - "R018"
-      - "R019"
-    rule_sets: []  # No nested rule sets.
+      - "R002"
+      - "R003"
 ```
 
 This defines a new ruleset named `standard` and makes it the default for all repositories. It uses pre-defined rules that come with Lintr.

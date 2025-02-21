@@ -6,7 +6,7 @@ import pytest
 from pydantic import Field
 
 from lintr.config import BaseLintrConfig, CustomRuleDefinition, RepositoryConfig
-from lintr.rules.base import BaseRuleConfig, Rule, RuleCheckResult, RuleResult
+from lintr.rules.base import BaseRuleConfig, Rule, RuleCheckResult, RuleResult, RuleSet
 from lintr.rules.context import RuleContext
 from lintr.rule_manager import RuleManager
 
@@ -67,9 +67,20 @@ class TestCustomRules:
 
         with patch("importlib.metadata.entry_points") as mock_entry_points:
             # Mock entry points to return our test rule
-            mock_entry_point = MagicMock()
-            mock_entry_point.load.return_value = DefaultBranchRule
-            mock_entry_points.return_value.select.return_value = [mock_entry_point]
+            mock_entry_point_rule = MagicMock()
+            mock_entry_point_rule.load.return_value = DefaultBranchRule
+
+            def select(group: str):
+                if group == "lintr.rules":
+                    return [mock_entry_point_rule]
+                elif group == "lintr.rule_sets":
+                    return []
+                return []
+
+            mock_entry_points_return_value = MagicMock()
+            mock_entry_points_return_value.select = select
+
+            mock_entry_points.return_value = mock_entry_points_return_value
 
             # Create manager and return
             manager = RuleManager()
@@ -90,7 +101,7 @@ class TestCustomRules:
         }
 
         # Initialize rule manager with custom rules
-        rule_manager._add_custom_rules(custom_rules)
+        rule_manager.add_rules(custom_rules)
 
         # Create mock repository
         repo = MagicMock()
@@ -100,7 +111,8 @@ class TestCustomRules:
         context = RuleContext(repository=repo)
 
         # Get and run the custom rule
-        rule_cls = rule_manager.get_rule_class("custom_branch")
+        rule_cls = rule_manager.get("custom_branch")
+        assert issubclass(rule_cls, Rule)
         assert rule_cls is not None, "Custom rule not found"
 
         rule = rule_cls()
@@ -122,7 +134,7 @@ class TestCustomRules:
         }
 
         # Initialize rule manager with custom rules
-        rule_manager._add_custom_rules(custom_rules)
+        rule_manager.add_rules(custom_rules)
 
         # Create mock repositories
         valid_repo = MagicMock()
@@ -132,7 +144,7 @@ class TestCustomRules:
         invalid_repo.default_branch = "main"
 
         # Get the custom rule
-        rule_cls = rule_manager.get_rule_class("strict_branch")
+        rule_cls = rule_manager.get("strict_branch")
         assert rule_cls is not None, "Custom rule not found"
 
         rule = rule_cls()
@@ -162,7 +174,7 @@ class TestCustomRules:
         config = BaseLintrConfig(
             github_token="test-token",
             rules=custom_rules,
-            repository_rule_sets={
+            repositories={
                 "test/repo": RepositoryConfig(
                     ruleset="custom",
                     rules={"configurable_branch": {"allowed_names": ["develop"]}},
@@ -171,7 +183,7 @@ class TestCustomRules:
         )
 
         # Initialize rule manager
-        rule_manager._add_custom_rules(config.rules)
+        rule_manager.add_rules(config.rules)
 
         # Create mock repository
         repo = MagicMock()
@@ -179,7 +191,7 @@ class TestCustomRules:
         repo.full_name = "test/repo"
 
         # Get and run the custom rule
-        rule_cls = rule_manager.get_rule_class("configurable_branch")
+        rule_cls = rule_manager.get("configurable_branch")
         assert rule_cls is not None, "Custom rule not found"
 
         # Create context with repository config
@@ -189,7 +201,7 @@ class TestCustomRules:
 
         rule = rule_cls(
             type(rule_cls._config).model_validate(
-                config.repository_rule_sets["test/repo"].rules["configurable_branch"]
+                config.repositories["test/repo"].rules["configurable_branch"]
             )
         )
         result = rule.check(context)
@@ -218,20 +230,21 @@ class TestCustomRules:
         config = BaseLintrConfig(
             github_token="test-token",
             rules=custom_rules,
-            rule_sets={
+            rulesets={
                 "custom_set": {
-                    "name": "Custom rule set",
+                    "description": "Custom rule set",
                     "rules": ["custom_branch1", "custom_branch2"],
                 }
             },
         )
 
         # Initialize rule manager and load rule sets
-        rule_manager._add_custom_rules(config.rules)
-        rule_manager.load_rule_sets_from_config(config)
+        rule_manager.add_rules(config.rules)
+        rule_manager.add_rulesets(config.rulesets)
 
         # Get the rule set
-        rule_set = rule_manager.get_rule_set("custom_set")
+        rule_set = rule_manager.get("custom_set")
+        assert isinstance(rule_set, RuleSet)
         assert rule_set is not None, "Rule set not found"
         assert len(list(rule_set.rules())) == 2
 
@@ -261,7 +274,7 @@ class TestCustomRules:
 
         # Verify that RuleManager raises an exception
         with pytest.raises(Exception) as exc_info:
-            rule_manager._add_custom_rules(custom_rules)
+            rule_manager.add_rules(custom_rules)
         assert "Failed to create custom rule" in str(exc_info.value)
 
     def test_invalid_custom_rule_config(self, rule_manager):
@@ -277,5 +290,5 @@ class TestCustomRules:
 
         # Verify that RuleManager raises an exception
         with pytest.raises(Exception) as exc_info:
-            rule_manager._add_custom_rules(custom_rules)
+            rule_manager.add_rules(custom_rules)
         assert "Failed to create custom rule" in str(exc_info.value)

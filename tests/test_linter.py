@@ -95,7 +95,7 @@ def test_create_context(repository, config):
 def test_get_rule_set_for_repository_default(repository, config, ruleset, rule_manager):
     """Test getting default rule set for repository."""
     # Setup mock rule manager
-    rule_manager.get_rule_set.return_value = ruleset
+    rule_manager.get.return_value = ruleset
 
     # Create linter and get rule set
     linter = Linter(config)
@@ -106,7 +106,7 @@ def test_get_rule_set_for_repository_default(repository, config, ruleset, rule_m
     rule_set_id, rule_set = rule_set_info
     assert rule_set_id == "empty"
     assert rule_set == ruleset
-    rule_manager.get_rule_set.assert_called_once_with("empty")
+    rule_manager.get.assert_called_once_with("empty")
 
 
 def test_get_rule_set_for_repository_specific(
@@ -117,7 +117,7 @@ def test_get_rule_set_for_repository_specific(
     ruleset._id = "specific"
 
     # Setup mock rule manager
-    rule_manager.get_rule_set.return_value = ruleset
+    rule_manager.get.return_value = ruleset
 
     # Create linter and get rule set
     linter = Linter(config)
@@ -130,13 +130,13 @@ def test_get_rule_set_for_repository_specific(
     rule_set_id, rule_set = rule_set_info
     assert rule_set_id == "specific"
     assert rule_set == ruleset
-    rule_manager.get_rule_set.assert_called_once_with("specific")
+    rule_manager.get.assert_called_once_with("specific")
 
 
 def test_get_rule_set_for_repository_not_found(repository, config, rule_manager):
     """Test handling of non-existent rule set."""
     # Setup mock rule manager to return no rule set
-    rule_manager.get_rule_set.return_value = None
+    rule_manager.get.return_value = None
 
     # Create linter and get rule set
     linter = Linter(config)
@@ -144,7 +144,7 @@ def test_get_rule_set_for_repository_not_found(repository, config, rule_manager)
 
     # Verify no rule set is returned
     assert rule_set_info is None
-    rule_manager.get_rule_set.assert_called_once_with("empty")
+    rule_manager.get.assert_called_once_with("empty")
 
 
 def test_check_repository_success(repository, config, ruleset):
@@ -179,7 +179,7 @@ def test_check_repository_rule_error(repository, config, rule_cls):
 def test_lint_repositories_with_missing_rule_set(repository, config, rule_manager):
     """Test linting repositories when rule set is not found."""
     # Setup mock rule manager to return no rule set
-    rule_manager.get_rule_set.return_value = None
+    rule_manager.get.return_value = None
 
     # Create linter and lint repositories
     linter = Linter(config)
@@ -189,13 +189,13 @@ def test_lint_repositories_with_missing_rule_set(repository, config, rule_manage
     assert "test-repo" in results
     assert "error" in results["test-repo"]
     assert "No rule set found" in results["test-repo"]["error"]
-    rule_manager.get_rule_set.assert_called_once_with("empty")
+    rule_manager.get.assert_called_once_with("empty")
 
 
 def test_lint_repositories_success(repository, config, ruleset, rule_manager):
     """Test successful repository linting."""
     # Setup mock rule manager
-    rule_manager.get_rule_set.return_value = ruleset
+    rule_manager.get.return_value = ruleset
 
     # Create linter and lint repositories
     linter = Linter(config)
@@ -244,11 +244,11 @@ def test_lint_repositories_output_formatting(repository, config, capsys, rule_cl
     rule_set.add_rule(fixable_rule)
 
     # Configure mock config to use our test rule set
-    config.default_rule_set = "test"
+    config.default_ruleset = "test"
 
     # Setup mock rule manager to return our rule set
     rule_manager = MagicMock()
-    rule_manager.get_rule_set.return_value = rule_set
+    rule_manager.get.return_value = rule_set
 
     # Create linter with mocked rule manager
     linter = Linter(config)
@@ -289,11 +289,11 @@ def test_lint_repositories_output_formatting_with_fix(
     )
 
     # Configure mock config to use our test rule set
-    config.default_rule_set = "test"
+    config.default_ruleset = "test"
 
     # Setup mock rule manager to return our rule set
     rule_manager = MagicMock()
-    rule_manager.get_rule_set.return_value = rule_set
+    rule_manager.get.return_value = rule_set
 
     # Create linter with mocked rule manager
     linter = Linter(config)
@@ -322,11 +322,11 @@ def test_lint_repositories_custom_error_message(repository, config, capsys, rule
     rule_set.add_rule(rule_cls("R001", "Error rule", result=Exception(error_message)))
 
     # Configure mock config to use our test rule set
-    config.default_rule_set = "test"
+    config.default_ruleset = "test"
 
     # Setup mock rule manager to return our rule set
     rule_manager = MagicMock()
-    rule_manager.get_rule_set.return_value = rule_set
+    rule_manager.get.return_value = rule_set
 
     # Create linter with mocked rule manager
     linter = Linter(config)
@@ -355,8 +355,8 @@ def test_lint_repositories_custom_error_message(repository, config, capsys, rule
 def test_lint_repositories_no_rule_set_found(repository, config, capsys):
     """Test output formatting when no rule set is found."""
     # Configure mock config with non-existent rule set
-    config.default_rule_set = "non-existent"
-    config.repository_rule_sets = {}
+    config.default_ruleset = "non-existent"
+    config.repositories = {}
 
     # Setup mock rule manager to return no rule set
     rule_manager = MagicMock()
@@ -415,14 +415,14 @@ def test_lint_repositories_fix_interaction(
 
     # Mock rule manager
     rule_manager = MagicMock()
-    rule_manager.get_rule_set.return_value = rule_set
+    rule_manager.get.return_value = rule_set
 
     # Mock user input
     mock_input = MagicMock(return_value=user_input.strip())
     monkeypatch.setattr("builtins.input", mock_input)
 
     # Mock repository name
-    repository.name = "test-repo"
+    repository.description = "test-repo"
 
     # Create linter with mocked components
     linter = Linter(config, dry_run=False, non_interactive=non_interactive, fix=True)
@@ -467,7 +467,7 @@ def test_lint_repositories_fix_error(repository, config, capsys):
 
     # Setup rule manager
     mock_manager = MagicMock()
-    mock_manager.get_rule_set.return_value = rule_set
+    mock_manager.get.return_value = rule_set
     with patch("lintr.linter.RuleManager", return_value=mock_manager):
         # Run linter in non-interactive mode to trigger fix
         linter = Linter(config, non_interactive=True, fix=True)
@@ -515,7 +515,7 @@ def test_lint_repositories_recheck_error(repository, config, capsys):
 
     # Setup rule manager
     mock_manager = MagicMock()
-    mock_manager.get_rule_set.return_value = rule_set
+    mock_manager.get.return_value = rule_set
     with patch("lintr.linter.RuleManager", return_value=mock_manager):
         # Run linter in non-interactive mode to trigger fix
         linter = Linter(config, non_interactive=True, fix=True)
@@ -555,7 +555,7 @@ def test_lint_repositories_fix_error_with_failed_fix(repository, config, capsys)
 
     # Setup rule manager
     mock_manager = MagicMock()
-    mock_manager.get_rule_set.return_value = rule_set
+    mock_manager.get.return_value = rule_set
     with patch("lintr.linter.RuleManager", return_value=mock_manager):
         # Run linter in non-interactive mode to trigger fix
         linter = Linter(config, non_interactive=True, fix=True)
@@ -610,7 +610,7 @@ def test_lint_repositories_fix_with_all_rule_results(
 
         # Setup rule manager
         mock_manager = MagicMock()
-        mock_manager.get_rule_set.return_value = rule_set
+        mock_manager.get.return_value = rule_set
         with patch("lintr.linter.RuleManager", return_value=mock_manager):
             # Run linter in non-interactive mode to trigger fix
             linter = Linter(config, non_interactive=True, fix=True)
@@ -648,10 +648,10 @@ def test_lint_repositories_no_fix_prompt_without_fix_flag(
 
     # Mock rule manager
     rule_manager = MagicMock()
-    rule_manager.get_rule_set.return_value = rule_set
+    rule_manager.get.return_value = rule_set
 
     # Mock repository name and context
-    repository.name = "test-repo"
+    repository.description = "test-repo"
     repository.empty = True
 
     # Create linter with mocked components (fix=False)

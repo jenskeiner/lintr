@@ -34,7 +34,6 @@ def manager():
 
     # Register a rule class
     manager._rules[TestRule.rule_id] = TestRule
-    manager._factory.register_rule_class(TestRule.rule_id, TestRule)
 
     return manager
 
@@ -54,7 +53,7 @@ def test_rule_set_discovery():
     """Test that rule sets are properly discovered from entry points."""
     # Mock entry points
     dummy_rule_set = RuleSet("RS999", "Test rule set")
-    default_rule_set = RuleSet("default", "Default rule set")
+    default_ruleset = RuleSet("default", "Default rule set")
 
     mock_entry_point1 = MagicMock()
     mock_entry_point1.name = "test_rule_set"
@@ -62,7 +61,7 @@ def test_rule_set_discovery():
 
     mock_entry_point2 = MagicMock()
     mock_entry_point2.name = "default"
-    mock_entry_point2.load.return_value = lambda: default_rule_set
+    mock_entry_point2.load.return_value = lambda: default_ruleset
 
     with patch("importlib.metadata.entry_points") as mock_entry_points:
         mock_entry_points.return_value.select.side_effect = lambda group: {
@@ -79,101 +78,143 @@ def test_rule_set_discovery():
         assert "RS999" in rule_set_ids
 
 
-def test_rule_manager_load_rule_sets_from_config(manager):
-    """Test loading rule sets from configuration."""
+def test_rule_manager_load_valid_rule_sets(manager):
+    """Test loading valid rule sets from configuration."""
     with patch("importlib.metadata.entry_points") as mock_entry_points:
         mock_entry_points.return_value.select.return_value = []
 
-        # Create a config with rule sets
+        # Create a config with valid rule sets
         config = BaseLintrConfig(
             github_token="dummy",
-            rule_sets={
+            rulesets={
                 "RS001": RuleSetConfig(
-                    name="Test rule set 1",
+                    description="Test rule set 1",
                     rules=["TEST001"],
-                ),
-                "RS002": RuleSetConfig(
-                    name="Test rule set 2",
-                    rule_sets=["RS001"],  # Nested rule set
-                ),
-                "RS003": RuleSetConfig(
-                    name="Test rule set 3",
-                    rules=["INVALID"],  # Invalid rule ID
-                ),
-                "RS004": RuleSetConfig(
-                    name="Test rule set 4",
-                    rule_sets=["INVALID"],  # Invalid nested rule set
                 ),
             },
         )
 
         # Load rule sets from config
-        manager.load_rule_sets_from_config(config)
+        manager.add_rulesets(config.rulesets)
 
         # Verify that valid rule sets were created
-        rs001 = manager.get_rule_set("RS001")
+        rs001 = manager.get("RS001")
         assert rs001 is not None
+        assert isinstance(rs001, RuleSet)
         assert rs001.id == "RS001"
         assert rs001.description == "Test rule set 1"
         assert len(list(rs001.rules())) == 1
 
+
+def test_rule_manager_load_valid_nested_rule_sets(manager):
+    """Test loading valid rule sets with nested rule sets from configuration."""
+    with patch("importlib.metadata.entry_points") as mock_entry_points:
+        mock_entry_points.return_value.select.return_value = []
+
+        # Create a config with nested rule sets
+        config = BaseLintrConfig(
+            github_token="dummy",
+            rulesets={
+                "RS001": RuleSetConfig(
+                    description="Test rule set 1",
+                    rules=["TEST001"],
+                ),
+                "RS002": RuleSetConfig(
+                    description="Test rule set 2",
+                    rules=["RS001"],  # Nested rule set
+                ),
+            },
+        )
+
+        # Load rule sets from config
+        manager.add_rulesets(config.rulesets)
+
         # Verify that nested rule set was created
-        rs002 = manager.get_rule_set("RS002")
+        rs002 = manager.get("RS002")
         assert rs002 is not None
+        assert isinstance(rs002, RuleSet)
         assert rs002.id == "RS002"
         assert rs002.description == "Test rule set 2"
         assert len(list(rs002.rules())) == 1  # Inherits rule from RS001
 
-        # Verify that invalid rule sets were skipped
-        assert manager.get_rule_set("RS003") is None
-        assert manager.get_rule_set("RS004") is None
 
-
-def test_rule_manager_create_rule_set(manager):
-    """Test creating a rule set with the rule manager."""
+def test_rule_manager_load_invalid_rule_references(manager):
+    """Test that loading rule sets with invalid rule references raises an exception."""
     with patch("importlib.metadata.entry_points") as mock_entry_points:
         mock_entry_points.return_value.select.return_value = []
 
-        # Create a rule set with a single rule
-        rule_set = manager.create_rule_set(
-            rule_set_id="RS001",
-            description="Test rule set",
-            rule_ids=["TEST001"],
+        # Create a config with invalid rule references
+        config = BaseLintrConfig(
+            github_token="dummy",
+            rulesets={
+                "RS001": RuleSetConfig(
+                    description="Test rule set 1",
+                    rules=["INVALID"],  # Invalid rule ID
+                ),
+            },
         )
 
-        assert isinstance(rule_set, RuleSet)
-        assert rule_set.id == "RS001"
-        assert rule_set.description == "Test rule set"
-        assert len(list(rule_set.rules())) == 1
+        # Loading rule sets with invalid rule references should raise ValueError
+        with pytest.raises(
+            ValueError, match=r"Rule or ruleset INVALID not found for ruleset RS001"
+        ):
+            manager.add_rulesets(config.rulesets)
 
-        # Verify that the rule set is registered
-        assert manager.get_rule_set("RS001") is rule_set
 
-        # Create a nested rule set
-        nested_set = manager.create_rule_set(
-            rule_set_id="RS002",
-            description="Nested rule set",
-            nested_rule_set_ids=["RS001"],
+def test_rule_manager_load_invalid_nested_rule_sets(manager):
+    """Test that loading rule sets with invalid nested rule set references raises an exception."""
+    with patch("importlib.metadata.entry_points") as mock_entry_points:
+        mock_entry_points.return_value.select.return_value = []
+
+        # Create a config with invalid nested rule set references
+        config = BaseLintrConfig(
+            github_token="dummy",
+            rulesets={
+                "RS001": RuleSetConfig(
+                    description="Test rule set 1",
+                    rules=["INVALID"],  # Invalid nested rule set
+                ),
+            },
         )
 
-        assert isinstance(nested_set, RuleSet)
-        assert len(list(nested_set.rules())) == 1  # Inherits rule from RS001
+        # Loading rule sets with invalid nested rule set references should raise ValueError
+        with pytest.raises(
+            ValueError, match=r"Rule or ruleset INVALID not found for ruleset RS001"
+        ):
+            manager.add_rulesets(config.rulesets)
 
-        # Verify that creating a rule set with an unknown rule ID raises an error
-        with pytest.raises(ValueError):
-            manager.create_rule_set(
-                rule_set_id="RS003",
-                description="Invalid rule set",
-                rule_ids=["INVALID"],
-            )
 
-        # Verify that creating a rule set with an unknown nested rule set ID raises an error
-        with pytest.raises(ValueError):
-            manager.create_rule_set(
-                rule_set_id="RS003",
-                description="Invalid rule set",
-                nested_rule_set_ids=["INVALID"],
-            )
+def test_rule_manager_load_duplicate_rule_sets(manager):
+    """Test that loading rule sets with duplicate IDs raises an exception."""
+    with patch("importlib.metadata.entry_points") as mock_entry_points:
+        mock_entry_points.return_value.select.return_value = []
+
+        # First, create a rule set
+        config1 = BaseLintrConfig(
+            github_token="dummy",
+            rulesets={
+                "RS001": RuleSetConfig(
+                    description="Test rule set 1",
+                    rules=["TEST001"],
+                ),
+            },
+        )
+        manager.add_rulesets(config1.rulesets)
+
+        # Try to create another rule set with the same ID
+        config2 = BaseLintrConfig(
+            github_token="dummy",
+            rulesets={
+                "RS001": RuleSetConfig(
+                    description="Test rule set 1 duplicate",
+                    rules=["TEST001"],
+                ),
+            },
+        )
+
+        # Loading rule sets with duplicate IDs should raise ValueError
+        with pytest.raises(ValueError, match=r"Rule or ruleset RS001 already exists"):
+            manager.add_rulesets(config2.rulesets)
 
 
 def test_rule_set_discovery_error_handling():
@@ -184,13 +225,18 @@ def test_rule_set_discovery_error_handling():
     mock_entry_point.load.side_effect = Exception("Failed to load rule set")
 
     with patch("importlib.metadata.entry_points") as mock_entry_points:
-        mock_entry_points.return_value.select.return_value = [mock_entry_point]
 
-        # Should not raise exception, but log warning
-        manager = RuleManager()
+        def select(group):
+            if group == "lintr.rule_sets":
+                return [mock_entry_point]
+            return []
 
-        # Verify rule set was not registered
-        assert "test_rule_set" not in manager._rule_sets
+        mock_entry_points.return_value.select = select
+
+        with pytest.raises(
+            ValueError, match=r"Failed to load ruleset test_rule_set"
+        ):  # Should not raise exception, but log warning
+            RuleManager()
 
 
 def test_rule_set_discovery_mixed_success():
@@ -207,93 +253,21 @@ def test_rule_set_discovery_mixed_success():
     mock_entry_point_failure.load.side_effect = Exception("Failed to load rule set")
 
     with patch("importlib.metadata.entry_points") as mock_entry_points:
-        mock_entry_points.return_value.select.return_value = [
-            mock_entry_point_success,
-            mock_entry_point_failure,
-        ]
 
-        # Should not raise exception
-        manager = RuleManager()
+        def select(group):
+            if group == "lintr.rule_sets":
+                return [
+                    mock_entry_point_success,
+                    mock_entry_point_failure,
+                ]
+            return []
 
-        # Verify successful rule set was registered
-        assert dummy_rule_set.id in manager._rule_sets
+        mock_entry_points.return_value.select = select
 
-        # Verify failed rule set was not registered
-        assert "test_rule_set_failure" not in manager._rule_sets
-
-
-def test_rule_set_config_validation(manager):
-    """Test validation of rule set configurations."""
-    with patch("importlib.metadata.entry_points") as mock_entry_points:
-        mock_entry_points.return_value.select.return_value = []
-
-        # Create a config with various edge cases
-        config = BaseLintrConfig(
-            github_token="dummy",
-            rule_sets={
-                # Empty rule set with no rules or nested sets
-                "RS001": RuleSetConfig(
-                    name="Empty rule set",
-                    rules=[],
-                    rule_sets=[],
-                ),
-                # Rule set with invalid nested set reference
-                "RS002": RuleSetConfig(
-                    name="Invalid nested set",
-                    rule_sets=["NONEXISTENT"],
-                ),
-                # Valid rule set that will be referenced
-                "RS003": RuleSetConfig(
-                    name="Valid rule set",
-                    rules=["TEST001"],
-                ),
-                # Rule set with mix of valid and invalid nested sets
-                "RS004": RuleSetConfig(
-                    name="Mixed nested sets",
-                    rule_sets=["RS003", "NONEXISTENT"],
-                ),
-                # Rule set with only rules, no nested sets
-                "RS005": RuleSetConfig(
-                    name="Rules only",
-                    rules=["TEST001"],
-                ),
-                # Rule set with only nested sets, no rules
-                "RS006": RuleSetConfig(
-                    name="Nested only",
-                    rule_sets=["RS005"],
-                ),
-            },
-        )
-
-        # Load rule sets from config
-        manager.load_rule_sets_from_config(config)
-
-        # Empty rule set should not be created
-        assert manager.get_rule_set("RS001") is None
-
-        # Rule set with only invalid nested set should not be created
-        assert manager.get_rule_set("RS002") is None
-
-        # Valid rule set should be created
-        rs003 = manager.get_rule_set("RS003")
-        assert rs003 is not None
-        assert len(list(rs003.rules())) == 1
-
-        # Rule set with mix of valid and invalid nested sets should be created
-        # and include rules from valid nested set
-        rs004 = manager.get_rule_set("RS004")
-        assert rs004 is not None
-        assert len(list(rs004.rules())) == 1  # Inherits rule from RS003
-
-        # Rules only rule set should be created
-        rs005 = manager.get_rule_set("RS005")
-        assert rs005 is not None
-        assert len(list(rs005.rules())) == 1
-
-        # Nested only rule set should be created and inherit rules
-        rs006 = manager.get_rule_set("RS006")
-        assert rs006 is not None
-        assert len(list(rs006.rules())) == 1  # Inherits rule from RS005
+        with pytest.raises(
+            ValueError, match=r"Failed to load ruleset test_rule_set_failure"
+        ):  # Should not raise exception, but log warning
+            RuleManager()
 
 
 def test_rule_discovery_error_handling():
@@ -304,14 +278,16 @@ def test_rule_discovery_error_handling():
     mock_entry_point.load.side_effect = Exception("Failed to load rule")
 
     with patch("importlib.metadata.entry_points") as mock_entry_points:
-        mock_entry_points.return_value.select.return_value = [mock_entry_point]
 
-        # Should not raise exception, but log warning
-        manager = RuleManager()
+        def select(group):
+            if group == "lintr.rules":
+                return [mock_entry_point]
+            return []
 
-        # Verify rule was not registered
-        assert "test_rule" not in manager._rules
-        assert "test_rule" not in manager._factory._rule_classes
+        mock_entry_points.return_value.select = select
+
+        with pytest.raises(ValueError, match=r"Failed to load rule test_rule"):
+            RuleManager()
 
 
 def test_rule_discovery_mixed_success():
@@ -336,18 +312,16 @@ def test_rule_discovery_mixed_success():
     mock_entry_point_failure.load.side_effect = Exception("Failed to load rule")
 
     with patch("importlib.metadata.entry_points") as mock_entry_points:
-        mock_entry_points.return_value.select.return_value = [
-            mock_entry_point_success,
-            mock_entry_point_failure,
-        ]
 
-        # Should not raise exception
-        manager = RuleManager()
+        def select(group):
+            if group == "lintr.rules":
+                return [
+                    mock_entry_point_success,
+                    mock_entry_point_failure,
+                ]
+            return []
 
-        # Verify successful rule was registered with its ID
-        assert "TEST002" in manager._rules
-        assert "TEST002" in manager._factory._rule_classes
+        mock_entry_points.return_value.select = select
 
-        # Verify failed rule was not registered
-        assert "test_rule_failure" not in manager._rules
-        assert "test_rule_failure" not in manager._factory._rule_classes
+        with pytest.raises(ValueError, match=r"Failed to load rule test_rule_failure"):
+            RuleManager()

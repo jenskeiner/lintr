@@ -28,10 +28,9 @@ def test_rule_set_config_validation():
         RuleSetConfig()
 
     # Test with only required fields
-    config = RuleSetConfig(name="test")
-    assert config.name == "test"
+    config = RuleSetConfig(description="test")
+    assert config.description == "test"
     assert config.rules == []
-    assert config.rule_sets == []
 
 
 def test_source_priority(env, env_file, config_file, monkeypatch):
@@ -48,20 +47,20 @@ def test_source_priority(env, env_file, config_file, monkeypatch):
 
     # 1. Environment variables should take precedence over both .env and yaml
     assert config.github_token == "env-var-token"
-    assert config.default_rule_set == "env-var-ruleset"
+    assert config.default_ruleset == "env-var-ruleset"
 
     # 2. Remove env vars to test .env file precedence over yaml
     monkeypatch.delenv("LINTR_GITHUB_TOKEN")
-    monkeypatch.delenv("LINTR_DEFAULT_RULE_SET")
+    monkeypatch.delenv("LINTR_DEFAULT_RULESET")
     config = LintrConfig()
     assert config.github_token == "env-file-token"
-    assert config.default_rule_set == "env-file-ruleset"
+    assert config.default_ruleset == "env-file-ruleset"
 
     # 3. Test yaml-only values (not set in env or .env)
     assert config.repository_filter.include_patterns == ["src/*", "tests/*"]
     assert config.repository_filter.exclude_patterns == ["**/temp/*"]
-    assert config.rule_sets["basic"].name == "basic"
-    assert config.rule_sets["basic"].rules == ["has_readme"]
+    assert config.rulesets["basic"].description == "basic"
+    assert config.rulesets["basic"].rules == ["R001"]
 
 
 def test_missing_config_file():
@@ -93,11 +92,11 @@ def test_defaults():
     LintrConfig = create_config_class()
     config = LintrConfig(github_token="test-token")
 
-    assert config.default_rule_set == "empty"  # Default value
+    assert config.default_ruleset == "empty"  # Default value
     assert isinstance(config.repository_filter, RepositoryFilter)
     assert config.repository_filter.include_patterns == []
     assert config.repository_filter.exclude_patterns == []
-    assert config.rule_sets == {}
+    assert config.rulesets == {}
 
 
 def test_custom_rule_definition():
@@ -158,7 +157,7 @@ def test_repository_specific_rule_config():
                 "config": {"required_sections": ["Installation", "Usage"]},
             }
         },
-        repository_rule_sets={
+        repositories={
             "owner/repo": RepositoryConfig(
                 ruleset="custom",
                 rules={
@@ -170,7 +169,7 @@ def test_repository_specific_rule_config():
         },
     )
 
-    repo_config = config.repository_rule_sets["owner/repo"]
+    repo_config = config.repositories["owner/repo"]
     assert repo_config.rules["custom_readme"]["required_sections"] == ["Quick Start"]
 
 
@@ -220,12 +219,12 @@ def test_custom_rule_in_ruleset():
                 "config": {"required_sections": ["Installation"]},
             }
         },
-        rule_sets={
+        rulesets={
             "custom_set": RuleSetConfig(
-                name="custom_set", rules=["custom_readme", "has_license"]
+                description="custom_set", rules=["custom_readme", "has_license"]
             )
         },
     )
 
-    assert "custom_set" in config.rule_sets
-    assert "custom_readme" in config.rule_sets["custom_set"].rules
+    assert "custom_set" in config.rulesets
+    assert "custom_readme" in config.rulesets["custom_set"].rules
