@@ -1,5 +1,6 @@
 """Rules for checking repository permission settings."""
 import abc
+from typing import Any
 
 from colorama import Fore, Style
 from difflib import unified_diff
@@ -8,7 +9,13 @@ from json import dumps
 from github.GithubException import GithubException
 from pydantic import Field
 
-from lintr.rules.base import Rule, RuleCheckResult, RuleResult, BaseRuleConfig
+from lintr.rules.base import (
+    Rule,
+    RuleCheckResult,
+    RuleResult,
+    BaseRuleConfig,
+    RuleCategory,
+)
 from lintr.rules.context import RuleContext
 
 
@@ -158,112 +165,6 @@ class NoCollaboratorsRule(Rule):
 
         except Exception as e:
             return False, f"Failed to remove collaborators: {str(e)}"
-
-
-class WikisDisabledRule(Rule):
-    """Rule that checks if wikis are disabled for a repository."""
-
-    _id = "R007"
-    _description = "Repository must have wikis disabled"
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Check if wikis are disabled for the repository.
-
-        Args:
-            context: Context object containing all information needed for the check.
-
-        Returns:
-            Result of the check with details.
-        """
-        try:
-            if not context.repository.has_wiki:
-                return RuleCheckResult(
-                    result=RuleResult.PASSED,
-                    message="Wikis are disabled",
-                )
-            else:
-                return RuleCheckResult(
-                    result=RuleResult.FAILED,
-                    message="Wikis are enabled",
-                    fix_available=True,
-                    fix_description="Disable wikis in repository settings",
-                )
-        except GithubException as e:
-            return RuleCheckResult(
-                result=RuleResult.FAILED,
-                message=f"Failed to check wiki status: {str(e)}",
-                fix_available=False,
-            )
-
-    def fix(self, context: RuleContext) -> tuple[bool, str]:
-        """Apply the fix for this rule.
-
-        Disable wikis in the repository settings.
-
-        Args:
-            context: Context object containing all information needed for the fix.
-
-        Returns:
-            A tuple of (success, message) indicating if the fix was successful.
-        """
-        try:
-            context.repository.edit(has_wiki=False)
-            return True, "Wikis have been disabled"
-        except GithubException as e:
-            return False, f"Failed to disable wikis: {str(e)}"
-
-
-class IssuesDisabledRule(Rule):
-    """Rule that checks if issues are disabled for a repository."""
-
-    _id = "R008"
-    _description = "Repository must have issues disabled"
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Check if issues are disabled for the repository.
-
-        Args:
-            context: Context object containing all information needed for the check.
-
-        Returns:
-            Result of the check with details.
-        """
-        try:
-            if not context.repository.has_issues:
-                return RuleCheckResult(
-                    result=RuleResult.PASSED,
-                    message="Issues are disabled",
-                )
-            else:
-                return RuleCheckResult(
-                    result=RuleResult.FAILED,
-                    message="Issues are enabled",
-                    fix_available=True,
-                    fix_description="Disable issues in repository settings",
-                )
-        except GithubException as e:
-            return RuleCheckResult(
-                result=RuleResult.FAILED,
-                message=f"Failed to check issues status: {str(e)}",
-                fix_available=False,
-            )
-
-    def fix(self, context: RuleContext) -> tuple[bool, str]:
-        """Apply the fix for this rule.
-
-        Disable issues in the repository settings.
-
-        Args:
-            context: Context object containing all information needed for the fix.
-
-        Returns:
-            A tuple of (success, message) indicating if the fix was successful.
-        """
-        try:
-            context.repository.edit(has_issues=False)
-            return True, "Issues have been disabled"
-        except GithubException as e:
-            return False, f"Failed to disable issues: {str(e)}"
 
 
 class MergeCommitsAllowedRule(Rule):
@@ -530,7 +431,7 @@ class NoClassicBranchProtectionRule(Rule):
 class BranchRulesetRuleConfig(BaseRuleConfig):
     ruleset_name: str
     branch_name: str
-    bypass_actors: list[dict[str, str]] = Field(
+    bypass_actors: list[dict[str, Any]] = Field(
         default_factory=lambda: [
             {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
         ]
@@ -777,17 +678,21 @@ class DevelopBranchRulesetRule(BranchRulesetRule):
     """Rule that checks if the develop branch has a proper branch ruleset set up."""
 
     _id = "GF003"
+    _category = RuleCategory.RULES
     _description = "Develop branch must have a proper ruleset configured"
     _config = BranchRulesetRuleConfig(
         ruleset_name="develop protection", branch_name="develop"
     )
+    _example = _config
 
 
 class MainBranchRulesetRule(BranchRulesetRule):
     """Rule that checks if the main branch has a proper branch ruleset set up."""
 
     _id = "GF004"
+    _category = RuleCategory.RULES
     _description = "Main branch must have a proper ruleset configured"
     _config = BranchRulesetRuleConfig(
         ruleset_name="main protection", branch_name="main"
     )
+    _example = _config

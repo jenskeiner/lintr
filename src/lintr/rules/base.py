@@ -6,10 +6,37 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TypeVar
 from typing import Union, Generic
+from warnings import warn
 
 from pydantic import BaseModel, ConfigDict
 
 from lintr.rules.context import RuleContext
+from lintr.util import camel_to_hyphen
+
+
+class RuleCategoryValue(BaseModel):
+    """Value for a rule category."""
+
+    name: str
+    code: str
+    description: str
+
+
+class RuleCategory(Enum):
+    """Categories for rules."""
+
+    GENERAL = RuleCategoryValue(name="General", code="G", description="General rules")
+    BRANCHES = RuleCategoryValue(name="Branches", code="B", description="Branch rules")
+    GITFLOW = RuleCategoryValue(name="GitFlow", code="GF", description="GitFlow rules")
+    RULES = RuleCategoryValue(name="Rules", code="R", description="Rules")
+    MISC = RuleCategoryValue(
+        name="Miscellaneous", code="M", description="Miscellaneous rules"
+    )
+
+
+class RuleStatus(Enum):
+    STABLE = "stable"
+    UNSTABLE = "unstable"
 
 
 class BaseRuleConfig(BaseModel):
@@ -85,6 +112,15 @@ class RuleMeta(ABCMeta):
                 f"Class {name} must define a '_id' class attribute as a string"
             )
 
+        if "_name" not in namespace:
+            # Determine name from the class name.
+            cls._name = camel_to_hyphen(cls.__name__).rstrip("-rule")
+
+        if not isinstance(cls._name, str):
+            raise TypeError(
+                f"Class {name} must define a '_name' class attribute as a string"
+            )
+
         if "_description" not in namespace:
             raise TypeError(
                 f"Class {name} must define a '_description' class attribute"
@@ -94,6 +130,53 @@ class RuleMeta(ABCMeta):
             raise TypeError(
                 f"Class {name} must define a '_description' class attribute as a string"
             )
+
+        if "_message" not in namespace:
+            cls._message = cls._description
+
+        if "_category" not in namespace:
+            cls._category = RuleCategory.MISC
+
+        if not isinstance(cls._category, RuleCategory):
+            raise TypeError(
+                f"Class {name} must define a '_category' class attribute as a RuleCategory"
+            )
+
+        if "_example" not in namespace:
+            cls._example = None
+            if expected_config_type is not BaseRuleConfig:
+                warn(f"Class {name} should define a '_example' class attribute")
+
+        if cls._example is not None and not isinstance(
+            cls._example, expected_config_type
+        ):
+            raise TypeError(
+                f"Class {name} must define a '_example' class attribute as {expected_config_type}"
+            )
+
+        if "_status" not in namespace:
+            cls._status = RuleStatus.STABLE
+
+        if not isinstance(cls._status, RuleStatus):
+            raise TypeError(
+                f"Class {name} must define a '_status' class attribute as a RuleStatus"
+            )
+
+        if "_deprecated" not in namespace:
+            cls._deprecated = False
+
+        if not isinstance(cls._deprecated, bool):
+            raise TypeError(
+                f"Class {name} must define a '_deprecated' class attribute as a bool"
+            )
+
+        # Check if fix method is overridden anywhere in the inheritance hierarchy
+        cls._fixable = False
+        if cls != _generic_base and issubclass(cls, _generic_base):
+            base_fix = _generic_base.fix
+            cls_fix = cls.fix
+            if cls_fix != base_fix:
+                cls._fixable = True
 
         return cls
 

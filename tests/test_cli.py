@@ -194,7 +194,7 @@ def test_cli_lint_with_config(capsys, config_file, mock_github):
                 "exclude_patterns": ["test-repo-excluded"],
             },
             "rulesets": {
-                "test-ruleset": {"description": "test-ruleset", "rules": ["R001"]}
+                "test-ruleset": {"description": "test-ruleset", "rules": ["R001P"]}
             },
             "repositories": {},
         }
@@ -234,8 +234,8 @@ def test_cli_lint_with_mock_github(capsys, config_file, env, mock_github):
                 "exclude_patterns": [],
             },
             "rulesets": {
-                "test-ruleset": {"description": "test-ruleset", "rules": ["R001"]},
-                "env-var-ruleset": {"description": "test-ruleset", "rules": ["R001"]},
+                "test-ruleset": {"description": "test-ruleset", "rules": ["R001P"]},
+                "env-var-ruleset": {"description": "test-ruleset", "rules": ["R001P"]},
             },
             "repositories": {},
         }
@@ -261,7 +261,7 @@ rulesets:
   env-var-ruleset:
     description: Default Rule Set
     rules:
-      - R001
+      - R001P
 """
     )
 
@@ -290,8 +290,10 @@ def test_cli_lint_config_not_found(capsys):
     assert exc_info.value.code == 1
 
     captured = capsys.readouterr()
-    assert f"Error: Configuration file not found: {non_existent_config}" in captured.out
-    assert "Run 'lintr init' to create a new configuration file" in captured.out
+    assert (
+        f"Error loading configuration: Config file not found: {non_existent_config}"
+        in captured.out
+    )
 
 
 def test_cli_lint_no_github_token(capsys, config_file, monkeypatch, env):

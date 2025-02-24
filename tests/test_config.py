@@ -60,7 +60,7 @@ def test_source_priority(env, env_file, config_file, monkeypatch):
     assert config.repository_filter.include_patterns == ["src/*", "tests/*"]
     assert config.repository_filter.exclude_patterns == ["**/temp/*"]
     assert config.rulesets["basic"].description == "basic"
-    assert config.rulesets["basic"].rules == ["R001"]
+    assert config.rulesets["basic"].rules == ["R001P"]
 
 
 def test_missing_config_file():

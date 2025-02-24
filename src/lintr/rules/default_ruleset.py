@@ -1,16 +1,12 @@
 """Default rule set for Lintr."""
 
 from lintr.rules.base import RuleSet
-from lintr.rules.branch_rules import (
-    DefaultBranchExistsRule,
-    WebCommitSignoffRequiredRule,
-)
+from lintr.rules.general import WebCommitSignoffRequiredEnabledRule
 from lintr.rules.permission_rules import (
     SingleOwnerRule,
     NoCollaboratorsRule,
-    WikisDisabledRule,
-    IssuesDisabledRule,
 )
+from lintr.rules.general import WikisDisabledRule, IssuesDisabledRule
 
 
 def get_default_ruleset() -> RuleSet:
@@ -29,8 +25,7 @@ def get_default_ruleset() -> RuleSet:
     )
 
     # Add basic repository checks
-    rule_set.add_rule(DefaultBranchExistsRule)
-    rule_set.add_rule(WebCommitSignoffRequiredRule)
+    rule_set.add_rule(WebCommitSignoffRequiredEnabledRule)
     rule_set.add_rule(SingleOwnerRule)
     rule_set.add_rule(NoCollaboratorsRule)
     rule_set.add_rule(WikisDisabledRule)

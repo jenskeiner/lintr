@@ -9,14 +9,13 @@ from lintr.rules.context import RuleContext
 from lintr.rules.permission_rules import (
     SingleOwnerRule,
     NoCollaboratorsRule,
-    WikisDisabledRule,
-    IssuesDisabledRule,
     MergeCommitsAllowedRule,
     SquashMergeDisabledRule,
     RebaseMergeDisabledRule,
     NoClassicBranchProtectionRule,
     DevelopBranchRulesetRule,
 )
+from lintr.rules.general import WikisDisabledRule, IssuesDisabledRule
 
 
 def test_single_owner_rule_pass():

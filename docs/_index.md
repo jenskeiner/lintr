@@ -1,15 +1,14 @@
 ---
-title: "Introduction"
+title: "Lintr"
 draft: false
 type: docs
 layout: "single"
 
 menu:
   docs_lintr:
+      name: "Introduction"
       weight: 0
 ---
-## Lintr
-
 A powerful and flexible GitHub repository settings linter, written in pure Python.
 
 <center>
@@ -99,7 +98,9 @@ set GITHUB_TOKEN="your-token-here"
 ```
 
 {{% warning %}}
-You can also set the token in a [configuration file](), but it is recommended to use an environment variable to ensure the token is not stored on disk in plain text and/or mixed with other configuration that might want to commit to version control or share with others.
+You can also set the token in a [configuration file](#configuration-file), but it is recommended to use an environment variable instead, 
+to ensure the token is not stored on disk in plain text, and/or mixed with other configuration that you might want to commit to 
+version control or share with others.
 {{% /warning %}}
 
 Once you have configured the token, you can verify it:
@@ -111,13 +112,19 @@ This will enumerate all repositories that can be accessed with the token. By def
 
 ## Configuration file
 
-By default, Lintr will scan all repositories it has access to through the personal access token, but will not apply any checks. To configure Linter, it is recommended
-to create a YAML-formatted configuration file, e.g. `lintr.yml`. Using a configuration file allows to configure the linting process, including the repositories to lint
-and the rule sets to use. Check the [configuration file reference]() for more detailed information.
+By default, Lintr will scan all repositories it has access to through the personal access token, but will not apply any checks.
+
+To configure Linter, it is recommended to create a YAML-formatted configuration file, e.g. `lintr.yml`. Using a configuration file allows to configure the linting process, including the repositories to lint and the rule sets to use.
+
+Check the [customization section](customization.md) for more detailed information.
 
 Here is an example of a simple `lintr.yml` file:
 
 ```yaml
+# GitHub personal access token.
+# Not recommended to set here, use GITHUB_TOKEN environment variable.
+#github_token: ...
+
 # The default rule set to use.
 default_ruleset: standard
 
@@ -132,6 +139,8 @@ rulesets:
 
 This defines a new ruleset named `standard` and makes it the default for all repositories. It uses pre-defined rules that come with Lintr.
 
+As already mentioned, it's not recommended to set the GitHub personal access token in a configuration file, but rather use the `GITHUB_TOKEN` environment variable.
+
 Once created, you can use Lintr with the configuration file as follows:
 
 ```bash
@@ -140,7 +149,7 @@ lintr lint --config lintr.yml
 
 This will lint all repositories using the `standard` ruleset defined in the configuration file and report any violations.
 
-## Rules
+## Rules & Rulesets
 
 Lintr checks repositories by applying a sequence of rules. Each rule has a relativly narrow focus, like checking if a certain repository setting is set to a certain value.
 For example, there may be a rule to check if the default branch has a certain name, or whether sign off on web-based commits is required. The flexibility and power of Lintr
@@ -150,10 +159,10 @@ Rules are combined into rulesets. A ruleset is a collection of rules that can be
 convenient to organise related rules into smaller sets from which larger rulesets can be composed. The larger rulesets can then be applied to repositories. This promotes
 sharing of common rules across repositories, but still alows for fine-grained control over individual repositories.
 
-Lintr comes with a range of pre-defined rules. Every rule has a unique identifier and a description. You can find a list of all available rules in the [reference]().
+Lintr comes with a range of pre-defined rules. Every rule has a unique identifier and a description. You can find a list of all available rules in the [rules section](rules/).
 
 Lintr also provides a few pre-defined rulesets. The most basic one is the `empty` ruleset which contains no rules and is used by default absent any other configuration.
-Like rules, each ruleset also has a unique identifier. You can find a list of all available rulesets in the [reference]().
+Like rules, each ruleset also has a unique identifier. You can find a list of all available rulesets in the [rulesets section](rulesets/).
 
 {{% note %}}
 To avoid confusion, rule and ruleset identifiers must be globally unique. Any rule or ruleset must have an ID distinct from that of any other rule or ruleset.
@@ -233,68 +242,3 @@ repositories:
 Lintr will use the ruleset `standard` for repository `foo` and the ruleset `extended` for repository `bar`. It will also use the default ruleset `standard` for all other repositories.
 
 Lintr can be customized further through custom rules and repository-specific rule settings. See the section on [customization](./customization) for more information.
-
-
-## Features
-
-### Command-line Interface (CLI)
-
-Operate Lintr effortlessly through its CLI. Lint all your repositories, or list available rules and rule sets, every task can be performed with simple commands.
-
-### Rules
-
-Lintr comes with a range of pre-defined rules covering a wide range of repository settings. Combine these rules to lint all your repositories or use them as starting point for custom rules.
-
-### Custom rules
-
-Create your custom rules by reconfiguring existing rules. This allows you to tailor Lintr to your specific needs and preferences.
-
-### Rule Sets
-
-Lintr comes with pre-built rule sets covering a wide range of repository configurations, including branch policies, permissions, 
-issue settings, and more.
-
-### Automatic Fixes
-
-For many common issues, Lintr not only detects problems but can also automatically apply fixes. This is especially useful in large 
-environments where manual interventions might be too time-consuming.
-
-### Customizability
-
-Every project is unique. Configure Lintr with repository-specific rules and settings as needed.
-
-### Detailed Output and Reporting
-
-Get clear and concise feedback about each check, including colorized status symbols and descriptive messages. This clarity helps you 
-quickly identify and address any problems.
-
-
-## Purpose
-
-Lintr was built with the aim of streamlining repository management by automatically **linting** various aspects of a repository’s 
-configuration. At its core, the tool monitors key repository settings and compares them against a set of predefined rules – from branch naming conventions to GitHub permission configurations. Here’s why Lintr exists:
-
-### Addressing Inconsistencies
-Many organizations face challenges due to inconsistent repository configurations, which can lead to fragmented practices and unexpected security issues. Lintr helps mitigate these issues by ensuring that every repository adheres to the desired guidelines.
-
-### Automation and Efficiency
-Manual checks are tedious and error-prone. With Lintr, you can automate the process of verifying repository settings, which not only saves time but also reduces the risk of human error.
-
-### Extensibility
-Lintr is designed to be highly extensible. Not only does it come with a set of core rules, but it also allows you to create and register custom rules tailored to your organization’s specific needs.
-
-### Improved Repository Health
-By catching configuration deviations early, Lintr helps maintain an overall healthy repository environment. This proactive monitoring can prevent potential security oversights and streamline your development workflow.
-
-## Who Should Use Lintr?
-
-Lintr is aimed primarily at those who manage or contribute to multiple GitHub repositories and wish to enforce a uniform standard across them. Its flexibility and robust feature set make it ideal for:
-
-### Repository Maintainers
-Ensure that every repository under your stewardship adheres to consistent configuration standards. Lintr helps catch misconfigurations before they cause issues.
-
-### DevOps Engineers
-Integrate Lintr into your CI/CD pipelines to automate the process of repository configuration validation. This guarantees that your deployment environments meet the necessary guidelines.
-
-### Developers Interested in Automation
-If you love automation and want your development process to be as robust as possible, Lintr offers automated linting that can save countless hours and reduce manual oversight.

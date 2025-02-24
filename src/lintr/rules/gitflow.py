@@ -101,3 +101,4 @@ class GitFlowDefaultBranchRule(DefaultBranchNameRule):
     _id = "GF002"
     _description = "Default branch must be 'develop'"
     _config = DefaultBranchNameRuleConfig(branch="develop")
+    _example = _config

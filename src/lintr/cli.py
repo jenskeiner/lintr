@@ -27,7 +27,7 @@ def create_parser() -> argparse.ArgumentParser:
         "lint", help="Lint repositories according to configured rules"
     )
     lint_parser.add_argument(
-        "--config", help="Path to configuration file", default=".lintr.yml"
+        "--config", help="Path to configuration file", default="lintr.yml"
     )
     lint_parser.add_argument(
         "--fix", action="store_true", help="Attempt to fix issues automatically"
@@ -64,7 +64,7 @@ def create_parser() -> argparse.ArgumentParser:
         "init", help="Initialize a new configuration file"
     )
     init_parser.add_argument(
-        "--output", help="Path to write configuration file", default=".lintr.yml"
+        "--output", help="Path to write configuration file", default="lintr.yml"
     )
 
     # Help command
@@ -76,12 +76,12 @@ def create_parser() -> argparse.ArgumentParser:
 def handle_lint(args: argparse.Namespace) -> None:
     """Handle the lint command."""
     try:
-        # Check if config file exists
+        # # Check if config file exists
         config_path = Path(args.config)
-        if not config_path.exists():
-            print(f"Error: Configuration file not found: {args.config}")
-            print("Run 'lintr init' to create a new configuration file")
-            sys.exit(1)
+        # if not config_path.exists():
+        #     print(f"Error: Configuration file not found: {args.config}")
+        #     print("Run 'lintr init' to create a new configuration file")
+        #     sys.exit(1)
 
         # Load and validate configuration from all sources
         LintrConfig = create_config_class(config_path)

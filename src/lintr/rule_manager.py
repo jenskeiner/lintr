@@ -181,7 +181,11 @@ class RuleManager:
         Returns:
             Dictionary mapping rule IDs to rule instances with descriptions.
         """
-        return {k: v for k, v in self._rules.items() if issubclass(v, Rule)}
+        return {
+            k: v
+            for k, v in self._rules.items()
+            if isinstance(v, type) and issubclass(v, Rule)
+        }
 
     def get_all_rule_sets(self) -> dict[str, RuleSet]:
         """Get all available rule sets.

@@ -14,6 +14,7 @@ dependencies = [
     "pydantic-settings>=2.1.0",
     "PyYAML>=6.0.1",
     "colorama>=0.4.6",
+    "PyYAML>=6.0.2",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -62,12 +63,12 @@ testpaths = ["tests"]
 lintr = "lintr.cli:main"
 
 [project.entry-points."lintr.rules"]
-default_branch_exists = "lintr.rules.branch_rules:DefaultBranchExistsRule"
-web_commit_signoff_required = "lintr.rules.branch_rules:WebCommitSignoffRequiredRule"
+web_commit_signoff_required_enabled = "lintr.rules.general:WebCommitSignoffRequiredEnabledRule"
+web_commit_signoff_required_disabled = "lintr.rules.general:WebCommitSignoffRequiredDisabledRule"
+wikis_disabled = "lintr.rules.general:WikisDisabledRule"
+issues_disabled = "lintr.rules.general:IssuesDisabledRule"
 single_owner = "lintr.rules.permission_rules:SingleOwnerRule"
 no_collaborators = "lintr.rules.permission_rules:NoCollaboratorsRule"
-wikis_disabled = "lintr.rules.permission_rules:WikisDisabledRule"
-issues_disabled = "lintr.rules.permission_rules:IssuesDisabledRule"
 preserve_repository = "lintr.rules.general:PreserveRepositoryRule"
 discussions_disabled = "lintr.rules.general:DiscussionsDisabledRule"
 projects_disabled = "lintr.rules.general:ProjectsDisabledRule"
