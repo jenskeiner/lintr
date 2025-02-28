@@ -10,10 +10,12 @@ menu:
 ---
 
 Lintr is still under development. You can greatly help the project by
-- suggesting improvements
-- reporting bugs
-- submitting PRs with improvements and/or fixes
-- adding new rules to check particular settings of interest
+- suggesting improvements,
+- reporting bugs,
+- submitting PRs with improvements and/or fixes,
+- adding new rules to check particular settings of interest,
+- improving automated tests and test coverage,
+- improving the documentation.
 
 ## Adding new rules
 
