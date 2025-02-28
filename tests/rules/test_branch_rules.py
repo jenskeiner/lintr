@@ -4,78 +4,18 @@ from unittest.mock import MagicMock, PropertyMock
 from github.GithubException import GithubException
 
 from lintr.rules.base import RuleResult
-from lintr.rules.branch_rules import (
-    DefaultBranchExistsRule,
-    WebCommitSignoffRequiredRule,
-    DeleteBranchOnMergeRule,
+from lintr.rules.general import (
+    WebCommitSignoffRequiredEnabledRule,
     AutoMergeDisabledRule,
+    DeleteBranchOnMergeEnabledRule,
 )
 from lintr.rules.context import RuleContext
 
 
-def test_default_branch_exists_rule_init():
-    """Test initialization of DefaultBranchExistsRule."""
-    rule = DefaultBranchExistsRule()
-    assert rule.rule_id == "R001"
-    assert "default branch" in rule.description.lower()
-
-
-def test_default_branch_exists_rule_check_success():
-    """Test DefaultBranchExistsRule when repository has a default branch."""
-    # Create a mock repository with a default branch
-    repo = MagicMock()
-    repo.default_branch = "main"
-    context = RuleContext(repository=repo)
-
-    # Check the rule
-    rule = DefaultBranchExistsRule()
-    result = rule.check(context)
-
-    assert result.result == RuleResult.PASSED
-    assert "main" in result.message
-    assert not result.fix_available
-    assert result.fix_description is None
-
-
-def test_default_branch_exists_rule_check_failure():
-    """Test DefaultBranchExistsRule when repository has no default branch."""
-    # Create a mock repository without a default branch
-    repo = MagicMock()
-    repo.default_branch = None
-    context = RuleContext(repository=repo)
-
-    # Check the rule
-    rule = DefaultBranchExistsRule()
-    result = rule.check(context)
-
-    assert result.result == RuleResult.FAILED
-    assert "does not have" in result.message.lower()
-    assert not result.fix_available
-    assert "create a branch" in result.fix_description.lower()
-
-
-def test_default_branch_exists_rule_check_error():
-    """Test DefaultBranchExistsRule when GitHub API call fails."""
-    # Create a mock repository that raises an exception
-    repo = MagicMock()
-    repo.default_branch = MagicMock(side_effect=GithubException(404, "Not found"))
-    context = RuleContext(repository=repo)
-
-    # Check the rule
-    rule = DefaultBranchExistsRule()
-    result = rule.check(context)
-
-    assert result.result == RuleResult.FAILED
-    assert "failed to check" in result.message.lower()
-    assert "not found" in result.message.lower()
-    assert not result.fix_available
-    assert result.fix_description is None
-
-
 def test_web_commit_signoff_required_rule_init():
     """Test initialization of WebCommitSignoffRequiredRule."""
-    rule = WebCommitSignoffRequiredRule()
-    assert rule.rule_id == "R004"
+    rule = WebCommitSignoffRequiredEnabledRule()
+    assert rule.rule_id == "G001P"
     assert "web-based commits" in rule.description.lower()
 
 
@@ -87,11 +27,14 @@ def test_web_commit_signoff_required_rule_check_success():
     context = RuleContext(repository=repo)
 
     # Check the rule
-    rule = WebCommitSignoffRequiredRule()
+    rule = WebCommitSignoffRequiredEnabledRule()
     result = rule.check(context)
 
     assert result.result == RuleResult.PASSED
-    assert "requires signoff" in result.message.lower()
+    assert (
+        "require contributors to sign off on web-based commits"
+        in result.message.lower()
+    )
     assert not result.fix_available
     assert result.fix_description is None
 
@@ -104,11 +47,11 @@ def test_web_commit_signoff_required_rule_check_failure():
     context = RuleContext(repository=repo)
 
     # Check the rule
-    rule = WebCommitSignoffRequiredRule()
+    rule = WebCommitSignoffRequiredEnabledRule()
     result = rule.check(context)
 
     assert result.result == RuleResult.FAILED
-    assert "does not require signoff" in result.message.lower()
+    assert "is disabled" in result.message.lower()
     assert result.fix_available
     assert "enable" in result.fix_description.lower()
 
@@ -123,11 +66,11 @@ def test_web_commit_signoff_required_rule_check_error():
     context = RuleContext(repository=repo)
 
     # Check the rule
-    rule = WebCommitSignoffRequiredRule()
+    rule = WebCommitSignoffRequiredEnabledRule()
     result = rule.check(context)
 
-    assert result.result == RuleResult.FAILED
-    assert "error checking" in result.message.lower()
+    assert result.result == RuleResult.SKIPPED
+    assert "failed to check" in result.message.lower()
     assert "not found" in result.message.lower()
     assert not result.fix_available
     assert result.fix_description is None
@@ -140,7 +83,7 @@ def test_web_commit_signoff_required_rule_fix_success():
     context = RuleContext(repository=repo)
 
     # Fix the issue
-    rule = WebCommitSignoffRequiredRule()
+    rule = WebCommitSignoffRequiredEnabledRule()
     success, message = rule.fix(context)
 
     assert success
@@ -156,7 +99,7 @@ def test_web_commit_signoff_required_rule_fix_error():
     context = RuleContext(repository=repo)
 
     # Try to fix
-    rule = WebCommitSignoffRequiredRule()
+    rule = WebCommitSignoffRequiredEnabledRule()
     success, message = rule.fix(context)
 
     assert not success
@@ -166,21 +109,21 @@ def test_web_commit_signoff_required_rule_fix_error():
 
 
 def test_delete_branch_on_merge_rule_init():
-    """Test initialization of DeleteBranchOnMergeRule."""
-    rule = DeleteBranchOnMergeRule()
-    assert rule.rule_id == "R017"
-    assert "delete_branch_on_merge" in rule.description.lower()
+    """Test initialization of DeleteBranchOnMergeEnabledRule."""
+    rule = DeleteBranchOnMergeEnabledRule()
+    assert rule.rule_id == "G011P"
+    assert "checks that automatically delete" in rule.description.lower()
 
 
 def test_delete_branch_on_merge_rule_check_success():
-    """Test DeleteBranchOnMergeRule when delete_branch_on_merge is enabled."""
+    """Test DeleteBranchOnMergeEnabledRule when delete_branch_on_merge is enabled."""
     # Create a mock repository with delete_branch_on_merge enabled
     repo = MagicMock()
     repo.delete_branch_on_merge = True
     context = RuleContext(repository=repo)
 
     # Check the rule
-    rule = DeleteBranchOnMergeRule()
+    rule = DeleteBranchOnMergeEnabledRule()
     result = rule.check(context)
 
     assert result.result == RuleResult.PASSED
@@ -190,24 +133,24 @@ def test_delete_branch_on_merge_rule_check_success():
 
 
 def test_delete_branch_on_merge_rule_check_failure():
-    """Test DeleteBranchOnMergeRule when delete_branch_on_merge is disabled."""
+    """Test DeleteBranchOnMergeEnabledRule when delete_branch_on_merge is disabled."""
     # Create a mock repository with delete_branch_on_merge disabled
     repo = MagicMock()
     repo.delete_branch_on_merge = False
     context = RuleContext(repository=repo)
 
     # Check the rule
-    rule = DeleteBranchOnMergeRule()
+    rule = DeleteBranchOnMergeEnabledRule()
     result = rule.check(context)
 
     assert result.result == RuleResult.FAILED
-    assert "not" in result.message.lower()
+    assert "is disabled" in result.message.lower()
     assert result.fix_available
     assert "enable" in result.fix_description.lower()
 
 
 def test_delete_branch_on_merge_rule_check_error():
-    """Test DeleteBranchOnMergeRule when GitHub API call fails."""
+    """Test DeleteBranchOnMergeEnabledRule when GitHub API call fails."""
     # Create a mock repository that raises an exception
     repo = MagicMock()
     type(repo).delete_branch_on_merge = PropertyMock(
@@ -216,24 +159,24 @@ def test_delete_branch_on_merge_rule_check_error():
     context = RuleContext(repository=repo)
 
     # Check the rule
-    rule = DeleteBranchOnMergeRule()
+    rule = DeleteBranchOnMergeEnabledRule()
     result = rule.check(context)
 
-    assert result.result == RuleResult.FAILED
-    assert "error" in result.message.lower()
+    assert result.result == RuleResult.SKIPPED
+    assert "failed to check" in result.message.lower()
     assert "not found" in result.message.lower()
     assert not result.fix_available
     assert result.fix_description is None
 
 
 def test_delete_branch_on_merge_rule_fix_success():
-    """Test DeleteBranchOnMergeRule fix method when successful."""
+    """Test DeleteBranchOnMergeEnabledRule fix method when successful."""
     # Create a mock repository
     repo = MagicMock()
     context = RuleContext(repository=repo)
 
     # Fix the rule
-    rule = DeleteBranchOnMergeRule()
+    rule = DeleteBranchOnMergeEnabledRule()
     success, message = rule.fix(context)
 
     assert success is True
@@ -242,14 +185,14 @@ def test_delete_branch_on_merge_rule_fix_success():
 
 
 def test_delete_branch_on_merge_rule_fix_error():
-    """Test DeleteBranchOnMergeRule fix method when GitHub API call fails."""
+    """Test DeleteBranchOnMergeEnabledRule fix method when GitHub API call fails."""
     # Create a mock repository that raises an exception
     repo = MagicMock()
     repo.edit.side_effect = GithubException(404, "Not found")
     context = RuleContext(repository=repo)
 
     # Fix the rule
-    rule = DeleteBranchOnMergeRule()
+    rule = DeleteBranchOnMergeEnabledRule()
     success, message = rule.fix(context)
 
     assert success is False
@@ -261,8 +204,8 @@ def test_delete_branch_on_merge_rule_fix_error():
 def test_auto_merge_disabled_rule_init():
     """Test initialization of AutoMergeDisabledRule."""
     rule = AutoMergeDisabledRule()
-    assert rule.rule_id == "R018"
-    assert "auto merge" in rule.description.lower()
+    assert rule.rule_id == "G010N"
+    assert "checks that 'allow auto-merge'" in rule.description.lower()
 
 
 def test_auto_merge_disabled_rule_check_success():
@@ -312,8 +255,8 @@ def test_auto_merge_disabled_rule_check_error():
     rule = AutoMergeDisabledRule()
     result = rule.check(context)
 
-    assert result.result == RuleResult.FAILED
-    assert "error" in result.message.lower()
+    assert result.result == RuleResult.SKIPPED
+    assert "failed to check" in result.message.lower()
     assert "not found" in result.message.lower()
     assert not result.fix_available
     assert result.fix_description is None

@@ -57,7 +57,7 @@
     - If available, pass back the suggested fix to the caller.
     - Execute the fix if requested.
 - Concrete rules are subclasses of the abstract base class.
-- Each rule has a short, unique identifier (similar to flake8, e.g. `R001`).
+- Each rule has a short, unique identifier (similar to flake8, e.g. `G001`).
 - Rules are discoverable at runtime. Adding a new rule class to the code base make sit available to the Rule Manager.
 - Rules receive a context object when running checks, which encapsulates all information needed for the check.
   - Initially, the context only contains the GitHub repository object.

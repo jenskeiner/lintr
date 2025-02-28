@@ -36,7 +36,7 @@ class RuleManager:
         if rulesets is None:
             rulesets = {}
         if not RuleManager._initialized:
-            self._rules: dict[str, type[Rule] | RuleSet] = {}
+            self._rules: dict[str, type[Rule] | RuleSet] = dict()
             self._discover_rules()
             self.add_rules(rules)
             self._discover_rule_sets()
@@ -47,6 +47,7 @@ class RuleManager:
         if rule_cls.rule_id in self._rules:
             raise ValueError(f"Rule {rule_cls.rule_id} already exists.")
         self._rules[rule_cls.rule_id] = rule_cls
+        self._update_mutually_exclusive(rule_cls)
 
     def _discover_rules(self) -> None:
         """Discover all available rules from entry points."""
@@ -84,7 +85,7 @@ class RuleManager:
                     )
                     self.add_rule(rule_cls)
                 except Exception as e:
-                    raise Exception(
+                    raise ValueError(
                         f"Failed to create custom rule {rule_id}: {e}"
                     ) from e
         else:
@@ -148,7 +149,12 @@ class RuleManager:
                         raise ValueError(
                             f"Rule or ruleset {nested_id} not found for ruleset {rule_set_id}."
                         ) from e
-                    rule_set.add_rule_set(nested_set)
+                    try:
+                        rule_set.add(nested_set)
+                    except Exception as e:
+                        raise ValueError(
+                            f"Error adding rule or ruleset {nested_id} to ruleset {rule_set_id}: {e}"
+                        ) from e
         else:
             for ruleset in rulesets:
                 self.add_rule_set(ruleset)
@@ -181,7 +187,11 @@ class RuleManager:
         Returns:
             Dictionary mapping rule IDs to rule instances with descriptions.
         """
-        return {k: v for k, v in self._rules.items() if issubclass(v, Rule)}
+        return {
+            k: v
+            for k, v in self._rules.items()
+            if isinstance(v, type) and issubclass(v, Rule)
+        }
 
     def get_all_rule_sets(self) -> dict[str, RuleSet]:
         """Get all available rule sets.
@@ -190,3 +200,10 @@ class RuleManager:
             Dictionary mapping rule set IDs to rule set instances.
         """
         return {k: v for k, v in self._rules.items() if isinstance(v, RuleSet)}
+
+    def _update_mutually_exclusive(self, rule: type[Rule]):
+        for id in rule._mutually_exclusive_with:
+            other = self._rules.get(id)
+            if other:
+                rule._mutually_exclusive_with_resolved.add(other)
+                other._mutually_exclusive_with_resolved.add(rule)

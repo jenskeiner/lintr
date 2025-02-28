@@ -1,16 +1,12 @@
 """Tests for default rule set."""
 
 from lintr.rules.default_ruleset import get_default_ruleset
-from lintr.rules.branch_rules import (
-    DefaultBranchExistsRule,
-    WebCommitSignoffRequiredRule,
-)
+from lintr.rules.general import WebCommitSignoffRequiredEnabledRule
 from lintr.rules.permission_rules import (
     SingleOwnerRule,
     NoCollaboratorsRule,
-    WikisDisabledRule,
-    IssuesDisabledRule,
 )
+from lintr.rules.general import WikisDisabledRule, IssuesDisabledRule
 
 
 def test_get_default_ruleset():
@@ -22,12 +18,11 @@ def test_get_default_ruleset():
 
     # Verify that the rule set contains all expected rules
     rules = list(rule_set.rules())
-    assert len(rules) == 6
+    assert len(rules) == 5
 
     # Verify that rules are in the expected order
-    assert rules[0] is DefaultBranchExistsRule
-    assert rules[1] is WebCommitSignoffRequiredRule
-    assert rules[2] is SingleOwnerRule
-    assert rules[3] is NoCollaboratorsRule
-    assert rules[4] is WikisDisabledRule
-    assert rules[5] is IssuesDisabledRule
+    assert rules[0] is WebCommitSignoffRequiredEnabledRule
+    assert rules[1] is SingleOwnerRule
+    assert rules[2] is NoCollaboratorsRule
+    assert rules[3] is WikisDisabledRule
+    assert rules[4] is IssuesDisabledRule

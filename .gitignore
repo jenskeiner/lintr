@@ -173,7 +173,7 @@ cython_debug/
 # Configuration file.
 lintr.yml
 
-docs/external/
+support/docs/external/
 
 # VS Code
 .vscode

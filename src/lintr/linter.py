@@ -98,7 +98,7 @@ class Linter:
         context = self.create_context(repository)
         results = {}
 
-        for rule in rule_set.rules():
+        for rule in rule_set.effective_rules():
             rule_config = (
                 repository_config.rules.get(rule.rule_id) if repository_config else None
             )

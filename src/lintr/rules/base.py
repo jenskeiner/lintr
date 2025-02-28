@@ -10,6 +10,32 @@ from typing import Union, Generic
 from pydantic import BaseModel, ConfigDict
 
 from lintr.rules.context import RuleContext
+from lintr.util import camel_to_hyphen
+
+
+class RuleCategoryValue(BaseModel):
+    """Value for a rule category."""
+
+    name: str
+    code: str
+    description: str
+
+
+class RuleCategory(Enum):
+    """Categories for rules."""
+
+    GENERAL = RuleCategoryValue(name="General", code="G", description="General rules")
+    BRANCHES = RuleCategoryValue(name="Branches", code="B", description="Branch rules")
+    GITFLOW = RuleCategoryValue(name="GitFlow", code="GF", description="GitFlow rules")
+    RULES = RuleCategoryValue(name="Rules", code="R", description="Rules")
+    MISC = RuleCategoryValue(
+        name="Miscellaneous", code="M", description="Miscellaneous rules"
+    )
+
+
+class RuleStatus(Enum):
+    STABLE = "stable"
+    UNSTABLE = "unstable"
 
 
 class BaseRuleConfig(BaseModel):
@@ -28,13 +54,54 @@ class RuleMeta(ABCMeta):
     def __new__(mcs, name: str, bases: tuple, namespace: dict):
         cls = super().__new__(mcs, name, bases, namespace)
 
+        cls._mutually_exclusive_with_resolved = set()
+
+        if "_name" not in namespace:
+            # Determine name from the class name.
+            cls._name = camel_to_hyphen(cls.__name__).rstrip("-rule")
+
+        if not isinstance(cls._name, str):
+            raise TypeError(
+                f"Class {name} must define a '_name' class attribute as a string"
+            )
+
+        if "_status" not in namespace:
+            cls._status = RuleStatus.STABLE
+
+        if not isinstance(cls._status, RuleStatus):
+            raise TypeError(
+                f"Class {name} must define a '_status' class attribute as a RuleStatus"
+            )
+
+        if "_deprecated" not in namespace:
+            cls._deprecated = False
+
+        if not isinstance(cls._deprecated, bool):
+            raise TypeError(
+                f"Class {name} must define a '_deprecated' class attribute as a bool"
+            )
+
+        # Check if fix method is overridden anywhere in the inheritance hierarchy
+        cls._fixable = False
+        if _generic_base and cls != _generic_base and issubclass(cls, _generic_base):
+            base_fix = _generic_base.fix
+            cls_fix = cls.fix
+            if cls_fix != base_fix:
+                cls._fixable = True
+
+        if "_message" not in namespace and hasattr(cls, "_description"):
+            cls._message = cls._description
+
         # Skip validation for the base class itself
-        if ABC in bases:
-            return cls
+        cls._abstract = ABC in bases
 
         # Get the expected config type from generic parameters
         expected_config_type = BaseRuleConfig
-        s = [cls] if cls != _generic_base and issubclass(cls, _generic_base) else []
+        s = (
+            [cls]
+            if _generic_base and cls != _generic_base and issubclass(cls, _generic_base)
+            else []
+        )
         while s:
             klass = s.pop()
             if (
@@ -59,12 +126,25 @@ class RuleMeta(ABCMeta):
                     )
 
         if expected_config_type is None:
-            expected_config_type = type(_generic_base._config)
+            expected_config_type = (
+                type(_generic_base._config) if _generic_base else BaseRuleConfig
+            )
 
-        # If no _config is defined, inherit from parent
+        cls._configurable = _generic_base and expected_config_type is not type(
+            _generic_base._config
+        )
+
+        if cls._abstract:
+            return cls
+
+        # If no _config is defined, inherit from parent if it's of the expected type.
         if "_config" not in namespace:
             for base in bases:
-                if hasattr(base, "_config"):
+                if (
+                    hasattr(base, "_config")
+                    and base._config
+                    and issubclass(type(base._config), expected_config_type)
+                ):
                     cls._config = base._config
                     break
 
@@ -93,6 +173,27 @@ class RuleMeta(ABCMeta):
         if not isinstance(cls._description, str):
             raise TypeError(
                 f"Class {name} must define a '_description' class attribute as a string"
+            )
+
+        if not hasattr(cls, "_category"):
+            cls._category = RuleCategory.MISC
+
+        if not isinstance(cls._category, RuleCategory):
+            raise TypeError(
+                f"Class {name} must define a '_category' class attribute as a RuleCategory"
+            )
+
+        if expected_config_type is not BaseRuleConfig:
+            if "_example" not in namespace:
+                cls._example = cls._config
+        else:
+            cls._example = None
+
+        if cls._example is not None and not isinstance(
+            cls._example, expected_config_type
+        ):
+            raise TypeError(
+                f"Class {name} must define a '_example' class attribute as {expected_config_type}"
             )
 
         return cls
@@ -130,14 +231,14 @@ class Rule(Generic[ConfigT], ABC, metaclass=RuleMeta):  #
     _config = BaseRuleConfig()
 
     # Class-level set of rule IDs that this rule is mutually exclusive with
-    mutually_exclusive_with: set[str] = set()
+    _mutually_exclusive_with: set[str] = set()
 
     def __init__(self, config: ConfigT | None = None) -> None:
         """
         Initialize with optional config override.
 
         Args:
-            rule_id: Unique identifier for the rule (e.g., 'R001').
+            rule_id: Unique identifier for the rule (e.g., 'G001').
             description: Human-readable description of what the rule checks.
             config: If provided, this config instance will be used instead
                 of the class-level default config.
@@ -204,6 +305,7 @@ class RuleSet:
         self._description = description
         # Store both rules and rule sets in a single list, maintaining order
         self._items: list[Union[type[Rule], "RuleSet"]] = []
+        self._mutually_exclusive = dict()
 
     @property
     def id(self) -> str:
@@ -213,7 +315,7 @@ class RuleSet:
     def description(self) -> str:
         return self._description
 
-    def add_rule(self, rule: type[Rule]) -> None:
+    def add(self, rule: Union[type[Rule], "RuleSet"]) -> None:
         """Add a rule to this rule set.
 
         Args:
@@ -223,18 +325,10 @@ class RuleSet:
             ValueError: If a rule with the same ID already exists.
         """
 
+        if not isinstance(rule, RuleSet) and rule._abstract:
+            raise ValueError(f"Rule {rule.rule_id} is abstract.")
+
         self._items.append(rule)
-
-    def add_rule_set(self, rule_set: "RuleSet") -> None:
-        """Add another rule set to this rule set.
-
-        Args:
-            rule_set: Rule set to add.
-
-        Raises:
-            ValueError: If a rule set with the same ID already exists.
-        """
-        self._items.append(rule_set)
 
     def rules(self) -> Iterator[type[Rule]]:
         """Get all rules in this rule set, including those from nested rule sets.
@@ -279,7 +373,7 @@ class RuleSet:
         # Build up a dictionary of mutually exclusive rules.
         mutually_exclusive_rules = dict()
         for rule in all_rules:
-            for id in rule.mutually_exclusive_with:
+            for id in rule._mutually_exclusive_with:
                 mutually_exclusive_rules[rule.rule_id] = mutually_exclusive_rules.get(
                     rule.rule_id, set()
                 ) | {id}
