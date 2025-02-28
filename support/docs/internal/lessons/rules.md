@@ -3,7 +3,7 @@
 - Use Python's ABC (Abstract Base Class) to enforce a consistent interface for all rules. This ensures that all rules implement the required methods (`check`, `can_fix`, and `fix`).
 - Separate the rule result (passed/failed/skipped) from the result details (message, fix availability) using distinct classes (`RuleResult` enum and `RuleCheckResult` dataclass).
 - Design rule sets to support nesting (rule sets containing other rule sets) from the start.
-- Use unique identifiers for rules (e.g., 'R001'). Rule identifiers are class attributes on concrete sub-classes of the rule base clasds.
+- Use unique identifiers for rules (e.g., 'G001'). Rule identifiers are class attributes on concrete sub-classes of the rule base clasds.
 - In case a rule fails, provide a clear error message that indicate exactly what needs to be fixed.
 - The linter class in `src/lintr/linter.py`should handle rule execution and error handling.
 - Use a context object to pass information to rules instead of raw objects.

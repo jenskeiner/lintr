@@ -9,13 +9,16 @@ from lintr.rules.context import RuleContext
 from lintr.rules.permission_rules import (
     SingleOwnerRule,
     NoCollaboratorsRule,
-    MergeCommitsAllowedRule,
+    NoClassicBranchProtectionRule,
+)
+from lintr.rules.gitflow import GitFlowDevelopBranchRulesetRule
+from lintr.rules.general import (
+    WikisDisabledRule,
+    IssuesDisabledRule,
+    MergeCommitsEnabledRule,
     SquashMergeDisabledRule,
     RebaseMergeDisabledRule,
-    NoClassicBranchProtectionRule,
-    DevelopBranchRulesetRule,
 )
-from lintr.rules.general import WikisDisabledRule, IssuesDisabledRule
 
 
 def test_single_owner_rule_pass():
@@ -271,7 +274,7 @@ def test_wikis_disabled_rule_api_error():
     result = rule.check(context)
 
     # Verify result
-    assert result.result == RuleResult.FAILED
+    assert result.result == RuleResult.SKIPPED
     assert "Failed to check" in result.message
     assert "API Error" in result.message
 
@@ -349,7 +352,7 @@ def test_issues_disabled_rule_api_error():
     result = rule.check(context)
 
     # Verify result
-    assert result.result == RuleResult.FAILED
+    assert result.result == RuleResult.SKIPPED
     assert "Failed to check" in result.message
     assert "API Error" in result.message
 
@@ -364,12 +367,12 @@ def test_merge_commits_allowed_rule_pass():
     context = RuleContext(mock_repo)
 
     # Run check
-    rule = MergeCommitsAllowedRule()
+    rule = MergeCommitsEnabledRule()
     result = rule.check(context)
 
     # Verify result
     assert result.result == RuleResult.PASSED
-    assert "Merge commits are allowed" in result.message
+    assert "Merge commits is enabled" in result.message
 
 
 def test_merge_commits_allowed_rule_fail():
@@ -382,12 +385,12 @@ def test_merge_commits_allowed_rule_fail():
     context = RuleContext(mock_repo)
 
     # Run check
-    rule = MergeCommitsAllowedRule()
+    rule = MergeCommitsEnabledRule()
     result = rule.check(context)
 
     # Verify result
     assert result.result == RuleResult.FAILED
-    assert "Merge commits are not allowed" in result.message
+    assert "Merge commits is disabled" in result.message
     assert result.fix_available
     assert "Enable merge commits" in result.fix_description
 
@@ -403,12 +406,12 @@ def test_merge_commits_allowed_rule_fix():
     context = RuleContext(mock_repo)
 
     # Run fix
-    rule = MergeCommitsAllowedRule()
+    rule = MergeCommitsEnabledRule()
     success, message = rule.fix(context)
 
     # Verify fix
     assert success
-    assert "Enabled merge commits" in message
+    assert "Merge commits has been enabled" in message
     mock_repo.edit.assert_called_once_with(allow_merge_commit=True)
 
 
@@ -424,11 +427,11 @@ def test_merge_commits_allowed_rule_api_error():
     context = RuleContext(mock_repo)
 
     # Run check
-    rule = MergeCommitsAllowedRule()
+    rule = MergeCommitsEnabledRule()
     result = rule.check(context)
 
     # Verify result
-    assert result.result == RuleResult.FAILED
+    assert result.result == RuleResult.SKIPPED
     assert "API Error" in result.message
     assert not result.fix_available
 
@@ -487,7 +490,7 @@ def test_squash_merge_disabled_rule_fix():
 
     # Verify fix
     assert success
-    assert "Disabled squash merging" in message
+    assert "Squash merging has been disabled" in message
     mock_repo.edit.assert_called_once_with(allow_squash_merge=False)
 
 
@@ -507,7 +510,7 @@ def test_squash_merge_disabled_rule_api_error():
     result = rule.check(context)
 
     # Verify result
-    assert result.result == RuleResult.FAILED
+    assert result.result == RuleResult.SKIPPED
     assert "API Error" in result.message
     assert not result.fix_available
 
@@ -566,7 +569,7 @@ def test_rebase_merge_disabled_rule_fix():
 
     # Verify fix
     assert success
-    assert "Disabled rebase merging" in message
+    assert "Rebase merging has been disabled" in message
     mock_repo.edit.assert_called_once_with(allow_rebase_merge=False)
 
 
@@ -586,7 +589,7 @@ def test_rebase_merge_disabled_rule_api_error():
     result = rule.check(context)
 
     # Verify result
-    assert result.result == RuleResult.FAILED
+    assert result.result == RuleResult.SKIPPED
     assert "API Error" in result.message
     assert not result.fix_available
 
@@ -737,7 +740,7 @@ def test_develop_branch_ruleset_rule_pass(repository):
     context = RuleContext(repository)
 
     # Run check
-    rule = DevelopBranchRulesetRule()
+    rule = GitFlowDevelopBranchRulesetRule()
     result = rule.check(context)
 
     # Verify result
@@ -754,7 +757,6 @@ def test_develop_branch_ruleset_rule_fail_missing_rules(repository):
     for rule_type in ["creation", "update"]:
         mock_rule = MagicMock()
         mock_rule.type = rule_type
-        mock_rule.parameters = {"enabled": True}
         mock_rules.append(mock_rule)
 
     mock_ruleset = MagicMock()
@@ -763,6 +765,9 @@ def test_develop_branch_ruleset_rule_fail_missing_rules(repository):
     mock_ruleset.conditions = {
         "ref_name": {"include": ["refs/heads/develop"], "exclude": []}
     }
+    mock_ruleset.bypass_actors = [
+        {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
+    ]
     mock_ruleset.rules = mock_rules
 
     # Create mock repository
@@ -772,15 +777,15 @@ def test_develop_branch_ruleset_rule_fail_missing_rules(repository):
     context = RuleContext(repository)
 
     # Run check
-    rule = DevelopBranchRulesetRule()
+    rule = GitFlowDevelopBranchRulesetRule()
     result = rule.check(context)
 
     # Verify result
     assert result.result == RuleResult.FAILED
-    assert "Missing rule: restrict deletion" in result.message
-    assert "Missing rule: require signed commits" in result.message
-    assert "Missing rule: require pull request before merging" in result.message
-    assert "Missing rule: block force pushes" in result.message
+    assert "Missing rule: deletion" in result.message
+    assert "Missing rule: required_signatures" in result.message
+    assert "Missing rule: pull_request" in result.message
+    assert "Missing rule: non_fast_forward" in result.message
     assert result.fix_available
 
 
@@ -793,14 +798,14 @@ def test_develop_branch_ruleset_rule_fail_no_ruleset(repository):
     context = RuleContext(repository)
 
     # Run check
-    rule = DevelopBranchRulesetRule()
+    rule = GitFlowDevelopBranchRulesetRule()
     result = rule.check(context)
 
     # Verify result
     assert result.result == RuleResult.FAILED
     assert "No 'develop protection' ruleset found" in result.message
     assert result.fix_available
-    assert "Create a ruleset for the develop branch" in result.fix_description
+    assert "Create ruleset 'develop protection'" in result.fix_description
 
 
 def test_develop_branch_ruleset_rule_fail_disabled(repository):
@@ -820,14 +825,14 @@ def test_develop_branch_ruleset_rule_fail_disabled(repository):
     context = RuleContext(repository)
 
     # Run check
-    rule = DevelopBranchRulesetRule()
+    rule = GitFlowDevelopBranchRulesetRule()
     result = rule.check(context)
 
     # Verify result
     assert result.result == RuleResult.FAILED
     assert "Ruleset must be enabled" in result.message
     assert result.fix_available
-    assert "Update ruleset configuration" in result.fix_description
+    assert "Update ruleset 'develop protection'" in result.fix_description
 
 
 def test_develop_branch_ruleset_rule_fail_wrong_branch(repository):
@@ -847,14 +852,17 @@ def test_develop_branch_ruleset_rule_fail_wrong_branch(repository):
     context = RuleContext(repository)
 
     # Run check
-    rule = DevelopBranchRulesetRule()
+    rule = GitFlowDevelopBranchRulesetRule()
     result = rule.check(context)
 
     # Verify result
     assert result.result == RuleResult.FAILED
-    assert "Ruleset must apply to the develop branch" in result.message
+    assert (
+        "Ruleset includes refs ['refs/heads/main'] but should include ['refs/heads/develop']"
+        in result.message
+    )
     assert result.fix_available
-    assert "Update ruleset configuration" in result.fix_description
+    assert "Update ruleset 'develop protection'" in result.fix_description
 
 
 def test_develop_branch_ruleset_rule_multiple_rulesets(repository):
@@ -908,7 +916,7 @@ def test_develop_branch_ruleset_rule_multiple_rulesets(repository):
     context = RuleContext(repository)
 
     # Run check
-    rule = DevelopBranchRulesetRule()
+    rule = GitFlowDevelopBranchRulesetRule()
     result = rule.check(context)
 
     # Verify result
@@ -928,14 +936,14 @@ def test_develop_branch_ruleset_rule_api_error(repository):
     context = RuleContext(repository)
 
     # Run check
-    rule = DevelopBranchRulesetRule()
+    rule = GitFlowDevelopBranchRulesetRule()
     result = rule.check(context)
 
     # Verify result
     assert result.result == RuleResult.FAILED
     assert "Repository rulesets not found" in result.message
     assert result.fix_available
-    assert "Create a ruleset for the develop branch" in result.fix_description
+    assert "Create ruleset 'develop protection'" in result.fix_description
 
 
 def test_develop_branch_ruleset_rule_other_api_error(repository):
@@ -949,7 +957,7 @@ def test_develop_branch_ruleset_rule_other_api_error(repository):
     context = RuleContext(repository)
 
     # Run check
-    rule = DevelopBranchRulesetRule()
+    rule = GitFlowDevelopBranchRulesetRule()
 
     # Verify that other API errors are re-raised
     with pytest.raises(GithubException):
@@ -996,7 +1004,7 @@ def test_develop_branch_ruleset_rule_fail_additional_rules(repository):
     context = RuleContext(repository)
 
     # Run check
-    rule = DevelopBranchRulesetRule()
+    rule = GitFlowDevelopBranchRulesetRule()
     result = rule.check(context)
 
     # Verify result
@@ -1006,9 +1014,7 @@ def test_develop_branch_ruleset_rule_fail_additional_rules(repository):
         in result.message
     )
     assert result.fix_available
-    assert (
-        "Update ruleset configuration for the develop branch" == result.fix_description
-    )
+    assert "Update ruleset 'develop protection'." == result.fix_description
 
 
 def test_develop_branch_ruleset_rule_fail_multiple_branches(repository):
@@ -1050,13 +1056,13 @@ def test_develop_branch_ruleset_rule_fail_multiple_branches(repository):
     context = RuleContext(repository)
 
     # Run check
-    rule = DevelopBranchRulesetRule()
+    rule = GitFlowDevelopBranchRulesetRule()
     result = rule.check(context)
 
     # Verify result
     assert result.result == RuleResult.FAILED
     assert (
-        "Ruleset must only apply to develop branch, but also includes: refs/heads/feature/*, refs/heads/main"
+        "Ruleset includes refs ['refs/heads/develop', 'refs/heads/main', 'refs/heads/feature/*'] but should include ['refs/heads/develop']"
         in result.message
     )
     assert result.fix_available
@@ -1108,14 +1114,14 @@ def test_develop_branch_ruleset_rule_fail_excluded_branches(repository):
     context = RuleContext(repository)
 
     # Run check
-    rule = DevelopBranchRulesetRule()
+    rule = GitFlowDevelopBranchRulesetRule()
     result = rule.check(context)
 
     # Verify result
     assert result.result == RuleResult.FAILED
     assert "Rulesset 'develop protection' not set up correctly:" in result.message
     assert (
-        "Ruleset must not exclude any branches, but excludes: refs/heads/feature/*, refs/heads/hotfix/*"
+        "Ruleset excludes refs ['refs/heads/feature/*', 'refs/heads/hotfix/*'] but should exclude []"
         in result.message
     )
     assert result.fix_available
@@ -1130,12 +1136,12 @@ def test_develop_branch_ruleset_rule_fix_create(repository):
     context = RuleContext(repository)
 
     # Run fix
-    rule = DevelopBranchRulesetRule()
+    rule = GitFlowDevelopBranchRulesetRule()
     success, message = rule.fix(context)
 
     # Verify result
     assert success
-    assert "Created new develop branch ruleset" in message
+    assert "Created ruleset 'develop protection'" in message
 
     # Verify that create_ruleset was called with correct arguments
     repository.create_ruleset.assert_called_once()
@@ -1171,12 +1177,12 @@ def test_develop_branch_ruleset_rule_fix_update(repository):
     context = RuleContext(repository)
 
     # Run fix
-    rule = DevelopBranchRulesetRule()
+    rule = GitFlowDevelopBranchRulesetRule()
     success, message = rule.fix(context)
 
     # Verify result
     assert success
-    assert "Updated existing develop branch ruleset" in message
+    assert "Updated ruleset 'develop protection'" in message
 
     # Verify that update was called with correct arguments
     mock_ruleset.update.assert_called_once()
@@ -1212,7 +1218,7 @@ def test_develop_branch_ruleset_rule_fix_error(repository):
     context = RuleContext(repository)
 
     # Run fix
-    rule = DevelopBranchRulesetRule()
+    rule = GitFlowDevelopBranchRulesetRule()
     success, message = rule.fix(context)
 
     # Verify result

@@ -6,7 +6,7 @@ from github.GithubException import GithubException
 
 from lintr.rules.base import RuleResult
 from lintr.rules.context import RuleContext
-from lintr.rules.general import PreserveRepositoryRule
+from lintr.rules.general import PreserveRepositoryEnabledRule
 from lintr.rules.general import DiscussionsDisabledRule
 from lintr.rules.general import ProjectsDisabledRule
 
@@ -21,12 +21,12 @@ def test_preserve_repository_rule_pass():
     context = RuleContext(mock_repo)
 
     # Run check
-    rule = PreserveRepositoryRule()
+    rule = PreserveRepositoryEnabledRule()
     result = rule.check(context)
 
     # Verify result
     assert result.result == RuleResult.PASSED
-    assert "preserved" in result.message.lower()
+    assert "'preserve this repository' is enabled" in result.message.lower()
 
 
 def test_preserve_repository_rule_fail():
@@ -39,14 +39,14 @@ def test_preserve_repository_rule_fail():
     context = RuleContext(mock_repo)
 
     # Run check
-    rule = PreserveRepositoryRule()
+    rule = PreserveRepositoryEnabledRule()
     result = rule.check(context)
 
     # Verify result
     assert result.result == RuleResult.FAILED
-    assert "not preserved" in result.message.lower()
+    assert "'preserve this repository' is disabled" in result.message.lower()
     assert result.fix_available
-    assert "preserve" in result.fix_description.lower()
+    assert "enable 'preserve this repository'" in result.fix_description.lower()
 
 
 def test_preserve_repository_rule_fix():
@@ -59,13 +59,13 @@ def test_preserve_repository_rule_fix():
     context = RuleContext(mock_repo)
 
     # Run fix
-    rule = PreserveRepositoryRule()
+    rule = PreserveRepositoryEnabledRule()
     success, message = rule.fix(context)
 
     # Verify fix was called with correct parameters
     mock_repo.edit.assert_called_once_with(archived=True)
     assert success
-    assert "successfully" in message.lower()
+    assert "has been enabled" in message.lower()
 
 
 def test_preserve_repository_rule_fix_dry_run():
@@ -78,7 +78,7 @@ def test_preserve_repository_rule_fix_dry_run():
     context = RuleContext(mock_repo, dry_run=True)
 
     # Run fix
-    rule = PreserveRepositoryRule()
+    rule = PreserveRepositoryEnabledRule()
     success, message = rule.fix(context)
 
     # Verify fix was not actually called
@@ -99,12 +99,12 @@ def test_preserve_repository_rule_api_error():
     context = RuleContext(mock_repo)
 
     # Run check
-    rule = PreserveRepositoryRule()
+    rule = PreserveRepositoryEnabledRule()
     result = rule.check(context)
 
     # Verify error handling
     assert result.result == RuleResult.SKIPPED
-    assert "failed" in result.message.lower()
+    assert "failed to check" in result.message.lower()
     assert "api error" in result.message.lower()
 
 
@@ -119,7 +119,7 @@ def test_preserve_repository_rule_fix_api_error():
     context = RuleContext(mock_repo)
 
     # Run fix
-    rule = PreserveRepositoryRule()
+    rule = PreserveRepositoryEnabledRule()
     success, message = rule.fix(context)
 
     # Verify error handling
@@ -182,7 +182,7 @@ def test_discussions_disabled_rule_fix():
     # Verify fix was called with correct parameters
     mock_repo.edit.assert_called_once_with(has_discussions=False)
     assert success
-    assert "successfully" in message.lower()
+    assert "has been disabled" in message.lower()
 
 
 def test_discussions_disabled_rule_fix_dry_run():
@@ -221,7 +221,7 @@ def test_discussions_disabled_rule_api_error():
 
     # Verify error handling
     assert result.result == RuleResult.SKIPPED
-    assert "failed" in result.message.lower()
+    assert "failed to check" in result.message.lower()
     assert "api error" in result.message.lower()
 
 
@@ -299,7 +299,7 @@ def test_projects_disabled_rule_fix():
     # Verify fix was called with correct parameters
     mock_repo.edit.assert_called_once_with(has_projects=False)
     assert success
-    assert "successfully" in message.lower()
+    assert "has been disabled" in message.lower()
 
 
 def test_projects_disabled_rule_fix_dry_run():
@@ -338,7 +338,7 @@ def test_projects_disabled_rule_api_error():
 
     # Verify error handling
     assert result.result == RuleResult.SKIPPED
-    assert "failed" in result.message.lower()
+    assert "failed to check" in result.message.lower()
     assert "api error" in result.message.lower()
 
 

@@ -113,11 +113,11 @@ rulesets:
   basic:
     description: basic
     rules:
-      - "R001P"
+      - "G001P"
   env-var-ruleset:
     description: basic
     rules:
-      - "R001P"
+      - "G001P"
 """
         )
         yield c

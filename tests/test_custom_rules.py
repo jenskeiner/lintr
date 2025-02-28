@@ -20,7 +20,7 @@ class DefaultBranchConfig(BaseRuleConfig):
 class DefaultBranchRule(Rule[DefaultBranchConfig]):
     """Rule that checks if a repository has a default branch."""
 
-    _id = "R001"
+    _id = "G001"
     _description = "Repository must have a default branch"
     _config = DefaultBranchConfig()
 
@@ -94,7 +94,7 @@ class TestCustomRules:
         # Create a custom rule definition
         custom_rules = {
             "custom_branch": CustomRuleDefinition(
-                base="R001",  # DefaultBranchExistsRule
+                base="G001",  # DefaultBranchExistsRule
                 description="Custom branch rule",
                 config={},
             )
@@ -127,7 +127,7 @@ class TestCustomRules:
         # Create a custom rule definition with config
         custom_rules = {
             "strict_branch": CustomRuleDefinition(
-                base="R001",  # DefaultBranchExistsRule
+                base="G001",  # DefaultBranchExistsRule
                 description="Strict branch rule",
                 config={"allowed_names": ["master"]},  # Only allow master
             )
@@ -164,7 +164,7 @@ class TestCustomRules:
         # Create base custom rule
         custom_rules = {
             "configurable_branch": CustomRuleDefinition(
-                base="R001",  # DefaultBranchExistsRule
+                base="G001",  # DefaultBranchExistsRule
                 description="Configurable branch rule",
                 config={"allowed_names": ["master", "main"]},
             )
@@ -215,12 +215,12 @@ class TestCustomRules:
         # Create custom rules
         custom_rules = {
             "custom_branch1": CustomRuleDefinition(
-                base="R001",
+                base="G001",
                 description="Custom branch rule 1",
                 config={},
             ),
             "custom_branch2": CustomRuleDefinition(
-                base="R001",
+                base="G001",
                 description="Custom branch rule 2",
                 config={},
             ),
@@ -282,7 +282,7 @@ class TestCustomRules:
         # Try to create a custom rule with invalid config
         custom_rules = {
             "invalid_config": CustomRuleDefinition(
-                base="R001",
+                base="G001",
                 description="Rule with invalid config",
                 config={"non_existent_field": "value"},
             )

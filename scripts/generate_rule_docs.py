@@ -106,22 +106,36 @@ def generate_rule_doc(
 
     # Add status indicators
     if rule_cls._status is RuleStatus.STABLE:
-        output.append("✔️ This rule is stable\n")
+        output.append("✅  This rule is stable.\n")
     else:
-        output.append("🧪 This rule is unstable and is in preview\n")
+        output.append("🧪 This rule is unstable and is in preview.\n")
+
+    if rule_cls._abstract:
+        output.append("🔷 This rule is abstract.\n")
 
     if rule_cls._deprecated:
         output.append(
-            "⚠️ This rule has been deprecated and will be removed in a future release\n"
+            "⚠️ This rule has been deprecated and will be removed in a future release.\n"
         )
 
     if rule_cls._fixable:
         output.append(
-            "🛠️ This rule is automatically fixable by the `--fix` command-line option\n"
+            "🛠️ This rule is automatically fixable by the `--fix` command-line option.\n"
         )
 
-    if type(rule_cls._config) is not BaseRuleConfig:
-        output.append("🔧 This rule is configurable\n")
+    if rule_cls._configurable:
+        output.append("⚙️ This rule is configurable\n")
+
+    if len(rule_cls._mutually_exclusive_with_resolved) > 0:
+        output.append(
+            "↔️ This rule is mutually exclusive with "
+            + ", ".join(
+                [
+                    f"[{r._id}](../{r._name}/)"
+                    for r in rule_cls._mutually_exclusive_with_resolved
+                ]
+            )
+        )
 
     # Add description and message
     output.append("## What it does")
@@ -190,8 +204,9 @@ def generate_markdown(rules_by_category):
         f"Lintr currently supports {sum(len(rules) for rules in rules_by_category.values())} rules.\n"
     )
     output.append("### Legend\n")
-    output.append("✅ The rule is stable\n")
+    output.append("✅ The rule is stable.\n")
     output.append("🧪 The rule is unstable and is in preview.\n")
+    output.append("🔷 The rule is abstract.\n")
     output.append(
         "⚠️ The rule has been deprecated and will be removed in a future release.\n"
     )
@@ -223,13 +238,16 @@ def generate_markdown(rules_by_category):
             else:
                 status.append("🧪")
 
+            if rule_cls._abstract:
+                status.append("🔷")
+
             if rule_cls._deprecated:
                 status.append("⚠️")
 
             if rule_cls._fixable:
                 status.append("🛠️")
 
-            if type(rule_cls._config) is not BaseRuleConfig:
+            if rule_cls._configurable:
                 status.append("⚙️")
 
             rule_link = f"[{rule_cls._name}]({rule_cls._name}/)"

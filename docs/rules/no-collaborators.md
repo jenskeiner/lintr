@@ -1,5 +1,5 @@
 ---
-title: "no-collaborators (R006)"
+title: "no-collaborators (R013)"
 draft: false
 type: docs
 layout: "single"
@@ -8,9 +8,9 @@ menu:
     parent: "rules"
 ---
 
-✔️ This rule is stable
+✅  This rule is stable.
 
-🛠️ This rule is automatically fixable by the `--fix` command-line option
+🛠️ This rule is automatically fixable by the `--fix` command-line option.
 
 ## What it does
 

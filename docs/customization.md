@@ -26,9 +26,9 @@ rulesets:
   standard:
     description: "Standard ruleset"
     rules:
-      - R001
-      - R002
-      - R003
+      - G001
+      - G002
+      - G003
       - myrule
 ```
 
@@ -54,9 +54,9 @@ rulesets:
   standard:
     description: "Standard ruleset"
     rules:
-      - R001
-      - R002
-      - R003
+      - G001
+      - G002
+      - G003
       - GF002
 
 repositories:
@@ -73,9 +73,67 @@ repository `bar`only, and for `develop` on all remaining repositories.
 
 ## Abstract rules
 
-tba
+Some pre-defined rules are abstract, indicated by 🔷, and therefore cannot be used directly. Usually, they implement a check that requires additional configuration
+for which no sensible default exists. These rules provide a foundation for concrete rules that can be derived from them by providing a suitable configuration.
 
+An example for such a rule is [branch-ruleset (M001)](../rules/branch-ruleset.md) which checks that a branch ruleset with given properties exists.
+For a specific use case, you can derive a concrete rule from it and define specific properties you expect on the branch ruleset, like the target branches or
+other restrictions. In fact, the pre-defined rule [develop-branch-ruleset (GF003)](../rules/develop-branch-ruleset.md) is derived from
+[branch-ruleset (M001)](../rules/branch-ruleset.md) with a specific configuration.
 
-## Writing custom rules
+## Mutually exclusive rules
 
-tba
+Some rules, particularly those that check boolean properties, naturally come with a natural opposite. For example, the rule [web-commit-signoff-required-disabled (G001N)](../rules/web-commit-signoff-required-disabled.md) and [web-commit-signoff-required-enabled (G001P)](../rules/web-commit-signoff-required-enabled.md) are mutually exclusive.
+
+This is not a problem unless these two rules are part of the same ruleset. In that case, regardless of the value of the property the rules check, one of them will always fail.
+This problem can of course be solved by crafting rulesets so that conflicts like this do not occur.
+
+However, in some cases, it may be convenient be able to flip a rule in an existing ruleset to create a new ruleset. And this is where the following special handling comes in:
+Every ruleset defines a total ordering of all contained rules by a recursive depth-first traverse of the tree that contains all its rules and rulesets (remember that rulesets 
+can contain other rulesets). Effectively, you can think of this as recursively replacing every child ruleset with its ordered list of rules.
+
+Before a ruleset is applied, any conflicting rules are eliminated from the ordered list as follows: Starting from the last rule and moving to the first, any preceding rule that conflicts with the current rule is removed. This ensures that rules added "later" always override previous rules in case of a conflict.
+
+Consider the following example:
+
+```yaml
+default_ruleset: standard
+
+rulesets:
+  rs1:
+    description: "Ruleset 1"
+    rules:
+      - G002P
+      - G001N
+      - G003N
+  rs2:
+    description: "Ruleset 2"
+    rules:
+      - rs1
+      - G001P
+```
+
+The ordered list of rules in the ruleset `rs2` is `G002P`, `G001N`, `G003N`, `G001P]`. The effective list, after elimination of conflicts, is `G002P`, `G003N`, `G001P`, since `G001P` and `G001N` are mutually exclusive and `G001P` comes after `G001N`, and thus has higher priority.
+
+This behaviour may be convenient if `rs1` is a very large ruleset and an identical ruleset with `G001N` replaced by `G001P` is needed.
+
+In the following example the situation is reversed:
+
+```yaml
+default_ruleset: standard
+
+rulesets:
+  rs1:
+    description: "Ruleset 1"
+    rules:
+      - G002P
+      - G001N
+      - G003N
+  rs2:
+    description: "Ruleset 2"
+    rules:
+      - G001P
+      - rs1
+```
+
+Here, the list of rules is `G001P`, `G002P`, `G001N`, `G003N` which gets resolved to `G002P`, `G001N`, `G003N`. So, `rs2` is effectively identical to `rs1`.

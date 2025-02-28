@@ -137,7 +137,7 @@ def handle_lint(args: argparse.Namespace) -> None:
             # TODO: Display results
 
         except Exception as e:
-            print(f"Error accessing GitHub: {e}")
+            print(f"Error linting repositories: {e}")
             sys.exit(1)
 
     except Exception as e:

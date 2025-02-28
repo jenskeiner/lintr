@@ -1,5 +1,5 @@
 ---
-title: "single-own (R005)"
+title: "single-own (R012)"
 draft: false
 type: docs
 layout: "single"
@@ -8,7 +8,7 @@ menu:
     parent: "rules"
 ---
 
-✔️ This rule is stable
+✅  This rule is stable.
 
 ## What it does
 

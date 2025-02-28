@@ -25,10 +25,10 @@ def get_default_ruleset() -> RuleSet:
     )
 
     # Add basic repository checks
-    rule_set.add_rule(WebCommitSignoffRequiredEnabledRule)
-    rule_set.add_rule(SingleOwnerRule)
-    rule_set.add_rule(NoCollaboratorsRule)
-    rule_set.add_rule(WikisDisabledRule)
-    rule_set.add_rule(IssuesDisabledRule)
+    rule_set.add(WebCommitSignoffRequiredEnabledRule)
+    rule_set.add(SingleOwnerRule)
+    rule_set.add(NoCollaboratorsRule)
+    rule_set.add(WikisDisabledRule)
+    rule_set.add(IssuesDisabledRule)
 
     return rule_set
