@@ -171,9 +171,12 @@ cython_debug/
 .pypirc
 
 # Configuration file.
-.lintr.yml
+lintr.yml
 
-docs/external/
+support/docs/external/
 
 # VS Code
 .vscode
+
+# Windsurf
+scratchpad.md

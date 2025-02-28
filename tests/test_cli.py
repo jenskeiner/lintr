@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from lintr.cli import main
+from lintr.config import RuleSetConfig
 from lintr.rules.base import Rule, RuleSet, RuleCheckResult, RuleResult
 
 
@@ -69,8 +70,8 @@ def test_cli_list_rules(capsys, monkeypatch, rule_cls):  # noqa: F811
     """Test list command with --rules option comprehensively."""
     # Mock rule manager to return test rules
     test_rules = {
-        "R001": rule_cls("R001", "Check branch protection")(),
-        "R002": rule_cls("R002", "Check repository visibility")(),
+        "G001": rule_cls("G001", "Check branch protection")(),
+        "G002": rule_cls("G002", "Check repository visibility")(),
     }
 
     def mock_get_all_rules(self):
@@ -187,13 +188,15 @@ def test_cli_lint_with_config(capsys, config_file, mock_github):
     config_file.set(
         {
             "github_token": "test-token",
-            "default_rule_set": "test-ruleset",
+            "default_ruleset": "test-ruleset",
             "repository_filter": {
                 "include_patterns": ["test-repo-*"],
                 "exclude_patterns": ["test-repo-excluded"],
             },
-            "rule_sets": {"test-ruleset": {"name": "test-ruleset", "rules": ["R001"]}},
-            "repository_rule_sets": {},
+            "rulesets": {
+                "test-ruleset": {"description": "test-ruleset", "rules": ["G001P"]}
+            },
+            "repositories": {},
         }
     )
 
@@ -225,13 +228,16 @@ def test_cli_lint_with_mock_github(capsys, config_file, env, mock_github):
     config_file.set(
         {
             "github_token": "env-token",
-            "default_rule_set": "default",
+            "default_ruleset": "default",
             "repository_filter": {
                 "include_patterns": ["test-repo-*"],
                 "exclude_patterns": [],
             },
-            "rule_sets": {"test-ruleset": {"name": "test-ruleset", "rules": ["R001"]}},
-            "repository_rule_sets": {},
+            "rulesets": {
+                "test-ruleset": {"description": "test-ruleset", "rules": ["G001P"]},
+                "env-var-ruleset": {"description": "test-ruleset", "rules": ["G001P"]},
+            },
+            "repositories": {},
         }
     )
 
@@ -251,11 +257,11 @@ def test_cli_lint_with_non_interactive(capsys, config_file, mock_github, env):
     config_file.set(
         """
 github_token: env-token
-rule_sets:
-  default:
-    name: Default Rule Set
+rulesets:
+  env-var-ruleset:
+    description: Default Rule Set
     rules:
-      - test.rule
+      - G001P
 """
     )
 
@@ -284,8 +290,10 @@ def test_cli_lint_config_not_found(capsys):
     assert exc_info.value.code == 1
 
     captured = capsys.readouterr()
-    assert f"Error: Configuration file not found: {non_existent_config}" in captured.out
-    assert "Run 'lintr init' to create a new configuration file" in captured.out
+    assert (
+        f"Error loading configuration: Config file not found: {non_existent_config}"
+        in captured.out
+    )
 
 
 def test_cli_lint_no_github_token(capsys, config_file, monkeypatch, env):
@@ -296,10 +304,10 @@ def test_cli_lint_no_github_token(capsys, config_file, monkeypatch, env):
     # Create a temporary config without tokens
     config_file.set(
         {
-            "default_rule_set": "default",
+            "default_ruleset": "default",
             "repository_filter": {"include_patterns": [], "exclude_patterns": []},
             "rule_sets": {},
-            "repository_rule_sets": {},
+            "repositories": {},
         }
     )
 
@@ -451,15 +459,15 @@ def test_cli_lint_interactive_fix(capsys, config_file, mock_github, monkeypatch)
     config_file.set(
         {
             "github_token": "token",
-            "default_rule_set": "test",
+            "default_ruleset": "test",
             "repository_filter": {"include_patterns": [], "exclude_patterns": []},
-            "rule_sets": {
+            "rulesets": {
                 "test": {
-                    "name": "Test Rule Set",
+                    "description": "Test Rule Set",
                     "rules": ["TEST001"],
                 }
             },
-            "repository_rule_sets": {},
+            "repositories": {},
         }
     )
 
@@ -494,24 +502,23 @@ def test_cli_lint_interactive_fix(capsys, config_file, mock_github, monkeypatch)
 
     # Mock RuleManager to return our test rule
     class MockRuleManager:
-        def __init__(self, *args, **kwargs):
+        def __init__(self, _rules, rulesets: dict[str, RuleSetConfig] | None = None):
             self._rules = {"TEST001": MockRule}
             self._rule_sets = {}
-
-        def load_rule_sets_from_config(self, config):
-            for rule_set_id, rule_set_config in config.rule_sets.items():
-                self._rule_sets[rule_set_id] = self.create_rule_set(
-                    rule_set_id, rule_set_config.name, rule_set_config.rules
-                )
+            if rulesets is not None:
+                for rule_set_id, rule_set_config in rulesets.items():
+                    self._rule_sets[rule_set_id] = self.create_rule_set(
+                        rule_set_id, rule_set_config.description, rule_set_config.rules
+                    )
 
         def create_rule_set(self, rule_set_id, description, rule_ids):
             rule_set = RuleSet(rule_set_id, description)
             for rule_id in rule_ids:
                 rule = self._rules[rule_id]
-                rule_set.add_rule(rule)
+                rule_set.add(rule)
             return rule_set
 
-        def get_rule_set(self, rule_set_id):
+        def get(self, rule_set_id):
             return self._rule_sets.get(rule_set_id)
 
     monkeypatch.setattr("lintr.linter.RuleManager", MockRuleManager)
@@ -551,7 +558,7 @@ def test_cli_lint_fix_error(capsys, config_file, mock_github, monkeypatch):
 
     # Mock rule that raises an exception during fix
     class FailingFixRule(Rule):
-        _id = "R001"
+        _id = "G001"
         _description = "Rule with failing fix"
 
         def check(self, context):
@@ -567,24 +574,23 @@ def test_cli_lint_fix_error(capsys, config_file, mock_github, monkeypatch):
 
     # Create test rule set with failing fix rule
     class MockRuleManager:
-        def __init__(self, *args, **kwargs):
-            self._rules = {"R001": FailingFixRule}
+        def __init__(self, rules, rulesets: dict[str, RuleSetConfig] | None = None):
+            self._rules = {"G001": FailingFixRule}
             self._rule_sets = {}
-
-        def load_rule_sets_from_config(self, config):
-            for rule_set_id, rule_set_config in config.rule_sets.items():
-                self._rule_sets[rule_set_id] = self.create_rule_set(
-                    rule_set_id, rule_set_config.name, rule_set_config.rules
-                )
+            if rulesets is not None:
+                for rule_set_id, rule_set_config in rulesets.items():
+                    self._rule_sets[rule_set_id] = self.create_rule_set(
+                        rule_set_id, rule_set_config.description, rule_set_config.rules
+                    )
 
         def create_rule_set(self, rule_set_id, description, rule_ids):
             rule_set = RuleSet(rule_set_id, description)
             for rule_id in rule_ids:
                 rule = self._rules[rule_id]
-                rule_set.add_rule(rule)
+                rule_set.add(rule)
             return rule_set
 
-        def get_rule_set(self, rule_set_id):
+        def get(self, rule_set_id):
             return self._rule_sets.get(rule_set_id)
 
     monkeypatch.setattr("lintr.linter.RuleManager", MockRuleManager)
@@ -592,15 +598,15 @@ def test_cli_lint_fix_error(capsys, config_file, mock_github, monkeypatch):
     # Create config with fix enabled
     config = {
         "github_token": "env-token",
-        "default_rule_set": "default",
+        "default_ruleset": "default",
         "repository_filter": {"include_patterns": [], "exclude_patterns": []},
-        "rule_sets": {
+        "rulesets": {
             "default": {
-                "name": "Default Rule Set",
-                "rules": ["R001"],
+                "description": "Default Rule Set",
+                "rules": ["G001"],
             }
         },
-        "repository_rule_sets": {},
+        "repositories": {},
     }
     config_file.set(config)
 
@@ -620,7 +626,7 @@ def test_cli_lint_fix_failure(capsys, config_file, mock_github, monkeypatch):
 
     # Mock rule that returns failure from fix
     class FailingFixRule(Rule):
-        _id = "R001"
+        _id = "G001"
         _description = "Rule with failing fix"
 
         def check(self, context):
@@ -636,24 +642,23 @@ def test_cli_lint_fix_failure(capsys, config_file, mock_github, monkeypatch):
 
     # Create test rule set with failing fix rule
     class MockRuleManager:
-        def __init__(self, *args, **kwargs):
-            self._rules = {"R001": FailingFixRule}
+        def __init__(self, rules, rulesets: dict[str, RuleSetConfig] | None = None):
+            self._rules = {"G001": FailingFixRule}
             self._rule_sets = {}
-
-        def load_rule_sets_from_config(self, config):
-            for rule_set_id, rule_set_config in config.rule_sets.items():
-                self._rule_sets[rule_set_id] = self.create_rule_set(
-                    rule_set_id, rule_set_config.name, rule_set_config.rules
-                )
+            if rulesets is not None:
+                for rule_set_id, rule_set_config in rulesets.items():
+                    self._rule_sets[rule_set_id] = self.create_rule_set(
+                        rule_set_id, rule_set_config.description, rule_set_config.rules
+                    )
 
         def create_rule_set(self, rule_set_id, description, rule_ids):
             rule_set = RuleSet(rule_set_id, description)
             for rule_id in rule_ids:
                 rule = self._rules[rule_id]
-                rule_set.add_rule(rule)
+                rule_set.add(rule)
             return rule_set
 
-        def get_rule_set(self, rule_set_id):
+        def get(self, rule_set_id):
             return self._rule_sets.get(rule_set_id)
 
     monkeypatch.setattr("lintr.linter.RuleManager", MockRuleManager)
@@ -661,15 +666,15 @@ def test_cli_lint_fix_failure(capsys, config_file, mock_github, monkeypatch):
     # Create config with fix enabled
     config = {
         "github_token": "env-token",
-        "default_rule_set": "default",
+        "default_ruleset": "default",
         "repository_filter": {"include_patterns": [], "exclude_patterns": []},
-        "rule_sets": {
+        "rulesets": {
             "default": {
-                "name": "Default Rule Set",
-                "rules": ["R001"],
+                "description": "Default Rule Set",
+                "rules": ["G001"],
             }
         },
-        "repository_rule_sets": {},
+        "repositories": {},
     }
     config_file.set(config)
 
@@ -689,8 +694,6 @@ def test_cli_lint_github_access_error(capsys, config_file, env, monkeypatch):
     # Create a test config file
     config_file.set(
         {
-            "repositories": ["test-org/test-repo"],
-            "rules": {},
             "github_token": "env-token",
         }
     )
@@ -714,7 +717,7 @@ def test_cli_lint_github_access_error(capsys, config_file, env, monkeypatch):
 
     assert exc_info.value.code == 1
     captured = capsys.readouterr()
-    assert "Error accessing GitHub: Failed to access GitHub API" in captured.out
+    assert "Error linting repositories: Failed to access GitHub API" in captured.out
 
 
 def test_cli_lint_config_load_error(capsys, config_file):
@@ -765,3 +768,18 @@ def test_cli_init_parent_dir_exists(capsys, tmp_path):
     # Verify success
     assert result == 0
     assert output_file.exists()
+
+
+def test_cli_help_command(capsys):
+    """Test that the help command shows the same output as no arguments."""
+    # Get output with no arguments
+    main([])
+    no_args_output = capsys.readouterr().out
+
+    # Get output with help command
+    main(["help"])
+    help_output = capsys.readouterr().out
+
+    # Both should show help text and be identical
+    assert "usage:" in help_output.lower()
+    assert help_output == no_args_output

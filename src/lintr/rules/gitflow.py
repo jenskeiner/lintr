@@ -1,15 +1,21 @@
 """Rules for checking GitFlow branch naming conventions."""
+import abc
+from typing import Any
 
 from github.GithubException import GithubException
+from pydantic import Field
 
-from lintr.rules.base import Rule, RuleCheckResult, RuleResult
+from lintr.rules.base import Rule, RuleCheckResult, RuleResult, RuleCategory
 from lintr.rules.context import RuleContext
+from lintr.rules.branch_rules import DefaultBranchNameRule, DefaultBranchNameRuleConfig
+from lintr.rules.permission_rules import BranchRulesetRuleConfig, BranchRulesetRule
 
 
 class GitFlowBranchNamingRule(Rule):
     """Rule that checks if branch names conform to GitFlow conventions."""
 
     _id = "GF001"
+    _category = RuleCategory.GITFLOW
     _description = "Branch names must conform to GitFlow conventions"
 
     def check(self, context: RuleContext) -> RuleCheckResult:
@@ -94,61 +100,63 @@ class GitFlowBranchNamingRule(Rule):
             )
 
 
-class GitFlowDefaultBranchRule(Rule):
+class GitFlowDefaultBranchRule(DefaultBranchNameRule):
     """Rule that checks if 'develop' is the default branch."""
 
     _id = "GF002"
+    _category = RuleCategory.GITFLOW
     _description = "Default branch must be 'develop'"
+    _config = DefaultBranchNameRuleConfig(branch="develop")
+    _example = _config
 
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Check if 'develop' is the default branch.
 
-        Args:
-            context: Context object containing all information needed for the check.
+class DefaultBranchRulesetRuleConfig(BranchRulesetRuleConfig, abc.ABC):
+    bypass_actors: list[dict[str, Any]] = Field(
+        default_factory=lambda: [
+            {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
+        ],
+        description="List of actors that should bypass the branch ruleset.",
+    )
+    rules: dict[str, dict[str, Any] | None] = Field(
+        default_factory=lambda: {
+            "creation": None,
+            "update": None,
+            "deletion": None,
+            "required_signatures": None,
+            "pull_request": {
+                "required_approving_review_count": 1,
+                "dismiss_stale_reviews_on_push": True,
+                "require_code_owner_review": True,
+                "require_last_push_approval": True,
+                "required_review_thread_resolution": True,
+                "automatic_copilot_code_review_enabled": False,
+                "allowed_merge_methods": ["merge"],
+            },
+            "non_fast_forward": None,
+        },
+        description="List of required rules for the branch ruleset.",
+    )
 
-        Returns:
-            Result of the check with details.
-        """
-        try:
-            default_branch = context.repository.default_branch
 
-            if default_branch != "develop":
-                return RuleCheckResult(
-                    result=RuleResult.FAILED,
-                    message=f"Default branch is '{default_branch}' but should be 'develop'",
-                    fix_available=True,
-                )
+class GitFlowDevelopBranchRulesetRule(BranchRulesetRule):
+    """Rule that checks if the develop branch has a proper branch ruleset set up."""
 
-            return RuleCheckResult(
-                result=RuleResult.PASSED,
-                message="Default branch is correctly set to 'develop'",
-            )
+    _id = "GF003"
+    _category = RuleCategory.GITFLOW
+    _description = "Develop branch must have a proper ruleset configured"
+    _config = DefaultBranchRulesetRuleConfig(
+        name="develop protection", included_refs=["refs/heads/develop"]
+    )
+    _example = _config
 
-        except GithubException as e:
-            return RuleCheckResult(
-                result=RuleResult.FAILED,
-                message=f"Failed to check default branch: {str(e)}",
-                fix_available=False,
-            )
 
-    def fix(self, context: RuleContext) -> bool:
-        """Fix the default branch by setting it to 'develop'.
+class GitFlowMainBranchRulesetRule(BranchRulesetRule):
+    """Rule that checks if the main branch has a proper branch ruleset set up."""
 
-        Args:
-            context: Context object containing all information needed for the fix.
-
-        Returns:
-            True if the fix was successful, False otherwise.
-        """
-        try:
-            # First check if develop branch exists
-            branches = list(context.repository.get_branches())
-            if not any(b.name == "develop" for b in branches):
-                return False
-
-            # Update default branch to develop
-            context.repository.edit(default_branch="develop")
-            return True
-
-        except GithubException:
-            return False
+    _id = "GF004"
+    _category = RuleCategory.GITFLOW
+    _description = "Main branch must have a proper ruleset configured"
+    _config = DefaultBranchRulesetRuleConfig(
+        name="main protection", included_refs=["refs/heads/main"]
+    )
+    _example = _config

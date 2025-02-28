@@ -14,6 +14,7 @@ dependencies = [
     "pydantic-settings>=2.1.0",
     "PyYAML>=6.0.1",
     "colorama>=0.4.6",
+    "PyYAML>=6.0.2",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -62,25 +63,37 @@ testpaths = ["tests"]
 lintr = "lintr.cli:main"
 
 [project.entry-points."lintr.rules"]
-default_branch_exists = "lintr.rules.branch_rules:DefaultBranchExistsRule"
-web_commit_signoff_required = "lintr.rules.branch_rules:WebCommitSignoffRequiredRule"
+web_commit_signoff_required_enabled = "lintr.rules.general:WebCommitSignoffRequiredEnabledRule"
+web_commit_signoff_required_disabled = "lintr.rules.general:WebCommitSignoffRequiredDisabledRule"
+wikis_disabled = "lintr.rules.general:WikisDisabledRule"
+wikis_enabled = "lintr.rules.general:WikisEnabledRule"
+issues_disabled = "lintr.rules.general:IssuesDisabledRule"
+issues_enabled = "lintr.rules.general:IssuesEnabledRule"
+preserve_repository_disabled = "lintr.rules.general:PreserveRepositoryDisabledRule"
+preserve_repository_enabled = "lintr.rules.general:PreserveRepositoryEnabledRule"
+discussions_disabled = "lintr.rules.general:DiscussionsDisabledRule"
+discussions_enabled = "lintr.rules.general:DiscussionsEnabledRule"
+projects_disabled = "lintr.rules.general:ProjectsDisabledRule"
+projects_enabled = "lintr.rules.general:ProjectsEnabledRule"
 single_owner = "lintr.rules.permission_rules:SingleOwnerRule"
 no_collaborators = "lintr.rules.permission_rules:NoCollaboratorsRule"
-wikis_disabled = "lintr.rules.permission_rules:WikisDisabledRule"
-issues_disabled = "lintr.rules.permission_rules:IssuesDisabledRule"
-preserve_repository = "lintr.rules.general:PreserveRepositoryRule"
-discussions_disabled = "lintr.rules.general:DiscussionsDisabledRule"
-projects_disabled = "lintr.rules.general:ProjectsDisabledRule"
-merge_commits_allowed = "lintr.rules.permission_rules:MergeCommitsAllowedRule"
-squash_merge_disabled = "lintr.rules.permission_rules:SquashMergeDisabledRule"
-rebase_merge_disabled = "lintr.rules.permission_rules:RebaseMergeDisabledRule"
-delete_branch_on_merge = "lintr.rules.branch_rules:DeleteBranchOnMergeRule"
-auto_merge_disabled = "lintr.rules.branch_rules:AutoMergeDisabledRule"
+merge_commits_disabled = "lintr.rules.general:MergeCommitsDisabledRule"
+merge_commits_enabled = "lintr.rules.general:MergeCommitsEnabledRule"
+squash_merge_disabled = "lintr.rules.general:SquashMergeDisabledRule"
+squash_merge_enabled = "lintr.rules.general:SquashMergeEnabledRule"
+rebase_merge_disabled = "lintr.rules.general:RebaseMergeDisabledRule"
+rebase_merge_enabled = "lintr.rules.general:RebaseMergeEnabledRule"
+delete_branch_on_merge_disabled = "lintr.rules.general:DeleteBranchOnMergeDisabledRule"
+delete_branch_on_merge_enabled = "lintr.rules.general:DeleteBranchOnMergeEnabledRule"
+auto_merge_disabled = "lintr.rules.general:AutoMergeDisabledRule"
+auto_merge_enabled = "lintr.rules.general:AutoMergeEnabledRule"
 gitflow_branch_naming = "lintr.rules.gitflow:GitFlowBranchNamingRule"
 gitflow_default_branch = "lintr.rules.gitflow:GitFlowDefaultBranchRule"
 no_classic_branch_protection = "lintr.rules.permission_rules:NoClassicBranchProtectionRule"
-develop_branch_ruleset = "lintr.rules.permission_rules:DevelopBranchRulesetRule"
-main_branch_ruleset = "lintr.rules.permission_rules:MainBranchRulesetRule"
+branch_ruleset = "lintr.rules.permission_rules:BranchRulesetRule"
+gitflow_develop_branch_ruleset = "lintr.rules.gitflow:GitFlowDevelopBranchRulesetRule"
+gitflow_main_branch_ruleset = "lintr.rules.gitflow:GitFlowMainBranchRulesetRule"
 
 [project.entry-points."lintr.rule_sets"]
-default = "lintr.rules.default_rule_set:get_default_rule_set"
+default = "lintr.rules.default_ruleset:get_default_ruleset"
+empty = "lintr.rules.empty_ruleset:get_empty_ruleset"

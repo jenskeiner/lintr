@@ -2,10 +2,10 @@
 
 import importlib.metadata
 from typing import Optional
+from collections.abc import Iterable
 
 from lintr.rules import Rule, RuleSet
-from lintr.rules.factories import RuleSetFactory
-from lintr.config import BaseLintrConfig, CustomRuleDefinition
+from lintr.config import CustomRuleDefinition, RuleSetConfig
 
 
 class RuleManager:
@@ -20,15 +20,34 @@ class RuleManager:
             cls._instance.__init__(*args, **kwargs)
         return cls._instance
 
-    def __init__(self, custom_rules: dict[str, CustomRuleDefinition] = {}):
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the singleton instance."""
+        cls._instance = None
+        cls._initialized = False
+
+    def __init__(
+        self,
+        rules: dict[str, CustomRuleDefinition] | None = None,
+        rulesets: dict[str, RuleSetConfig] | None = None,
+    ) -> None:
+        if rules is None:
+            rules = {}
+        if rulesets is None:
+            rulesets = {}
         if not RuleManager._initialized:
-            self._rules: dict[str, type[Rule]] = {}
-            self._rule_sets: dict[str, RuleSet] = {}
-            self._factory = RuleSetFactory()
+            self._rules: dict[str, type[Rule] | RuleSet] = dict()
             self._discover_rules()
-            self._add_custom_rules(custom_rules)
+            self.add_rules(rules)
             self._discover_rule_sets()
+            self.add_rulesets(rulesets)
             RuleManager._initialized = True
+
+    def add_rule(self, rule_cls: type[Rule]) -> None:
+        if rule_cls.rule_id in self._rules:
+            raise ValueError(f"Rule {rule_cls.rule_id} already exists.")
+        self._rules[rule_cls.rule_id] = rule_cls
+        self._update_mutually_exclusive(rule_cls)
 
     def _discover_rules(self) -> None:
         """Discover all available rules from entry points."""
@@ -40,33 +59,43 @@ class RuleManager:
             try:
                 # Load the rule class or factory
                 rule_cls: type[Rule] = entry_point.load()
-                self._rules[rule_cls.rule_id] = rule_cls
-                self._factory.register_rule_class(rule_cls.rule_id, rule_cls)
+                self.add_rule(rule_cls)
             except Exception as e:
-                # Log warning about invalid entry point
-                print(f"Warning: Failed to load rule {entry_point.name}: {e}")
+                raise ValueError(f"Failed to load rule {entry_point.name}.") from e
 
-    def _add_custom_rules(self, custom_rules: dict[str, CustomRuleDefinition]) -> None:
-        for rule_id, rule_definition in custom_rules.items():
-            try:
-                # Lookup the base class.
-                base_cls = self._rules[rule_definition.base]
-                # Create a new sub-class of base.
-                rule_cls = type(
-                    f"CustomRule{rule_id}",
-                    (base_cls,),
-                    {
-                        "_id": rule_id,
-                        "_description": rule_definition.description,
-                        "_config": type(base_cls._config).model_validate(
-                            rule_definition.config
-                        ),
-                    },
-                )
-                self._rules[rule_id] = rule_cls
-                self._factory.register_rule_class(rule_id, rule_cls)
-            except Exception as e:
-                raise Exception(f"Failed to create custom rule {rule_id}: {e}") from e
+    def add_rules(
+        self, rules: dict[str, CustomRuleDefinition] | Iterable[type[Rule]]
+    ) -> None:
+        if isinstance(rules, dict):
+            for rule_id, rule_definition in rules.items():
+                try:
+                    # Lookup the base class.
+                    base_cls = self._rules[rule_definition.base]
+                    # Create a new sub-class of base.
+                    rule_cls = type(
+                        f"CustomRule{rule_id}",
+                        (base_cls,),
+                        {
+                            "_id": rule_id,
+                            "_description": rule_definition.description,
+                            "_config": type(base_cls._config).model_validate(
+                                rule_definition.config
+                            ),
+                        },
+                    )
+                    self.add_rule(rule_cls)
+                except Exception as e:
+                    raise ValueError(
+                        f"Failed to create custom rule {rule_id}: {e}"
+                    ) from e
+        else:
+            for rule in rules:
+                self.add_rule(rule)
+
+    def add_rule_set(self, ruleset: RuleSet) -> None:
+        if ruleset.id in self._rules:
+            raise ValueError(f"Rule or ruleset {ruleset.id} already exists.")
+        self._rules[ruleset.id] = ruleset
 
     def _discover_rule_sets(self) -> None:
         """Discover all available rule sets from entry points."""
@@ -77,13 +106,14 @@ class RuleManager:
         for entry_point in rule_set_entry_points:
             try:
                 factory_func = entry_point.load()
-                rule_set = factory_func()  # Call the factory function
-                self._rule_sets[rule_set.id] = rule_set
+                self.add_rule_set(factory_func())  # Call the factory function
             except Exception as e:
                 # Log warning about invalid entry point
-                print(f"Warning: Failed to load rule set {entry_point.name}: {e}")
+                raise ValueError(f"Failed to load ruleset {entry_point.name}.") from e
 
-    def load_rule_sets_from_config(self, config: BaseLintrConfig) -> None:
+    def add_rulesets(
+        self, rulesets: dict[str, RuleSetConfig] | Iterable[RuleSet]
+    ) -> None:
         """Load rule sets from configuration.
 
         Args:
@@ -92,92 +122,48 @@ class RuleManager:
         Raises:
             ValueError: If a rule set configuration is invalid.
         """
-        # First pass: Create all rule sets with rules
-        # This ensures all base rule sets exist before we try to add nested sets
-        for rule_set_id, rule_set_config in config.rule_sets.items():
-            if rule_set_id in self._rule_sets:
-                print(f"Warning: Rule set {rule_set_id} already exists, skipping")
-                continue
+        if isinstance(rulesets, dict):
+            # First pass: Create all rule sets, but do not add any rules yet.
+            # This ensures everything is in place before we add nested sets.
+            for rule_set_id, rule_set_config in rulesets.items():
+                if rule_set_id in self._rules:
+                    raise ValueError(f"Rule or ruleset {rule_set_id} already exists")
 
-            if not rule_set_config.rules:
-                continue
-
-            try:
-                rule_set = self.create_rule_set(
-                    rule_set_id=rule_set_id,
-                    description=rule_set_config.name,
-                    rule_ids=rule_set_config.rules,
-                )
-                self._rule_sets[rule_set_id] = rule_set
-            except ValueError as e:
-                print(f"Error creating rule set {rule_set_id}: {e}")
-                continue
-
-        # Second pass: Create rule sets with nested sets
-        for rule_set_id, rule_set_config in config.rule_sets.items():
-            if rule_set_id in self._rule_sets or not rule_set_config.rule_sets:
-                continue
-
-            try:
-                rule_set = self.create_rule_set(
-                    rule_set_id=rule_set_id,
-                    description=rule_set_config.name,
-                )
-                self._rule_sets[rule_set_id] = rule_set
-            except ValueError as e:
-                print(f"Error creating rule set {rule_set_id}: {e}")
-                continue
-
-        # Third pass: Add nested rule sets
-        for rule_set_id, rule_set_config in config.rule_sets.items():
-            if not rule_set_config.rule_sets:
-                continue
-
-            rule_set = self._rule_sets.get(rule_set_id)
-            if not rule_set:
-                continue
-
-            has_valid_nested = False
-            for nested_id in rule_set_config.rule_sets:
-                nested_set = self._rule_sets.get(nested_id)
-                if not nested_set:
-                    print(
-                        f"Warning: Nested rule set {nested_id} not found for {rule_set_id}"
-                    )
-                    continue
                 try:
-                    rule_set.add_rule_set(nested_set)
-                    has_valid_nested = True
-                except ValueError as e:
-                    print(
-                        f"Error adding nested rule set {nested_id} to {rule_set_id}: {e}"
-                    )
+                    rule_set = RuleSet(rule_set_id, rule_set_config.description)
+                    # for r in rule_set_config.rules:
+                    #     rule_set.add_rule(self.get_rule_class(r))
+                    self._rules[rule_set_id] = rule_set
+                except Exception as e:
+                    raise ValueError(f"Error creating rule set {rule_set_id}.") from e
 
-            # If this rule set has no rules and no valid nested sets, remove it
-            if not rule_set_config.rules and not has_valid_nested:
-                del self._rule_sets[rule_set_id]
+            # Second pass: Add rules and nested rulesets.
+            for rule_set_id, rule_set_config in rulesets.items():
+                rule_set = self._rules.get(rule_set_id)
+                assert isinstance(rule_set, RuleSet)
 
-    def get_rule_class(self, rule_id: str) -> type[Rule] | None:
-        """Get a rule class by its ID.
+                for nested_id in rule_set_config.rules:
+                    try:
+                        nested_set = self.get(nested_id)
+                    except Exception as e:
+                        raise ValueError(
+                            f"Rule or ruleset {nested_id} not found for ruleset {rule_set_id}."
+                        ) from e
+                    try:
+                        rule_set.add(nested_set)
+                    except Exception as e:
+                        raise ValueError(
+                            f"Error adding rule or ruleset {nested_id} to ruleset {rule_set_id}: {e}"
+                        ) from e
+        else:
+            for ruleset in rulesets:
+                self.add_rule_set(ruleset)
 
-        Args:
-            rule_id: ID of the rule to get.
-
-        Returns:
-            Rule class if found, None otherwise.
-        """
-        return self._rules.get(rule_id)
-
-    def get_rule_set(self, rule_set_id: str) -> RuleSet | None:
-        """Get a rule set by its ID.
-
-        Args:
-            rule_set_id: ID of the rule set to get.
-
-        Returns:
-            Rule set if found, None otherwise.
-        """
-        return self._rule_sets.get(rule_set_id)
+    def get(self, id: str) -> type[Rule] | RuleSet:
+        if id in self._rules:
+            return self._rules[id]
+        else:
+            raise KeyError(f"Rule or rule set with ID {id} not found.")
 
     def get_all_rule_ids(self) -> set[str]:
         """Get all available rule IDs.
@@ -185,7 +171,7 @@ class RuleManager:
         Returns:
             Set of all rule IDs.
         """
-        return set(self._rules.keys())
+        return {k for k, v in self._rules.items() if issubclass(v, Rule)}
 
     def get_all_rule_set_ids(self) -> set[str]:
         """Get all available rule set IDs.
@@ -193,50 +179,19 @@ class RuleManager:
         Returns:
             Set of all rule set IDs.
         """
-        return set(self._rule_sets.keys())
+        return {k for k, v in self._rules.items() if isinstance(v, RuleSet)}
 
-    def create_rule_set(
-        self,
-        rule_set_id: str,
-        description: str,
-        rule_ids: list[str] | None = None,
-        nested_rule_set_ids: list[str] | None = None,
-    ) -> RuleSet:
-        """Create a new rule set programmatically.
-
-        Args:
-            rule_set_id: ID for the new rule set.
-            description: Description of what the rule set checks.
-            rule_ids: Optional list of rule IDs to include.
-            nested_rule_set_ids: Optional list of rule set IDs to include.
-
-        Returns:
-            New rule set with the specified rules.
-
-        Raises:
-            ValueError: If a rule ID is not registered.
-        """
-        rule_set = self._factory.create_rule_set(
-            rule_set_id=rule_set_id,
-            description=description,
-            rule_ids=rule_ids,
-            nested_rule_set_ids=nested_rule_set_ids,
-        )
-        self._rule_sets[rule_set_id] = rule_set
-        return rule_set
-
-    def get_all_rules(self) -> dict[str, Rule]:
+    def get_all_rules(self) -> dict[str, type[Rule]]:
         """Get all available rules with their descriptions.
 
         Returns:
             Dictionary mapping rule IDs to rule instances with descriptions.
         """
-        rules = {}
-        for rule_id, rule_class in self._rules.items():
-            rules[rule_id] = rule_class(
-                rule_id, ""
-            )  # Description will be set by the rule class
-        return rules
+        return {
+            k: v
+            for k, v in self._rules.items()
+            if isinstance(v, type) and issubclass(v, Rule)
+        }
 
     def get_all_rule_sets(self) -> dict[str, RuleSet]:
         """Get all available rule sets.
@@ -244,4 +199,11 @@ class RuleManager:
         Returns:
             Dictionary mapping rule set IDs to rule set instances.
         """
-        return self._rule_sets.copy()
+        return {k: v for k, v in self._rules.items() if isinstance(v, RuleSet)}
+
+    def _update_mutually_exclusive(self, rule: type[Rule]):
+        for id in rule._mutually_exclusive_with:
+            other = self._rules.get(id)
+            if other:
+                rule._mutually_exclusive_with_resolved.add(other)
+                other._mutually_exclusive_with_resolved.add(rule)

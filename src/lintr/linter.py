@@ -36,10 +36,7 @@ class Linter:
         self._dry_run = dry_run
         self._non_interactive = non_interactive
         self._fix = fix
-        self._rule_manager = RuleManager(config.rules)
-
-        # Load rule sets from configuration
-        self._rule_manager.load_rule_sets_from_config(config)
+        self._rule_manager = RuleManager(config.rules, config.rulesets)
 
     def create_context(self, repository: Repository) -> RuleContext:
         """Create a rule context for a repository.
@@ -71,15 +68,15 @@ class Linter:
         if repository_config:
             rule_set_id = repository_config.ruleset
             if rule_set_id:
-                rule_set = self._rule_manager.get_rule_set(rule_set_id)
-                if rule_set:
+                rule_set = self._rule_manager.get(rule_set_id)
+                if rule_set and isinstance(rule_set, RuleSet):
                     return rule_set_id, rule_set
 
         # Fall back to default rule set
-        if self._config.default_rule_set:
-            rule_set = self._rule_manager.get_rule_set(self._config.default_rule_set)
-            if rule_set:
-                return self._config.default_rule_set, rule_set
+        if self._config.default_ruleset:
+            rule_set = self._rule_manager.get(self._config.default_ruleset)
+            if rule_set and isinstance(rule_set, RuleSet):
+                return self._config.default_ruleset, rule_set
 
         return None
 
@@ -101,7 +98,7 @@ class Linter:
         context = self.create_context(repository)
         results = {}
 
-        for rule in rule_set.rules():
+        for rule in rule_set.effective_rules():
             rule_config = (
                 repository_config.rules.get(rule.rule_id) if repository_config else None
             )
@@ -208,7 +205,7 @@ class Linter:
 
         for repo in repositories:
             # Get the config for the repository.
-            repo_config = self._config.repository_rule_sets.get(repo.name)
+            repo_config = self._config.repositories.get(repo.name)
             # Get rule set for repository
             rule_set_info = self.get_rule_set_for_repository(repo_config)
             if not rule_set_info:

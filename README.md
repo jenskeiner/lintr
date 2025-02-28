@@ -1,10 +1,14 @@
- # Lintr
+# Lintr
 
 [![image](https://img.shields.io/pypi/v/lintr.svg)](https://pypi.python.org/pypi/lintr)
 [![image](https://img.shields.io/pypi/l/lintr.svg)](https://pypi.python.org/pypi/lintr)
 [![image](https://img.shields.io/pypi/pyversions/lintr.svg)](https://pypi.python.org/pypi/lintr)
 
 A powerful and flexible GitHub repository settings linter.
+
+<p align="center">
+  <img src="./assets/demo.gif" style="max-width: 400px; width: 100%;" alt="Demo Animation">
+</p>
 
 ## Highlights
 

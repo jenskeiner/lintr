@@ -1,5 +1,6 @@
 """Rules for checking repository permission settings."""
 import abc
+from typing import Any
 
 from colorama import Fore, Style
 from difflib import unified_diff
@@ -8,14 +9,20 @@ from json import dumps
 from github.GithubException import GithubException
 from pydantic import Field
 
-from lintr.rules.base import Rule, RuleCheckResult, RuleResult, BaseRuleConfig
+from lintr.rules.base import (
+    Rule,
+    RuleCheckResult,
+    RuleResult,
+    BaseRuleConfig,
+    RuleCategory,
+)
 from lintr.rules.context import RuleContext
 
 
 class SingleOwnerRule(Rule):
     """Rule that checks if the user is the only owner or admin of the repository."""
 
-    _id = "R005"
+    _id = "R012"
     _description = "Repository must have only one owner or admin (the user)"
 
     def check(self, context: RuleContext) -> RuleCheckResult:
@@ -79,7 +86,7 @@ class SingleOwnerRule(Rule):
 class NoCollaboratorsRule(Rule):
     """Rule that checks if a repository has no collaborators other than the user."""
 
-    _id = "R006"
+    _id = "R013"
     _description = "Repository must have no collaborators other than the user"
 
     def check(self, context: RuleContext) -> RuleCheckResult:
@@ -158,277 +165,6 @@ class NoCollaboratorsRule(Rule):
 
         except Exception as e:
             return False, f"Failed to remove collaborators: {str(e)}"
-
-
-class WikisDisabledRule(Rule):
-    """Rule that checks if wikis are disabled for a repository."""
-
-    _id = "R007"
-    _description = "Repository must have wikis disabled"
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Check if wikis are disabled for the repository.
-
-        Args:
-            context: Context object containing all information needed for the check.
-
-        Returns:
-            Result of the check with details.
-        """
-        try:
-            if not context.repository.has_wiki:
-                return RuleCheckResult(
-                    result=RuleResult.PASSED,
-                    message="Wikis are disabled",
-                )
-            else:
-                return RuleCheckResult(
-                    result=RuleResult.FAILED,
-                    message="Wikis are enabled",
-                    fix_available=True,
-                    fix_description="Disable wikis in repository settings",
-                )
-        except GithubException as e:
-            return RuleCheckResult(
-                result=RuleResult.FAILED,
-                message=f"Failed to check wiki status: {str(e)}",
-                fix_available=False,
-            )
-
-    def fix(self, context: RuleContext) -> tuple[bool, str]:
-        """Apply the fix for this rule.
-
-        Disable wikis in the repository settings.
-
-        Args:
-            context: Context object containing all information needed for the fix.
-
-        Returns:
-            A tuple of (success, message) indicating if the fix was successful.
-        """
-        try:
-            context.repository.edit(has_wiki=False)
-            return True, "Wikis have been disabled"
-        except GithubException as e:
-            return False, f"Failed to disable wikis: {str(e)}"
-
-
-class IssuesDisabledRule(Rule):
-    """Rule that checks if issues are disabled for a repository."""
-
-    _id = "R008"
-    _description = "Repository must have issues disabled"
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Check if issues are disabled for the repository.
-
-        Args:
-            context: Context object containing all information needed for the check.
-
-        Returns:
-            Result of the check with details.
-        """
-        try:
-            if not context.repository.has_issues:
-                return RuleCheckResult(
-                    result=RuleResult.PASSED,
-                    message="Issues are disabled",
-                )
-            else:
-                return RuleCheckResult(
-                    result=RuleResult.FAILED,
-                    message="Issues are enabled",
-                    fix_available=True,
-                    fix_description="Disable issues in repository settings",
-                )
-        except GithubException as e:
-            return RuleCheckResult(
-                result=RuleResult.FAILED,
-                message=f"Failed to check issues status: {str(e)}",
-                fix_available=False,
-            )
-
-    def fix(self, context: RuleContext) -> tuple[bool, str]:
-        """Apply the fix for this rule.
-
-        Disable issues in the repository settings.
-
-        Args:
-            context: Context object containing all information needed for the fix.
-
-        Returns:
-            A tuple of (success, message) indicating if the fix was successful.
-        """
-        try:
-            context.repository.edit(has_issues=False)
-            return True, "Issues have been disabled"
-        except GithubException as e:
-            return False, f"Failed to disable issues: {str(e)}"
-
-
-class MergeCommitsAllowedRule(Rule):
-    """Rule that checks if merge commits are allowed for pull requests."""
-
-    _id = "R014"
-    _description = "Repository must allow merge commits for pull requests"
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Check if merge commits are allowed for pull requests.
-
-        Args:
-            context: Context object containing all information needed for the check.
-
-        Returns:
-            Result of the check with details.
-        """
-        try:
-            # Check if merge commits are allowed
-            if context.repository.allow_merge_commit:
-                return RuleCheckResult(
-                    result=RuleResult.PASSED,
-                    message="Merge commits are allowed for pull requests",
-                )
-            else:
-                return RuleCheckResult(
-                    result=RuleResult.FAILED,
-                    message="Merge commits are not allowed for pull requests",
-                    fix_available=True,
-                    fix_description="Enable merge commits in repository settings",
-                )
-        except GithubException as e:
-            return RuleCheckResult(
-                result=RuleResult.FAILED,
-                message=f"Failed to check merge commit status: {str(e)}",
-                fix_available=False,
-            )
-
-    def fix(self, context: RuleContext) -> tuple[bool, str]:
-        """Apply the fix for this rule.
-
-        Enable merge commits in repository settings.
-
-        Args:
-            context: Context object containing all information needed for the fix.
-
-        Returns:
-            A tuple of (success, message) indicating if the fix was successful.
-        """
-        try:
-            # Enable merge commits
-            context.repository.edit(allow_merge_commit=True)
-            return True, "Enabled merge commits for pull requests"
-        except GithubException as e:
-            return False, f"Failed to enable merge commits: {str(e)}"
-
-
-class SquashMergeDisabledRule(Rule):
-    """Rule that checks if squash merging is disabled for pull requests."""
-
-    _id = "R015"
-    _description = "Repository must have squash merging disabled for pull requests"
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Check if squash merging is disabled for pull requests.
-
-        Args:
-            context: Context object containing all information needed for the check.
-
-        Returns:
-            Result of the check with details.
-        """
-        try:
-            # Check if squash merging is disabled
-            if not context.repository.allow_squash_merge:
-                return RuleCheckResult(
-                    result=RuleResult.PASSED,
-                    message="Squash merging is disabled for pull requests",
-                )
-            else:
-                return RuleCheckResult(
-                    result=RuleResult.FAILED,
-                    message="Squash merging is enabled for pull requests",
-                    fix_available=True,
-                    fix_description="Disable squash merging in repository settings",
-                )
-        except GithubException as e:
-            return RuleCheckResult(
-                result=RuleResult.FAILED,
-                message=f"Failed to check squash merge status: {str(e)}",
-                fix_available=False,
-            )
-
-    def fix(self, context: RuleContext) -> tuple[bool, str]:
-        """Apply the fix for this rule.
-
-        Disable squash merging in repository settings.
-
-        Args:
-            context: Context object containing all information needed for the fix.
-
-        Returns:
-            A tuple of (success, message) indicating if the fix was successful.
-        """
-        try:
-            # Disable squash merging
-            context.repository.edit(allow_squash_merge=False)
-            return True, "Disabled squash merging for pull requests"
-        except GithubException as e:
-            return False, f"Failed to disable squash merging: {str(e)}"
-
-
-class RebaseMergeDisabledRule(Rule):
-    """Rule that checks if rebase merging is disabled for pull requests."""
-
-    _id = "R016"
-    _description = "Repository must have rebase merging disabled for pull requests"
-
-    def check(self, context: RuleContext) -> RuleCheckResult:
-        """Check if rebase merging is disabled for pull requests.
-
-        Args:
-            context: Context object containing all information needed for the check.
-
-        Returns:
-            Result of the check with details.
-        """
-        try:
-            # Check if rebase merging is disabled
-            if not context.repository.allow_rebase_merge:
-                return RuleCheckResult(
-                    result=RuleResult.PASSED,
-                    message="Rebase merging is disabled for pull requests",
-                )
-            else:
-                return RuleCheckResult(
-                    result=RuleResult.FAILED,
-                    message="Rebase merging is enabled for pull requests",
-                    fix_available=True,
-                    fix_description="Disable rebase merging in repository settings",
-                )
-        except GithubException as e:
-            return RuleCheckResult(
-                result=RuleResult.FAILED,
-                message=f"Failed to check rebase merge status: {str(e)}",
-                fix_available=False,
-            )
-
-    def fix(self, context: RuleContext) -> tuple[bool, str]:
-        """Apply the fix for this rule.
-
-        Disable rebase merging in repository settings.
-
-        Args:
-            context: Context object containing all information needed for the fix.
-
-        Returns:
-            A tuple of (success, message) indicating if the fix was successful.
-        """
-        try:
-            # Disable rebase merging
-            context.repository.edit(allow_rebase_merge=False)
-            return True, "Disabled rebase merging for pull requests"
-        except GithubException as e:
-            return False, f"Failed to disable rebase merging: {str(e)}"
 
 
 class NoClassicBranchProtectionRule(Rule):
@@ -528,16 +264,58 @@ class NoClassicBranchProtectionRule(Rule):
 
 
 class BranchRulesetRuleConfig(BaseRuleConfig):
-    ruleset_name: str
-    branch_name: str
-    bypass_actors: list[dict[str, str]] = Field(
-        default_factory=lambda: [
-            {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
-        ]
+    name: str = Field(description="The name of the branch ruleset to check.")
+    enabled: bool = Field(
+        default=True, description="Whether the branch ruleset should be enabled."
+    )
+    included_refs: list[str] = Field(
+        default_factory=list,
+        description="List of refs to include in the branch ruleset.",
+    )
+    excluded_refs: list[str] = Field(
+        default_factory=list,
+        description="List of refs to exclude from the branch ruleset.",
+    )
+    bypass_actors: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="List of actors that should bypass the branch ruleset.",
+    )
+    rules: dict[str, dict[str, Any] | None] = Field(
+        default_factory=dict,
+        description="List of required rules for the branch ruleset.",
     )
 
 
 class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
+    _id = "M001"
+    _category = RuleCategory.MISC
+    _description = "Checks that a ruleset with given properties exists."
+    _example = BranchRulesetRuleConfig(
+        name="ruleset",
+        enabled=True,
+        included_refs=["refs/heads/master"],
+        excluded_refs=["refs/heads/develop"],
+        bypass_actors=[
+            {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
+        ],
+        rules={
+            "creation": None,
+            "update": None,
+            "deletion": None,
+            "required_signatures": None,
+            "pull_request": {
+                "required_approving_review_count": 1,
+                "dismiss_stale_reviews_on_push": True,
+                "require_code_owner_review": True,
+                "require_last_push_approval": True,
+                "required_review_thread_resolution": True,
+                "automatic_copilot_code_review_enabled": False,
+                "allowed_merge_methods": ["merge"],
+            },
+            "non_fast_forward": None,
+        },
+    )
+
     def check(self, context: RuleContext) -> RuleCheckResult:
         """Check if the branch has a proper branch ruleset set up.
 
@@ -553,16 +331,14 @@ class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
             rulesets = repo.get_rulesets()
 
             # Find the relevant ruleset
-            ruleset = next(
-                (r for r in rulesets if r.name == self._config.ruleset_name), None
-            )
+            ruleset = next((r for r in rulesets if r.name == self._config.name), None)
 
             if not ruleset:
                 return RuleCheckResult(
                     result=RuleResult.FAILED,
-                    message=f"No '{self._config.ruleset_name}' ruleset found",
+                    message=f"No '{self._config.name}' ruleset found.",
                     fix_available=True,
-                    fix_description=f"Create a ruleset for the {self._config.branch_name} branch",
+                    fix_description=f"Create ruleset '{self._config.name}'.",
                 )
 
             # Check ruleset configuration
@@ -570,12 +346,24 @@ class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
 
             # Check if ruleset is enabled
             if ruleset.enforcement != "active":
-                violations.append("Ruleset must be enabled")
+                violations.append("Ruleset must be enabled.")
 
             # Check if ruleset applies exactly to branch
             ref_name_conditions = ruleset.conditions.get("ref_name", {})
-            included_refs = set(ref_name_conditions.get("include", []))
-            excluded_refs = set(ref_name_conditions.get("exclude", []))
+            included_refs = list(ref_name_conditions.get("include", []))
+            excluded_refs = list(ref_name_conditions.get("exclude", []))
+
+            # Check included refs
+            if set(included_refs) != set(self.config.included_refs):
+                violations.append(
+                    f"Ruleset includes refs {included_refs} but should include {self.config.included_refs}."
+                )
+
+            # Check excluded refs
+            if set(excluded_refs) != set(self.config.excluded_refs):
+                violations.append(
+                    f"Ruleset excludes refs {excluded_refs} but should exclude {self.config.excluded_refs}."
+                )
 
             # Check bypass actors.
             if ruleset.bypass_actors != self.config.bypass_actors:
@@ -583,61 +371,19 @@ class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
                     f"Ruleset bypass actors must be set to {self.config.bypass_actors}."
                 )
 
-            expected_ref = f"refs/heads/{self._config.branch_name}"
-            if included_refs != {expected_ref}:
-                if not included_refs:
-                    violations.append(
-                        f"Ruleset must include the {self._config.branch_name} branch"
-                    )
-                elif len(included_refs) > 1:
-                    other_refs = sorted(
-                        ref for ref in included_refs if ref != expected_ref
-                    )
-                    violations.append(
-                        f"Ruleset must only apply to {self._config.branch_name} branch, but also includes: {', '.join(other_refs)}"
-                    )
-                elif expected_ref not in included_refs:
-                    violations.append(
-                        f"Ruleset must apply to the {self._config.branch_name} branch"
-                    )
-
-            if excluded_refs:
-                violations.append(
-                    f"Ruleset must not exclude any branches, but excludes: {', '.join(sorted(excluded_refs))}"
-                )
-
-            # Define required rules
-            required_rules = {
-                "creation": ("restrict creation", None),
-                "update": ("restrict updates", None),
-                "deletion": ("restrict deletion", None),
-                "required_signatures": ("require signed commits", None),
-                "pull_request": (
-                    "require pull request before merging",
-                    {
-                        "required_approving_review_count": 1,
-                        "dismiss_stale_reviews_on_push": True,
-                        "require_code_owner_review": True,
-                        "require_last_push_approval": True,
-                        "required_review_thread_resolution": True,
-                        "automatic_copilot_code_review_enabled": False,
-                        "allowed_merge_methods": ["merge"],
-                    },
-                ),
-                "non_fast_forward": ("block force pushes", None),
-            }
-
             # Get the actual rules from the ruleset
             ruleset_rules = {rule.type: rule for rule in ruleset.rules}
 
-            # Check for missing required rules
-            for rule_type, v in required_rules.items():
-                description, parameters_expected = v
+            # Check for missing required rules.
+            for rule_type, parameters_expected in self.config.rules.items():
                 if rule_type not in ruleset_rules:
-                    violations.append(f"Missing rule: {description}")
+                    violations.append(f"Missing rule: {rule_type}")
                     continue
                 rule = ruleset_rules[rule_type]
-                if rule.parameters != parameters_expected:
+                if (
+                    parameters_expected is not None
+                    and rule.parameters != parameters_expected
+                ):
                     diff = [
                         "          "
                         + (
@@ -658,11 +404,11 @@ class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
                         )
                     ]
                     violations.append(
-                        "\n".join([f"Rule {description} has wrong parameters: "] + diff)
+                        "\n".join([f"Rule '{rule_type}' has wrong parameters: "] + diff)
                     )
 
             # Check for additional rules that are not required
-            additional_rules = set(ruleset_rules.keys()) - set(required_rules.keys())
+            additional_rules = set(ruleset_rules.keys()) - set(self.config.rules.keys())
             if additional_rules:
                 violations.append(
                     f"Additional rules found that are not allowed: {', '.join(sorted(additional_rules))}"
@@ -670,16 +416,16 @@ class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
 
             if violations:
                 violations = [
-                    f"Rulesset '{self._config.ruleset_name}' not set up correctly:"
+                    f"Rulesset '{self._config.name}' not set up correctly:"
                 ] + [f"      - {x}" for x in violations]
 
             return RuleCheckResult(
                 result=RuleResult.PASSED if not violations else RuleResult.FAILED,
                 message="\n".join(violations)
                 if violations
-                else f"Ruleset '{self._config.ruleset_name}' properly configured",
+                else f"Ruleset '{self._config.name}' properly configured",
                 fix_available=bool(violations),
-                fix_description=f"Update ruleset configuration for the {self._config.branch_name} branch"
+                fix_description=f"Update ruleset '{self._config.name}'."
                 if violations
                 else None,
             )
@@ -690,7 +436,7 @@ class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
                     result=RuleResult.FAILED,
                     message="Repository rulesets not found",
                     fix_available=True,
-                    fix_description=f"Create a ruleset for the {self._config.branch_name} branch",
+                    fix_description=f"Create ruleset '{self._config.name}'.",
                 )
             raise
 
@@ -710,50 +456,23 @@ class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
             rulesets = context.repository.get_rulesets()
 
             # Find existing ruleset targeting the branch
-            ruleset = next(
-                (r for r in rulesets if r.name == self._config.ruleset_name), None
-            )
+            ruleset = next((r for r in rulesets if r.name == self._config.name), None)
 
             # Define the ruleset configuration
             ruleset_config = {
-                "name": self._config.ruleset_name,
+                "name": self.config.name,
                 "target": "branch",
-                "enforcement": "active",
+                "enforcement": "active" if self.config.enabled else "inactive",
                 "conditions": {
                     "ref_name": {
-                        "include": [f"refs/heads/{self._config.branch_name}"],
-                        "exclude": [],
+                        "include": self.config.included_refs,
+                        "exclude": self.config.excluded_refs,
                     }
                 },
                 "bypass_actors": self._config.bypass_actors,
                 "rules": [
-                    {
-                        "type": "creation",
-                    },
-                    {
-                        "type": "update",
-                    },
-                    {
-                        "type": "deletion",
-                    },
-                    {
-                        "type": "required_signatures",
-                    },
-                    {
-                        "type": "pull_request",
-                        "parameters": {
-                            "required_approving_review_count": 1,
-                            "dismiss_stale_reviews_on_push": True,
-                            "require_code_owner_review": True,
-                            "require_last_push_approval": True,
-                            "required_review_thread_resolution": True,
-                            "automatic_copilot_code_review_enabled": False,
-                            "allowed_merge_methods": ["merge"],
-                        },
-                    },
-                    {
-                        "type": "non_fast_forward",
-                    },
+                    {"type": k, "parameters": v} if v is not None else {"type": k}
+                    for k, v in self._config.rules.items()
                 ],
             }
 
@@ -762,32 +481,12 @@ class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
                 ruleset.update(**ruleset_config)
                 return (
                     True,
-                    f"Updated existing {self._config.branch_name} branch ruleset",
+                    f"Updated ruleset '{self._config.name}'.",
                 )
             else:
                 # Create new ruleset
                 context.repository.create_ruleset(**ruleset_config)
-                return True, f"Created new {self._config.branch_name} branch ruleset"
+                return True, f"Created ruleset '{self._config.name}'."
 
         except GithubException as e:
             return False, f"Failed to fix branch ruleset: {str(e)}"
-
-
-class DevelopBranchRulesetRule(BranchRulesetRule):
-    """Rule that checks if the develop branch has a proper branch ruleset set up."""
-
-    _id = "GF003"
-    _description = "Develop branch must have a proper ruleset configured"
-    _config = BranchRulesetRuleConfig(
-        ruleset_name="develop protection", branch_name="develop"
-    )
-
-
-class MainBranchRulesetRule(BranchRulesetRule):
-    """Rule that checks if the main branch has a proper branch ruleset set up."""
-
-    _id = "GF004"
-    _description = "Main branch must have a proper ruleset configured"
-    _config = BranchRulesetRuleConfig(
-        ruleset_name="main protection", branch_name="main"
-    )
