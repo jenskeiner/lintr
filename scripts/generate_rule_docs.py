@@ -97,7 +97,7 @@ def generate_rule_doc(
     output.append("type: docs")
     output.append('layout: "single"')
     output.append("menu:")
-    output.append("  docs_lintr:")
+    output.append("  lintr:")
     output.append('    parent: "rules"')
     output.append("---\n")
 
@@ -194,7 +194,7 @@ def generate_markdown(rules_by_category):
         "type: docs\n"
         'layout: "single"\n'
         "menu:\n"
-        "  docs_lintr:\n"
+        "  lintr:\n"
         '    identifier: "rules"\n'
         "    weight: 2\n"
         "---\n"

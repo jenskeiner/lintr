@@ -5,9 +5,9 @@ type: docs
 layout: "single"
 
 menu:
-  docs_lintr:
-      name: "Introduction"
-      weight: 0
+  lintr:
+    name: "Introduction"
+    weight: 0
 ---
 A powerful and flexible GitHub repository settings linter, written in pure Python.
 
@@ -18,7 +18,7 @@ A powerful and flexible GitHub repository settings linter, written in pure Pytho
 ## Highlights
 
 - ✅ Enforces consistent GitHub repository settings.
-- 🔒 Monitors key repository settings against [predefined rules and rulesets](#rules--rulesets).
+- 🔒 Monitors key repository settings against [rules](#rules--rulesets).
 - 🛡️ Helps mitigate security issues.
 - ⚙️ Streamlines repository management.
 - 🤖 Automates checks for repository hygiene.
@@ -33,7 +33,7 @@ However, more rules still need to be added to provide full coverage of all GitHu
 
 ## Contributing
 
-Help me build out Lintr by adding more rules or improving the code under the hood. See the [Contributing](contributing/) section for more information.
+Help me build out Lintr by adding more rules or improving the code under the hood. See the [Contributing](./contributing/) section for more information.
 
 ## Installation
 
@@ -131,7 +131,7 @@ Otherwise, you can point Lintr to a configuration file using the `--config` opti
 
 Using a configuration file allows to configure the linting process, including the repositories to lint and the rules to use.
 
-Check the [Customization](customization) section for more detailed information.
+Check the [Customization](./customization/) section for more detailed information.
 
 Here is an example of a simple `lintr.yml` file:
 
@@ -174,10 +174,11 @@ Rules are combined into rulesets. A ruleset is a collection of rules that can be
 convenient to organise related rules into smaller sets from which larger rulesets can be composed. The larger rulesets can then be applied to repositories. This promotes
 sharing of common rules across repositories, but still alows for fine-grained control over individual repositories.
 
-Lintr comes with a range of pre-defined rules. Every rule has a unique identifier and name. You can find a list of all available rules in the [Rules](rules/) section.
+Lintr comes with a range of pre-defined rules. Every rule has a unique identifier and name. You can find a list of all available rules in the [Rules](./rules/) section.
 
-Lintr also provides a few pre-defined rulesets. The most basic one is the `empty` ruleset which contains no rules and is used by default, absent any other configuration.
-Like rules, each ruleset also has a unique identifier. You can find a list of all available rulesets in the [Rulesets](rulesets/) section.
+Lintr combines multiple rules into rulesets. The most basic one is the pre-defined `empty` ruleset which contains no rules and is used by default, absent any other configuration.
+To apply any actual checks to a repository, you must define a custom ruleset that contains the appropriate rules; see the [next section](#custom-rulesets).
+Like rules, each ruleset needs to have a unique identifier.
 
 {{% note %}}
 To avoid confusion, rule and ruleset identifiers must be globally unique. Any rule or ruleset must have an ID distinct from that of any other rule or ruleset.

@@ -5,12 +5,12 @@ type: docs
 layout: "single"
 
 menu:
-  docs_lintr:
-      weight: 1
+  lintr:
+    weight: 1
 ---
 ## Custom rules
 
-Sometimes, the pre-defined rules may not be enough. For example, the rule [GF002]() checks that the default branch is named `develop`. But what if in your repositories, it is typically named `dev` or something else? To make your life easier, Lintr allows you to define a new rule based on the existing one, but with a different branch name to check against. Consider the following configuration file
+Sometimes, the pre-defined rules may not be enough. For example, the rule [GF002](../rules/git-flow-default-branch/) checks that the default branch is named `develop`. But what if in your repositories, it is typically named `dev` or something else? To make your life easier, Lintr allows you to define a new rule based on the existing one, but with a different branch name to check against. Consider the following configuration file
 snippet:
 ```yaml
 default_ruleset: standard
@@ -32,11 +32,11 @@ rulesets:
       - myrule
 ```
 
-The new `rules` section allows you to define new rules. Many rules support customization through different parameters. For the above rule GF002, you can override
+The new `rules` section allows you to define new rules. Many rules support customization through different parameters. For the above rule [GF002](../rules/git-flow-default-branch/), you can override
 its branch name to check against (`main` by default). The new rule `myrule` is based on GF002 and uses `dev` as the branch name to check against. It's used
 in the ruleset `standard` and thus checks in every repository that the default branch is named `dev`.
 
-Many rules support customization through different parameters to generate new custom rules. See the [reference]() for more information.
+Many rules support customization through different parameters to generate new custom rules. See the [rules reference](../rules/) for more information.
 
 
 ## Repository-specific rule settings
@@ -67,7 +67,7 @@ repositories:
         branch: dev
 ```
 
-Here, instead of defining a new custom rule based on [](GF002), the settings for this rule are overridden just for the repository `bar`. That is,
+Here, instead of defining a new custom rule based on [GF002](../rules/git-flow-default-branch/), the settings for this rule are overridden just for the repository `bar`. That is,
 all repositories will use the same ruleset `standard`, but the rule `GF002` will check for the branch `dev` instead of `develop` for the 
 repository `bar`only, and for `develop` on all remaining repositories.
 
@@ -76,14 +76,14 @@ repository `bar`only, and for `develop` on all remaining repositories.
 Some pre-defined rules are abstract, indicated by 🔷, and therefore cannot be used directly. Usually, they implement a check that requires additional configuration
 for which no sensible default exists. These rules provide a foundation for concrete rules that can be derived from them by providing a suitable configuration.
 
-An example for such a rule is [branch-ruleset (M001)](../rules/branch-ruleset.md) which checks that a branch ruleset with given properties exists.
+An example for such a rule is [branch-ruleset (M001)](../rules/branch-ruleset/) which checks that a branch ruleset with given properties exists.
 For a specific use case, you can derive a concrete rule from it and define specific properties you expect on the branch ruleset, like the target branches or
-other restrictions. In fact, the pre-defined rule [develop-branch-ruleset (GF003)](../rules/develop-branch-ruleset.md) is derived from
-[branch-ruleset (M001)](../rules/branch-ruleset.md) with a specific configuration.
+other restrictions. In fact, the pre-defined rule [develop-branch-ruleset (GF003)](../rules/git-flow-develop-branch-ruleset/) is derived from
+[branch-ruleset (M001)](../rules/branch-ruleset/) with a specific configuration.
 
 ## Mutually exclusive rules
 
-Some rules, particularly those that check boolean properties, naturally come with a natural opposite. For example, the rule [web-commit-signoff-required-disabled (G001N)](../rules/web-commit-signoff-required-disabled.md) and [web-commit-signoff-required-enabled (G001P)](../rules/web-commit-signoff-required-enabled.md) are mutually exclusive.
+Some rules, particularly those that check boolean properties, naturally come with a natural opposite. For example, the rule [web-commit-signoff-required-disabled (G001N)](../rules/web-commit-signoff-required-disabled/) and [web-commit-signoff-required-enabled (G001P)](../rules/web-commit-signoff-required-enabled) are mutually exclusive.
 
 This is not a problem unless these two rules are part of the same ruleset. In that case, regardless of the value of the property the rules check, one of them will always fail.
 This problem can of course be solved by crafting rulesets so that conflicts like this do not occur.

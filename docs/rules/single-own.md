@@ -4,7 +4,7 @@ draft: false
 type: docs
 layout: "single"
 menu:
-  docs_lintr:
+  lintr:
     parent: "rules"
 ---
 

@@ -5,8 +5,8 @@ type: docs
 layout: "single"
 
 menu:
-  docs_lintr:
-      weight: 4
+  lintr:
+    weight: 4
 ---
 
 Lintr is still under development. You can greatly help the project by
