@@ -12,7 +12,7 @@ menu:
 A powerful and flexible GitHub repository settings linter, written in pure Python.
 
 <center>
-  <img src="./assets/demo.gif" style="max-width: 600px; width: 100%;" alt="Demo Animation">
+  <img src="assets/demo.gif" style="max-width: 600px; width: 100%;" alt="Demo Animation">
 </center>
 
 ## Highlights
