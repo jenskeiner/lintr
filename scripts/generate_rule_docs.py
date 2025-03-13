@@ -250,7 +250,7 @@ def generate_markdown(rules_by_category):
             if rule_cls._configurable:
                 status.append("⚙️")
 
-            rule_link = f"[{rule_cls._name}]({rule_cls._name}/)"
+            rule_link = f"[{rule_cls._name}]({rule_cls._name}.md)"
             output.append(
                 f"| {rule_cls._id} | {rule_link} | {rule_cls._message} | {' '.join(status)} |"
             )
