@@ -10,7 +10,7 @@ menu:
 ---
 ## Custom rules
 
-Sometimes, the pre-defined rules may not be enough. For example, the rule [GF002](../rules/git-flow-default-branch/) checks that the default branch is named `develop`. But what if in your repositories, it is typically named `dev` or something else? To make your life easier, Lintr allows you to define a new rule based on the existing one, but with a different branch name to check against. Consider the following configuration file
+Sometimes, the pre-defined rules may not be enough. For example, the rule [GF002](rules/git-flow-default-branch.md) checks that the default branch is named `develop`. But what if in your repositories, it is typically named `dev` or something else? To make your life easier, Lintr allows you to define a new rule based on the existing one, but with a different branch name to check against. Consider the following configuration file
 snippet:
 ```yaml
 default_ruleset: standard

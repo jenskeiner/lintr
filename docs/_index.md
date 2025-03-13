@@ -131,7 +131,7 @@ Otherwise, you can point Lintr to a configuration file using the `--config` opti
 
 Using a configuration file allows to configure the linting process, including the repositories to lint and the rules to use.
 
-Check the [Customization](./customization/) section for more detailed information.
+Check the [Customization](customization.md) section for more detailed information.
 
 Here is an example of a simple `lintr.yml` file:
 
@@ -174,7 +174,7 @@ Rules are combined into rulesets. A ruleset is a collection of rules that can be
 convenient to organise related rules into smaller sets from which larger rulesets can be composed. The larger rulesets can then be applied to repositories. This promotes
 sharing of common rules across repositories, but still alows for fine-grained control over individual repositories.
 
-Lintr comes with a range of pre-defined rules. Every rule has a unique identifier and name. You can find a list of all available rules in the [Rules](./rules/) section.
+Lintr comes with a range of pre-defined rules. Every rule has a unique identifier and name. You can find a list of all available rules in the [Rules](rules/_index.md) section.
 
 Lintr combines multiple rules into rulesets. The most basic one is the pre-defined `empty` ruleset which contains no rules and is used by default, absent any other configuration.
 To apply any actual checks to a repository, you must define a custom ruleset that contains the appropriate rules; see the [next section](#custom-rulesets).
@@ -257,4 +257,4 @@ repositories:
 
 Lintr will use the ruleset `standard` for repository `foo` and the ruleset `extended` for repository `bar`. It will also use the default ruleset `standard` for all other repositories.
 
-Lintr can be customized further through custom rules and repository-specific rule settings. See the [Customization](./customization) section for more information.
+Lintr can be customized further through custom rules and repository-specific rule settings. See the [Customization](customization.md) section for more information.
