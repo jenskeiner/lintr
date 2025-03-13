@@ -33,7 +33,7 @@ However, more rules still need to be added to provide full coverage of all GitHu
 
 ## Contributing
 
-Help me build out Lintr by adding more rules or improving the code under the hood. See the [Contributing](./contributing/) section for more information.
+Help me build out Lintr by adding more rules or improving the code under the hood. See the [Contributing](contributing.md) section for more information.
 
 ## Installation
 
