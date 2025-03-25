@@ -3,6 +3,8 @@ title: "preserve-repository-disabled (G004N)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G004N"]
 menu:
   lintr:
     parent: "rules"

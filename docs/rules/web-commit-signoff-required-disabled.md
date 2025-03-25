@@ -3,6 +3,8 @@ title: "web-commit-signoff-required-disabled (G001N)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G001N"]
 menu:
   lintr:
     parent: "rules"

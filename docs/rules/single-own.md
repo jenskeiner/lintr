@@ -3,6 +3,8 @@ title: "single-own (R012)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["R012"]
 menu:
   lintr:
     parent: "rules"

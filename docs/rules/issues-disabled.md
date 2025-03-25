@@ -3,6 +3,8 @@ title: "issues-disabled (G003N)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G003N"]
 menu:
   lintr:
     parent: "rules"

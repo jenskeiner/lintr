@@ -3,6 +3,8 @@ title: "auto-merge-disabled (G010N)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G010N"]
 menu:
   lintr:
     parent: "rules"

@@ -3,6 +3,8 @@ title: "squash-merge-disabled (G008N)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G008N"]
 menu:
   lintr:
     parent: "rules"

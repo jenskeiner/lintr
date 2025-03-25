@@ -3,6 +3,8 @@ title: "wikis-enabled (G002P)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G002P"]
 menu:
   lintr:
     parent: "rules"

@@ -3,6 +3,8 @@ title: "merge-commits-disabled (G007N)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G007N"]
 menu:
   lintr:
     parent: "rules"

@@ -3,6 +3,8 @@ title: "rebase-merge-enabled (G009P)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G009P"]
 menu:
   lintr:
     parent: "rules"

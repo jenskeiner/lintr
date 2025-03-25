@@ -3,6 +3,8 @@ title: "git-flow-main-branch-ruleset (GF004)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["GF004"]
 menu:
   lintr:
     parent: "rules"

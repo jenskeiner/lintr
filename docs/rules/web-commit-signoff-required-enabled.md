@@ -3,6 +3,8 @@ title: "web-commit-signoff-required-enabled (G001P)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G001P"]
 menu:
   lintr:
     parent: "rules"

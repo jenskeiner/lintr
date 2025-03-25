@@ -3,6 +3,8 @@ title: "auto-merge-enabled (G010P)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G010P"]
 menu:
   lintr:
     parent: "rules"

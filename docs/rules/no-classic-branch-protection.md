@@ -3,6 +3,8 @@ title: "no-classic-branch-protection (R019)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["R019"]
 menu:
   lintr:
     parent: "rules"

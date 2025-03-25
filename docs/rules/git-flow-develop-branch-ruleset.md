@@ -3,6 +3,8 @@ title: "git-flow-develop-branch-ruleset (GF003)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["GF003"]
 menu:
   lintr:
     parent: "rules"

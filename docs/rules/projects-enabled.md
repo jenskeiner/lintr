@@ -3,6 +3,8 @@ title: "projects-enabled (G006P)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G006P"]
 menu:
   lintr:
     parent: "rules"

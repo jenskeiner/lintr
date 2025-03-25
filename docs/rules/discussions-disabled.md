@@ -3,6 +3,8 @@ title: "discussions-disabled (G005N)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G005N"]
 menu:
   lintr:
     parent: "rules"

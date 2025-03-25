@@ -90,12 +90,14 @@ def generate_rule_doc(
     """
     output = []
 
-    # Add frontmatter
+    # Add frontmatterg
     output.append("---")
     output.append(f'title: "{rule_cls._name} ({rule_cls._id})"')
     output.append("draft: false")
     output.append("type: docs")
     output.append('layout: "single"')
+    output.append("params:")
+    output.append(f'  tags: ["{rule_cls._id}"]')
     output.append("menu:")
     output.append("  lintr:")
     output.append('    parent: "rules"')

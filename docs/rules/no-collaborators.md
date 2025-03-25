@@ -3,6 +3,8 @@ title: "no-collaborators (R013)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["R013"]
 menu:
   lintr:
     parent: "rules"

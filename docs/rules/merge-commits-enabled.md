@@ -3,6 +3,8 @@ title: "merge-commits-enabled (G007P)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G007P"]
 menu:
   lintr:
     parent: "rules"

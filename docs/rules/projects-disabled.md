@@ -3,6 +3,8 @@ title: "projects-disabled (G006N)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G006N"]
 menu:
   lintr:
     parent: "rules"

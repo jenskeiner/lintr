@@ -3,6 +3,8 @@ title: "branch-ruleset (M001)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["M001"]
 menu:
   lintr:
     parent: "rules"

@@ -3,6 +3,8 @@ title: "rebase-merge-disabled (G009N)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G009N"]
 menu:
   lintr:
     parent: "rules"

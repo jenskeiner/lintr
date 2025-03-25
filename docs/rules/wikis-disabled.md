@@ -3,6 +3,8 @@ title: "wikis-disabled (G002N)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G002N"]
 menu:
   lintr:
     parent: "rules"

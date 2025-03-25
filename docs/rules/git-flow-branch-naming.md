@@ -3,6 +3,8 @@ title: "git-flow-branch-naming (GF001)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["GF001"]
 menu:
   lintr:
     parent: "rules"

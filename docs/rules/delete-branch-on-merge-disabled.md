@@ -3,6 +3,8 @@ title: "delete-branch-on-merge-disabled (G011N)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G011N"]
 menu:
   lintr:
     parent: "rules"

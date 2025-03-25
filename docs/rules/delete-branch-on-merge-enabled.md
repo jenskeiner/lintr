@@ -3,6 +3,8 @@ title: "delete-branch-on-merge-enabled (G011P)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G011P"]
 menu:
   lintr:
     parent: "rules"

@@ -3,6 +3,8 @@ title: "issues-enabled (G003P)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G003P"]
 menu:
   lintr:
     parent: "rules"

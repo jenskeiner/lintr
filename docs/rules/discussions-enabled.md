@@ -3,6 +3,8 @@ title: "discussions-enabled (G005P)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G005P"]
 menu:
   lintr:
     parent: "rules"

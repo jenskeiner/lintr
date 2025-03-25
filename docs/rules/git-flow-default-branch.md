@@ -3,6 +3,8 @@ title: "git-flow-default-branch (GF002)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["GF002"]
 menu:
   lintr:
     parent: "rules"

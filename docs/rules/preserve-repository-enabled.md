@@ -3,6 +3,8 @@ title: "preserve-repository-enabled (G004P)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G004P"]
 menu:
   lintr:
     parent: "rules"
