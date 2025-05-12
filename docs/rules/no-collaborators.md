@@ -10,9 +10,8 @@ menu:
     parent: "rules"
 ---
 
-✅  This rule is stable.
-
-🛠️ This rule is automatically fixable by the `--fix` command-line option.
+✅     This rule is stable.<br>
+🛠️     This rule is automatically fixable by the `--fix` command-line option.
 
 ## What it does
 

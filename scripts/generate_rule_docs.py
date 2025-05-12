@@ -107,30 +107,31 @@ def generate_rule_doc(
     # output.append(f"# {rule_cls._name} ({rule_cls._id})\n")
 
     # Add status indicators
+    indicators = []
     if rule_cls._status is RuleStatus.STABLE:
-        output.append("✅  This rule is stable.\n")
+        indicators.append("✅     This rule is stable.")
     else:
-        output.append("🧪 This rule is unstable and is in preview.\n")
+        indicators.append("🧪     This rule is unstable and is in preview.")
 
     if rule_cls._abstract:
-        output.append("🔷 This rule is abstract.\n")
+        indicators.append("🔷     This rule is abstract.")
 
     if rule_cls._deprecated:
-        output.append(
-            "⚠️ This rule has been deprecated and will be removed in a future release.\n"
+        indicators.append(
+            "⚠️     This rule has been deprecated and will be removed in a future release."
         )
 
     if rule_cls._fixable:
-        output.append(
-            "🛠️ This rule is automatically fixable by the `--fix` command-line option.\n"
+        indicators.append(
+            "🛠️     This rule is automatically fixable by the `--fix` command-line option."
         )
 
     if rule_cls._configurable:
-        output.append("⚙️ This rule is configurable\n")
+        indicators.append("⚙️     This rule is configurable.")
 
     if len(rule_cls._mutually_exclusive_with_resolved) > 0:
-        output.append(
-            "↔️ This rule is mutually exclusive with "
+        indicators.append(
+            "↔️     This rule is mutually exclusive with "
             + ", ".join(
                 [
                     f"[{r._id}](../{r._name}/)"
@@ -138,6 +139,9 @@ def generate_rule_doc(
                 ]
             )
         )
+
+    if len(indicators) > 0:
+        output.append("<br>\n".join(indicators) + "\n")
 
     # Add description and message
     output.append("## What it does")
@@ -206,16 +210,18 @@ def generate_markdown(rules_by_category):
         f"Lintr currently supports {sum(len(rules) for rules in rules_by_category.values())} rules.\n"
     )
     output.append("### Legend\n")
-    output.append("✅ The rule is stable.\n")
-    output.append("🧪 The rule is unstable and is in preview.\n")
-    output.append("🔷 The rule is abstract.\n")
-    output.append(
-        "⚠️ The rule has been deprecated and will be removed in a future release.\n"
+    legend = []
+    legend.append("✅     The rule is stable.\n")
+    legend.append("🧪     The rule is unstable and is in preview.\n")
+    legend.append("🔷     The rule is abstract.\n")
+    legend.append(
+        "⚠️     The rule has been deprecated and will be removed in a future release.\n"
     )
-    output.append(
-        "🛠️ The rule is automatically fixable by the `--fix` command-line option.\n"
+    legend.append(
+        "🛠     The rule is automatically fixable by the `--fix` command-line option.\n"
     )
-    output.append("⚙️ The rule is configurable.\n")
+    legend.append("⚙️     The rule is configurable.\n")
+    output.append("<br>\n".join(legend) + "\n")
 
     # Sort categories by their enum values to ensure consistent order
     for category in sorted(rules_by_category.keys(), key=lambda x: x.value.code):

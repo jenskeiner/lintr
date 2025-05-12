@@ -13,17 +13,18 @@ Lintr currently supports 30 rules.
 
 ### Legend
 
-✅ The rule is stable.
+✅     The rule is stable.
+<br>
+🧪     The rule is unstable and is in preview.
+<br>
+🔷     The rule is abstract.
+<br>
+⚠️     The rule has been deprecated and will be removed in a future release.
+<br>
+🛠     The rule is automatically fixable by the `--fix` command-line option.
+<br>
+⚙️     The rule is configurable.
 
-🧪 The rule is unstable and is in preview.
-
-🔷 The rule is abstract.
-
-⚠️ The rule has been deprecated and will be removed in a future release.
-
-🛠️ The rule is automatically fixable by the `--fix` command-line option.
-
-⚙️ The rule is configurable.
 
 
 ### General (G)

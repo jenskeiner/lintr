@@ -17,11 +17,11 @@ A powerful and flexible GitHub repository settings linter, written in pure Pytho
 
 ## Highlights
 
-- ✅ Enforces consistent GitHub repository settings.
-- 🔒 Monitors key repository settings against [rules](#rules--rulesets).
-- 🛡️ Helps mitigate security issues.
-- ⚙️ Streamlines repository management.
-- 🤖 Automates checks for repository hygiene.
+✅     Enforces consistent GitHub repository settings.<br>
+🔒     Monitors key repository settings against [rules](#rules--rulesets).<br>
+🛡     Helps mitigate security issues.<br>
+⚙️     Streamlines repository management.<br>
+🤖     Automates checks for repository hygiene.
 
 ## Status
 

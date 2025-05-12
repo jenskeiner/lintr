@@ -10,13 +10,10 @@ menu:
     parent: "rules"
 ---
 
-✅  This rule is stable.
-
-🔷 This rule is abstract.
-
-🛠️ This rule is automatically fixable by the `--fix` command-line option.
-
-⚙️ This rule is configurable
+✅     This rule is stable.<br>
+🔷     This rule is abstract.<br>
+🛠️     This rule is automatically fixable by the `--fix` command-line option.<br>
+⚙️     This rule is configurable.
 
 ## What it does
 

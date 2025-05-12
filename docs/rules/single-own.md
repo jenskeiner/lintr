@@ -10,7 +10,7 @@ menu:
     parent: "rules"
 ---
 
-✅  This rule is stable.
+✅     This rule is stable.
 
 ## What it does
 
