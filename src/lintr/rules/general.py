@@ -148,7 +148,7 @@ class WebCommitSignoffRequiredRule(BinarySettingRule, ABC):
         Returns:
             The name of the setting.
         """
-        return "'Require contributors to sign off on web-based commits'"
+        return "Require contributors to sign off on web-based commits"
 
 
 class WebCommitSignoffRequiredEnabledRule(WebCommitSignoffRequiredRule):
@@ -285,7 +285,7 @@ class PreserveRepositoryRule(BinarySettingRule, ABC):
         Returns:
             The name of the setting.
         """
-        return "'Preserve this repository'"
+        return "Preserve this repository"
 
 
 class PreserveRepositoryEnabledRule(PreserveRepositoryRule):
@@ -575,7 +575,7 @@ class AutoMergeRule(BinarySettingRule, ABC):
         Returns:
             The name of the setting.
         """
-        return "auto merge"
+        return "auto-merge"
 
 
 class AutoMergeDisabledRule(AutoMergeRule):
@@ -625,7 +625,7 @@ class DeleteBranchOnMergeRule(BinarySettingRule, ABC):
         Returns:
             The name of the setting.
         """
-        return "'Automatically delete head branches'"
+        return "Automatically delete head branches"
 
 
 class DeleteBranchOnMergeDisabledRule(DeleteBranchOnMergeRule):

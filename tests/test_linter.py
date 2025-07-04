@@ -3,7 +3,7 @@ from abc import ABC
 from unittest.mock import MagicMock, patch
 
 import pytest
-from colorama import Fore, Style
+import re
 
 from lintr.config import RepositoryConfig
 from lintr.linter import Linter
@@ -12,17 +12,9 @@ from lintr.rules.base import RuleContext
 
 
 def strip_color_codes(text: str) -> str:
-    """Strip ANSI color codes from text."""
-    for color in [
-        Fore.GREEN,
-        Fore.RED,
-        Fore.YELLOW,
-        Fore.BLUE,
-        Fore.WHITE,
-        Style.RESET_ALL,
-    ]:
-        text = text.replace(str(color), "")
-    return text
+    """Strip rich markup from text."""
+    # Remove rich markup like [green], [/green], etc.
+    return re.sub(r"\[/?[a-zA-Z_]+\]", "", text)
 
 
 class CustomException(Exception):
@@ -313,8 +305,11 @@ def test_lint_repositories_output_formatting_with_fix(
     assert "This can be fixed automatically" in output_lines[2]  # Fix description
 
 
-def test_lint_repositories_custom_error_message(repository, config, capsys, rule_cls):
+def test_lint_repositories_custom_error_message(
+    repository, config, mock_console, rule_cls
+):
     """Test output formatting of lint results with a custom error message."""
+    console, output_buffer = mock_console
     error_message = "Custom error occurred while checking rule"
 
     # Create a rule set with an error-raising rule
@@ -343,8 +338,8 @@ def test_lint_repositories_custom_error_message(repository, config, capsys, rule
     assert not result.fix_available
 
     # Verify error output format
-    captured = capsys.readouterr()
-    output_lines = [strip_color_codes(line) for line in captured.out.splitlines()]
+    output = output_buffer.getvalue()
+    output_lines = [strip_color_codes(line) for line in output.splitlines()]
     assert output_lines[0] == f"- {repository.name} (test)"
     assert "Error executing rule G001" in output_lines[1]
     assert error_message in output_lines[1]

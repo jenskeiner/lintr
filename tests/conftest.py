@@ -252,3 +252,22 @@ def rule_manager():
         mock_manager = MagicMock()
         mock_manager_class.return_value = mock_manager
         yield mock_manager
+
+
+@pytest.fixture
+def mock_console(monkeypatch):
+    """Mock rich console to capture output for tests."""
+    from io import StringIO
+    from rich.console import Console
+
+    # Create a string buffer to capture console output
+    output_buffer = StringIO()
+
+    # Create a console that writes to our buffer
+    test_console = Console(file=output_buffer, force_terminal=False, width=120)
+
+    # Patch the global console in the linter module
+    monkeypatch.setattr("lintr.linter.console", test_console)
+
+    # Return both the console and buffer for test access
+    return test_console, output_buffer

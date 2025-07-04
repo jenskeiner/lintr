@@ -124,7 +124,7 @@ class DefaultBranchRulesetRuleConfig(BranchRulesetRuleConfig, abc.ABC):
             "deletion": None,
             "required_signatures": None,
             "pull_request": {
-                "required_approving_review_count": 1,
+                "required_approving_review_count": 0,
                 "dismiss_stale_reviews_on_push": True,
                 "require_code_owner_review": True,
                 "require_last_push_approval": True,

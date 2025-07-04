@@ -710,7 +710,7 @@ def test_develop_branch_ruleset_rule_pass(repository):
         mock_rule.type = rule_type
         if rule_type == "pull_request":
             mock_rule.parameters = {
-                "required_approving_review_count": 1,
+                "required_approving_review_count": 0,
                 "dismiss_stale_reviews_on_push": True,
                 "require_code_owner_review": True,
                 "require_last_push_approval": True,
@@ -886,7 +886,7 @@ def test_develop_branch_ruleset_rule_multiple_rulesets(repository):
         mock_rule.type = rule_type
         if rule_type == "pull_request":
             mock_rule.parameters = {
-                "required_approving_review_count": 1,
+                "required_approving_review_count": 0,
                 "dismiss_stale_reviews_on_push": True,
                 "require_code_owner_review": True,
                 "require_last_push_approval": True,

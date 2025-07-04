@@ -2,9 +2,9 @@
 import abc
 from typing import Any
 
-from colorama import Fore, Style
 from difflib import unified_diff
 from json import dumps
+
 
 from github.GithubException import GithubException
 from pydantic import Field
@@ -384,25 +384,22 @@ class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
                     parameters_expected is not None
                     and rule.parameters != parameters_expected
                 ):
-                    diff = [
-                        "          "
-                        + (
-                            f"{Fore.YELLOW}{x}{Style.RESET_ALL}"
-                            if x.startswith("+")
-                            else (
-                                f"{Fore.RED}{x}{Style.RESET_ALL}"
-                                if x.startswith("-")
-                                else x
-                            )
-                        )
-                        for x in unified_diff(
-                            dumps(parameters_expected, indent=2).splitlines(),
-                            dumps(rule.parameters, indent=2).splitlines(),
-                            fromfile="expected",
-                            tofile="actual",
-                            n=500,
-                        )
-                    ]
+                    diff_lines = unified_diff(
+                        dumps(parameters_expected, indent=2).splitlines(),
+                        dumps(rule.parameters, indent=2).splitlines(),
+                        fromfile="expected",
+                        tofile="actual",
+                        n=500,
+                    )
+                    diff = []
+                    for line in diff_lines:
+                        if line.startswith("+"):
+                            colored_line = f"[yellow]          {line}[/yellow]"
+                        elif line.startswith("-"):
+                            colored_line = f"[red]          {line}[/red]"
+                        else:
+                            colored_line = f"          {line}"
+                        diff.append(colored_line)
                     violations.append(
                         "\n".join([f"Rule '{rule_type}' has wrong parameters: "] + diff)
                     )

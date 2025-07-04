@@ -1,8 +1,7 @@
 """Core linting functionality."""
 
 
-import colorama
-from colorama import Fore, Style
+from rich.console import Console
 from github.Repository import Repository
 
 from lintr.config import BaseLintrConfig, RepositoryConfig
@@ -10,8 +9,8 @@ from lintr.rule_manager import RuleManager
 from lintr.rules import RuleCheckResult, RuleResult, RuleSet
 from lintr.rules.context import RuleContext
 
-# Initialize colorama for cross-platform color support
-colorama.init()
+# Initialize rich console for colored output
+console = Console()
 
 
 class Linter:
@@ -111,8 +110,8 @@ class Linter:
                 result = rule.check(context)
                 results[rule.rule_id] = result
             except Exception as e:
-                print(
-                    f"{Fore.RED}Error executing rule {rule.rule_id} on repository {repository.name}: {str(e)}{Style.RESET_ALL}"
+                console.print(
+                    f"[red]Error executing rule {rule.rule_id} on repository {repository.name}: {str(e)}[/red]"
                 )
                 result = RuleCheckResult(
                     result=RuleResult.FAILED,
@@ -123,23 +122,23 @@ class Linter:
 
             # Print rule result
             if result.result == RuleResult.PASSED:
-                status_symbol = f"{Fore.GREEN}✓{Style.RESET_ALL}"
+                status_symbol = "[green]✓[/green]"
             elif result.result == RuleResult.FAILED:
-                status_symbol = f"{Fore.RED}✗{Style.RESET_ALL}"
+                status_symbol = "[red]✗[/red]"
             else:  # SKIPPED
-                status_symbol = f"{Fore.YELLOW}-{Style.RESET_ALL}"
+                status_symbol = "[yellow]-[/yellow]"
 
-            print(f"  {status_symbol} {rule.rule_id}: {result.message}")
+            console.print(f"  {status_symbol} {rule.rule_id}: {result.message}")
 
             # Always show fix description if available
             if result.fix_available:
-                print(f"    {Fore.BLUE}⚡ {result.fix_description}{Style.RESET_ALL}")
+                console.print(f"    [blue]⚡ {result.fix_description}[/blue]")
 
                 # Only proceed with fix if --fix flag is provided
                 if self._fix:
                     if self._dry_run:
-                        print(
-                            f"    {Fore.YELLOW}ℹ Would attempt to fix this issue (dry run){Style.RESET_ALL}"
+                        console.print(
+                            "    [yellow]ℹ Would attempt to fix this issue (dry run)[/yellow]"
                         )
                     else:
                         try:
@@ -147,45 +146,37 @@ class Linter:
 
                             if not self._non_interactive:
                                 response = input(
-                                    f"    {Fore.YELLOW}ℹ Apply this fix? [y/N]: {Style.RESET_ALL}"
+                                    "    ℹ Apply this fix? [y/N]: "
                                 ).lower()
                                 should_fix = response in ["y", "yes"]
 
                             if should_fix:
                                 success, message = rule.fix(context)
                                 if success:
-                                    print(
-                                        f"    {Fore.GREEN}⚡ Fixed: {message}{Style.RESET_ALL}"
+                                    console.print(
+                                        f"    [green]⚡ Fixed: {message}[/green]"
                                     )
                                     # Re-run check to get updated status
                                     result = rule.check(context)
                                     results[rule.rule_id] = result
                                     # Re-display rule status
                                     if result.result == RuleResult.PASSED:
-                                        status_symbol = (
-                                            f"{Fore.GREEN}✓{Style.RESET_ALL}"
-                                        )
+                                        status_symbol = "[green]✓[/green]"
                                     elif result.result == RuleResult.FAILED:
-                                        status_symbol = f"{Fore.RED}✗{Style.RESET_ALL}"
+                                        status_symbol = "[red]✗[/red]"
                                     else:  # SKIPPED
-                                        status_symbol = (
-                                            f"{Fore.YELLOW}-{Style.RESET_ALL}"
-                                        )
-                                    print(
+                                        status_symbol = "[yellow]-[/yellow]"
+                                    console.print(
                                         f"  {status_symbol} {rule.rule_id}: {result.message}"
                                     )
                                 else:
-                                    print(
-                                        f"    {Fore.RED}⚡ Fix failed: {message}{Style.RESET_ALL}"
+                                    console.print(
+                                        f"    [red]⚡ Fix failed: {message}[/red]"
                                     )
                             else:
-                                print(
-                                    f"    {Fore.YELLOW}ℹ Fix skipped{Style.RESET_ALL}"
-                                )
+                                console.print("    [yellow]ℹ Fix skipped[/yellow]")
                         except Exception as e:
-                            print(
-                                f"    {Fore.RED}⚡ Fix error: {str(e)}{Style.RESET_ALL}"
-                            )
+                            console.print(f"    [red]⚡ Fix error: {str(e)}[/red]")
 
         return results
 
@@ -209,19 +200,19 @@ class Linter:
             # Get rule set for repository
             rule_set_info = self.get_rule_set_for_repository(repo_config)
             if not rule_set_info:
-                print(f"{Fore.YELLOW}- {repo.name} (no rule set){Style.RESET_ALL}")
+                console.print(f"[yellow]- {repo.name} (no rule set)[/yellow]")
                 results[repo.name] = {"error": "No rule set found for repository"}
                 continue
 
             rule_set_id, rule_set = rule_set_info
-            print(f"{Fore.WHITE}- {repo.name} ({rule_set_id}){Style.RESET_ALL}")
+            console.print(f"[white]- {repo.name} ({rule_set_id})[/white]")
 
             # Run all rules in the rule set
             try:
                 rule_results = self.check_repository(repo, rule_set, repo_config)
                 results[repo.name] = rule_results
             except Exception as e:
-                print(f"{Fore.RED}  Error: {str(e)}{Style.RESET_ALL}")
+                console.print(f"[red]  Error: {str(e)}[/red]")
                 results[repo.name] = {"error": f"Failed to check repository: {str(e)}"}
 
         return results
