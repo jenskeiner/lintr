@@ -10,6 +10,7 @@ from lintr.rules.general import (
     DeleteBranchOnMergeEnabledRule,
 )
 from lintr.rules.context import RuleContext
+from tests.util import strip_markdown
 
 
 def test_web_commit_signoff_required_rule_init():
@@ -51,7 +52,10 @@ def test_web_commit_signoff_required_rule_check_failure():
     result = rule.check(context)
 
     assert result.result == RuleResult.FAILED
-    assert "is disabled" in result.message.lower()
+    assert (
+        "Require contributors to sign off on web-based commits is disabled"
+        in strip_markdown(result.message)
+    )
     assert result.fix_available
     assert "enable" in result.fix_description.lower()
 
@@ -144,7 +148,9 @@ def test_delete_branch_on_merge_rule_check_failure():
     result = rule.check(context)
 
     assert result.result == RuleResult.FAILED
-    assert "is disabled" in result.message.lower()
+    assert "Automatically delete head branches is disabled" in strip_markdown(
+        result.message
+    )
     assert result.fix_available
     assert "enable" in result.fix_description.lower()
 

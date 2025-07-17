@@ -45,7 +45,7 @@ class BinarySettingRule(Rule[BinaryFlagRuleConfig], ABC):
         pass
 
     @abstractmethod
-    def get_setting_name(self) -> str:
+    def get_setting_name(self) -> str | tuple[str, str]:
         """Get the human-readable name of the setting.
 
         Returns:
@@ -63,6 +63,10 @@ class BinarySettingRule(Rule[BinaryFlagRuleConfig], ABC):
             Result of the check with details.
         """
         setting_name = self.get_setting_name()
+        if isinstance(setting_name, tuple):
+            setting_name, verb = setting_name
+        else:
+            verb = "is"
 
         try:
             current_value = self.get_current_value(context)
@@ -70,19 +74,19 @@ class BinarySettingRule(Rule[BinaryFlagRuleConfig], ABC):
             if current_value == self.config.target:
                 return RuleCheckResult(
                     result=RuleResult.PASSED,
-                    message=f"{setting_name.capitalize()} is {'enabled' if self.config.target else 'disabled'}.",
+                    message=f"[i]{setting_name.capitalize()}[/i] {verb} [b]{'enabled' if self.config.target else 'disabled'}[/b].",
                 )
             else:
                 return RuleCheckResult(
                     result=RuleResult.FAILED,
-                    message=f"{setting_name.capitalize()} is {'disabled' if self.config.target else 'enabled'}.",
+                    message=f"[i]{setting_name.capitalize()}[/i] {verb} [b]{'disabled' if self.config.target else 'enabled'}[/b].",
                     fix_available=True,
-                    fix_description=f"{'Enable' if self.config.target else 'Disable'} {setting_name} in repository settings.",
+                    fix_description=f"{'Enable' if self.config.target else 'Disable'} [i]{setting_name}[/i] in repository settings.",
                 )
         except GithubException as e:
             return RuleCheckResult(
                 result=RuleResult.SKIPPED,
-                message=f"Failed to check {setting_name} status: {str(e)}",
+                message=f"Failed to check [i]{setting_name}[/i] status: {str(e)}",
                 fix_available=False,
             )
 
@@ -98,24 +102,24 @@ class BinarySettingRule(Rule[BinaryFlagRuleConfig], ABC):
             A tuple of (success, message) indicating if the fix was successful.
         """
         setting_name = self.get_setting_name()
+        if isinstance(setting_name, tuple):
+            setting_name, _ = setting_name
 
         try:
             if context.dry_run:
                 return (
                     True,
-                    f"Would {'enable' if self.config.target else 'disable'} {setting_name}.",
+                    f"Would {'enable' if self.config.target else 'disable'} [i]{setting_name}[/i].",
                 )
             self.update_setting(context, self.config.target)
-            setting_name = self.get_setting_name()
             return (
                 True,
-                f"{setting_name.capitalize()} has been {'enabled' if self.config.target else 'disabled'}.",
+                f"[i]{setting_name.capitalize()}[/i] has been {'enabled' if self.config.target else 'disabled'}.",
             )
         except GithubException as e:
-            setting_name = self.get_setting_name()
             return (
                 False,
-                f"Failed to {'enable' if self.config.target else 'disable'} {setting_name}: {str(e)}",
+                f"Failed to {'enable' if self.config.target else 'disable'} [i]{setting_name}[/i]: {str(e)}",
             )
 
 
@@ -191,13 +195,13 @@ class WikisRule(BinarySettingRule, ABC):
         """
         context.repository.edit(has_wiki=value)
 
-    def get_setting_name(self) -> str:
+    def get_setting_name(self) -> tuple[str, str]:
         """Get the human-readable name of the setting.
 
         Returns:
             The name of the setting.
         """
-        return "Wikis"
+        return "Wikis", "are"
 
 
 class WikisEnabledRule(WikisRule):
@@ -235,13 +239,13 @@ class IssuesRule(BinarySettingRule, ABC):
         """
         context.repository.edit(has_issues=value)
 
-    def get_setting_name(self) -> str:
+    def get_setting_name(self) -> tuple[str, str]:
         """Get the human-readable name of the setting.
 
         Returns:
             The name of the setting.
         """
-        return "Issues"
+        return "Issues", "are"
 
 
 class IssuesEnabledRule(IssuesRule):
@@ -327,13 +331,13 @@ class DiscussionsRule(BinarySettingRule, ABC):
         """
         context.repository.edit(has_discussions=value)
 
-    def get_setting_name(self) -> str:
+    def get_setting_name(self) -> tuple[str, str]:
         """Get the human-readable name of the setting.
 
         Returns:
             The name of the setting.
         """
-        return "Discussions"
+        return "Discussions", "are"
 
 
 class DiscussionsDisabledRule(DiscussionsRule):
@@ -371,13 +375,13 @@ class ProjectsRule(BinarySettingRule, ABC):
         """
         context.repository.edit(has_projects=value)
 
-    def get_setting_name(self) -> str:
+    def get_setting_name(self) -> tuple[str, str]:
         """Get the human-readable name of the setting.
 
         Returns:
             The name of the setting.
         """
-        return "Projects"
+        return "Projects", "are"
 
 
 class ProjectsDisabledRule(ProjectsRule):
@@ -419,13 +423,13 @@ class MergeCommitsRule(BinarySettingRule, ABC):
         """
         context.repository.edit(allow_merge_commit=value)
 
-    def get_setting_name(self) -> str:
+    def get_setting_name(self) -> tuple[str, str]:
         """Get the human-readable name of the setting.
 
         Returns:
             The name of the setting.
         """
-        return "merge commits"
+        return "Merge commits", "are"
 
 
 class MergeCommitsDisabledRule(MergeCommitsRule):

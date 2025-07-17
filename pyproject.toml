@@ -93,6 +93,13 @@ no_classic_branch_protection = "lintr.rules.permission_rules:NoClassicBranchProt
 branch_ruleset = "lintr.rules.permission_rules:BranchRulesetRule"
 gitflow_develop_branch_ruleset = "lintr.rules.gitflow:GitFlowDevelopBranchRulesetRule"
 gitflow_main_branch_ruleset = "lintr.rules.gitflow:GitFlowMainBranchRulesetRule"
+actions_permissions = "lintr.rules.actions:GitHubActionsPermissionsRule"
+actions_disabled = "lintr.rules.actions:GitHubActionsDisabledRule"
+actions_enabled_all = "lintr.rules.actions:GitHubActionsEnabledAllRule"
+actions_enabled_local_only = "lintr.rules.actions:GitHubActionsEnabledLocalOnlyRule"
+actions_enabled_selected = "lintr.rules.actions:GitHubActionsEnabledSelectedRule"
+actions_default_workflow_permissions = "lintr.rules.actions:GitHubActionsDefaultWorkflowPermissionsRule"
+webhooks = "lintr.rules.hooks:WebhooksRule"
 
 [project.entry-points."lintr.rule_sets"]
 default = "lintr.rules.default_ruleset:get_default_ruleset"

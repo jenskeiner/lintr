@@ -34,13 +34,13 @@ class DefaultBranchNameRule(Rule[DefaultBranchNameRuleConfig], ABC):
             if default_branch != self.config.branch:
                 return RuleCheckResult(
                     result=RuleResult.FAILED,
-                    message=f"Default branch is '{default_branch}' but should be '{self.config.branch}'",
+                    message=f"Default branch is [b]{default_branch}[/b] but should be [b]{self.config.branch}[/b]",
                     fix_available=True,
                 )
 
             return RuleCheckResult(
                 result=RuleResult.PASSED,
-                message=f"Default branch is correctly set to '{self.config.branch}'",
+                message=f"Default branch is [b]{self.config.branch}[/b].",
             )
 
         except GithubException as e:

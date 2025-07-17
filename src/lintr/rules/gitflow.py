@@ -89,7 +89,7 @@ class GitFlowBranchNamingRule(Rule):
 
             return RuleCheckResult(
                 result=RuleResult.PASSED,
-                message="All branch names conform to GitFlow conventions",
+                message="All branch names conform to GitFlow conventions.",
             )
 
         except GithubException as e:

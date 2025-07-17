@@ -3,14 +3,14 @@ title: "git-flow-branch-naming (GF001)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["GF001"]
 menu:
-  docs_lintr:
+  lintr:
     parent: "rules"
 ---
 
-✅  This rule is stable.
-
-⚙️ This rule is configurable
+✅     This rule is stable.
 
 ## What it does
 

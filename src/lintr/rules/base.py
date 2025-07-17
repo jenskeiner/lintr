@@ -7,7 +7,9 @@ from enum import Enum
 from typing import TypeVar
 from typing import Union, Generic
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
+
+from lintr.util import is_compatible_with_expected_type
 
 from lintr.rules.context import RuleContext
 from lintr.util import camel_to_hyphen
@@ -28,6 +30,10 @@ class RuleCategory(Enum):
     BRANCHES = RuleCategoryValue(name="Branches", code="B", description="Branch rules")
     GITFLOW = RuleCategoryValue(name="GitFlow", code="GF", description="GitFlow rules")
     RULES = RuleCategoryValue(name="Rules", code="R", description="Rules")
+    ACTIONS = RuleCategoryValue(name="Actions", code="A", description="Actions rules")
+    WEBHOOKS = RuleCategoryValue(
+        name="Webhooks", code="W", description="Webhooks rules"
+    )
     MISC = RuleCategoryValue(
         name="Miscellaneous", code="M", description="Miscellaneous rules"
     )
@@ -41,7 +47,7 @@ class RuleStatus(Enum):
 class BaseRuleConfig(BaseModel):
     """Abstract base rule configuration model."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", use_enum_values=True)
 
 
 ConfigT = TypeVar("ConfigT", bound=BaseRuleConfig)
@@ -114,8 +120,10 @@ class RuleMeta(ABCMeta):
                         orig_base.__origin__, _generic_base
                     ):
                         t = orig_base.__args__[0]
-                        if issubclass(t, expected_config_type):
+
+                        if is_compatible_with_expected_type(t, expected_config_type):
                             expected_config_type = t
+
                 if klass != _generic_base:
                     s.extend(
                         [
@@ -130,9 +138,15 @@ class RuleMeta(ABCMeta):
                 type(_generic_base._config) if _generic_base else BaseRuleConfig
             )
 
-        cls._configurable = _generic_base and expected_config_type is not type(
-            _generic_base._config
+        cls._configurable = (
+            "_configurable" not in namespace
+            and _generic_base
+            and expected_config_type is not type(_generic_base._config)
         )
+
+        if cls._configurable:
+            ta = TypeAdapter(expected_config_type)
+            cls._config_type_adapter = ta
 
         if cls._abstract:
             return cls
@@ -152,10 +166,13 @@ class RuleMeta(ABCMeta):
         if not hasattr(cls, "_config"):
             raise TypeError(f"Class {name} must define a '_config' class attribute")
 
-        if expected_config_type and not isinstance(cls._config, expected_config_type):
-            raise TypeError(
-                f"Config in {name} must be an instance of {expected_config_type}"
-            )
+        if cls._configurable:
+            try:
+                cls._config_type_adapter.validate_python(cls._config)
+            except ValidationError:
+                raise TypeError(
+                    f"Config in {name} must be a valid instance of {expected_config_type}"
+                )
 
         if "_id" not in namespace:
             raise TypeError(f"Class {name} must define a '_id' class attribute")
@@ -183,18 +200,19 @@ class RuleMeta(ABCMeta):
                 f"Class {name} must define a '_category' class attribute as a RuleCategory"
             )
 
-        if expected_config_type is not BaseRuleConfig:
+        if cls._configurable:
             if "_example" not in namespace:
                 cls._example = cls._config
         else:
             cls._example = None
 
-        if cls._example is not None and not isinstance(
-            cls._example, expected_config_type
-        ):
-            raise TypeError(
-                f"Class {name} must define a '_example' class attribute as {expected_config_type}"
-            )
+        if cls._example:
+            try:
+                cls._config_type_adapter.validate_python(cls._example)
+            except ValidationError:
+                raise TypeError(
+                    f"Class {name} must define a valid '_example' class attribute as {expected_config_type}"
+                )
 
         return cls
 

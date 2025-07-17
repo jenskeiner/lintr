@@ -44,3 +44,5 @@
 - [x] 2.6: Allow definition of custom rules in configuration file by inheriting from existing rules and overriding their configuration.
 - [x] 2.7: Allow to override rule configuration at the repository level.
 - [] 2.8: Create usage and developer documentation.
+- [] 2.9: Create a rule to check GitHub Actions permissions. THese control if and which actions and re-usable workflows are allowed to run in the repository.
+

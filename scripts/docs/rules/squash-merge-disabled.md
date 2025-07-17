@@ -3,16 +3,16 @@ title: "squash-merge-disabled (G008N)"
 draft: false
 type: docs
 layout: "single"
+params:
+  tags: ["G008N"]
 menu:
-  docs_lintr:
+  lintr:
     parent: "rules"
 ---
 
-✅  This rule is stable.
-
-🛠️ This rule is automatically fixable by the `--fix` command-line option.
-
-⚙️ This rule is configurable
+✅     This rule is stable.<br>
+🛠️     This rule is automatically fixable by the `--fix` command-line option.<br>
+⚙️     This rule is configurable.
 
 ## What it does
 

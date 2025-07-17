@@ -24,31 +24,31 @@ Checks that a ruleset with given properties exists.
 Example:
 
 ```yaml
+name: ruleset
+enabled: true
+included_refs:
+- refs/heads/master
+excluded_refs:
+- refs/heads/develop
 bypass_actors:
 - actor_id: 5
   actor_type: RepositoryRole
   bypass_mode: always
-enabled: true
-excluded_refs:
-- refs/heads/develop
-included_refs:
-- refs/heads/master
-name: ruleset
 rules:
   creation: null
+  update: null
   deletion: null
-  non_fast_forward: null
+  required_signatures: null
   pull_request:
-    allowed_merge_methods:
-    - merge
-    automatic_copilot_code_review_enabled: false
+    required_approving_review_count: 1
     dismiss_stale_reviews_on_push: true
     require_code_owner_review: true
     require_last_push_approval: true
-    required_approving_review_count: 1
     required_review_thread_resolution: true
-  required_signatures: null
-  update: null
+    automatic_copilot_code_review_enabled: false
+    allowed_merge_methods:
+    - merge
+  non_fast_forward: null
 ```
 
 Schema:

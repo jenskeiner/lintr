@@ -9,7 +9,7 @@ menu:
     weight: 2
 ---
 
-Lintr currently supports 30 rules.
+Lintr currently supports 35 rules.
 
 ### Legend
 
@@ -26,6 +26,17 @@ Lintr currently supports 30 rules.
 ⚙️     The rule is configurable.
 
 
+
+### Actions (A)
+
+Actions rules
+| Code | Name | Message | Properties |
+|-----|-----|-----|-----|
+| A001 | [github-actions-permissions](github-actions-permissions.md) | Checks GitHub Actions permissions for a repository | ✅ 🔷 🛠️ ⚙️ |
+| A001A | [github-actions-enabled-all](github-actions-enabled-all.md) | Checks that all GitHub Actions are enabled for the repository | ✅ 🛠️ |
+| A001D | [github-actions-disabled](github-actions-disabled.md) | Checks that GitHub Actions are disabled for the repository | ✅ 🛠️ |
+| A001L | [github-actions-enabled-local-only](github-actions-enabled-local-only.md) | Checks that only local GitHub Actions are enabled for the repository | ✅ 🛠️ |
+| A001S | [github-actions-enabled-selected](github-actions-enabled-selected.md) | Checks that only selected GitHub Actions are enabled for the repository | ✅ 🛠️ ⚙️ |
 
 ### General (G)
 

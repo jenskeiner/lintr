@@ -1,11 +1,17 @@
+# Project
+
+This is a project for GitHub repository settings linter named Lintr written in Python. For a succint project overview, see the file `CLAUDE.md` in the project's root directory.
+
 # Instructions
 
-During you interaction with the user, if you find anything reusable in this project (e.g. version of a library, model name), especially about a fix to a mistake you made or a correction you received,
-you should take note in the lessons section of the internal documentation in the directory `docs/internal/lessons/` so you will not make the same mistake again. Chose the appropriate file or create a
-new one for a new topic. Ensure the files you modify are linked properly from the project plan in `docs/internal/project_plan.md`.
+During you interaction with the user, if you find anything reusable in this project (e.g. version of a library, abstract base classes, functions, etc.), especially about a fix 
+to a mistake you made or a correction you received, you should take note in the lessons section of the internal documentation in the directory `docs/internal/lessons/` so you will not make the same mistake again.
 
-You should also use the `<project_root>/scratchpad.md` file as a scratchpad to organize your thoughts. Especially when you receive a new task, you should first review the content of the scratchpad, the project plan, 
-and relevant content from the lessons section linked from there, clear old different tasks if necessary, first explain the task, and plan the steps you need to take to complete the task. You can use todo markers to indicate the progress, e.g.
+Chose the appropriate file or create a new one for a new topic that is not yet covered, though try to keep the number of files to a minimum. Ensure the lessons you create/modify are properly linked from the project plan in `docs/internal/project_plan.md`.
+
+You should also use the file `scratchpad.md` in the project's root directory as a scratchpad to organize your thoughts when working a task. When you receive a new task, clear out any existing scratchpad file. While working a task, before making any code changes, review the content of the scratchpad, the project plan, and relevant content from the lessons section linked from there.
+
+When starting work on a new task, first explain the task, and plan the steps you need to take to complete the task. You can use todo markers to indicate the progress, e.g.
 [X] Task 1
 [ ] Task 2
 Also update the progress of the task in the Scratchpad when you finish a subtask.
@@ -14,6 +20,18 @@ Especially when you finished a milestone, it will help to improve your depth of 
 The goal is to help you maintain a big picture as well as the progress of the task. Always refer to the Scratchpad when you plan the next step.
 
 Often, your task will be listed in the project plan in `docs/internal/project_plan.md` so ensure you tick it off as well when done.
+
+# Implementing new repository rules
+
+This section only applies to a task where the user requests to implement a new repository rule. Ignore this section otherwise.
+
+Follow the following steps in order to add a new repository rule:
+1. Review the user's instructions to ensure the instructions contain enough information so you can start planning the work. If not, ask the user for clarification. Typically, you will need to know which settings exactly the rule is supposed to check and enforce.
+2. Check the OpenAPI spec of the GitHub API located in the folder `support/docs/external/api.github.com/` to find the relevant endpoints that allow to retrieve and change the desired settings. Note down your result in the scratchpad.
+3. Also review the API Reference of PyGithub to check if the desired endpoints can be accessed through the Python wrapper library. Note down the result in the scratchpad as well.
+4. Only continue if steps 2. and 3. yield a positive result. Stop and ask how to proceed if at least one of the two checks yields a negative result.
+5. Plan the implementation of the rule in the scratchpad. Carefully check if you can re-use any abstract base classes for the rule itself or its configuration. If so, use them. Ensure the implementation plan also addresses new pytest tests that need to be written.
+6. Execute your implementation plan. Ask the user for feedback at relevant steps to ensure your work does not deviate from the user's expectations.
 
 # Lessons
 

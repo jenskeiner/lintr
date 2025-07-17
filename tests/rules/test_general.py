@@ -10,6 +10,8 @@ from lintr.rules.general import PreserveRepositoryEnabledRule
 from lintr.rules.general import DiscussionsDisabledRule
 from lintr.rules.general import ProjectsDisabledRule
 
+from tests.util import strip_markdown
+
 
 def test_preserve_repository_rule_pass():
     """Test PreserveRepositoryRule passes when repository is archived."""
@@ -26,7 +28,7 @@ def test_preserve_repository_rule_pass():
 
     # Verify result
     assert result.result == RuleResult.PASSED
-    assert "preserve this repository is enabled" in result.message.lower()
+    assert "Preserve this repository is enabled." in strip_markdown(result.message)
 
 
 def test_preserve_repository_rule_fail():
@@ -44,9 +46,9 @@ def test_preserve_repository_rule_fail():
 
     # Verify result
     assert result.result == RuleResult.FAILED
-    assert "preserve this repository is disabled" in result.message.lower()
+    assert "Preserve this repository is disabled." in strip_markdown(result.message)
     assert result.fix_available
-    assert "enable preserve this repository" in result.fix_description.lower()
+    assert "Enable Preserve this repository" in strip_markdown(result.fix_description)
 
 
 def test_preserve_repository_rule_fix():

@@ -23,30 +23,30 @@ Main branch must have a proper ruleset configured
 Example:
 
 ```yaml
+name: main protection
+enabled: true
+included_refs:
+- refs/heads/main
+excluded_refs: []
 bypass_actors:
 - actor_id: 5
   actor_type: RepositoryRole
   bypass_mode: always
-enabled: true
-excluded_refs: []
-included_refs:
-- refs/heads/main
-name: main protection
 rules:
   creation: null
+  update: null
   deletion: null
-  non_fast_forward: null
+  required_signatures: null
   pull_request:
-    allowed_merge_methods:
-    - merge
-    automatic_copilot_code_review_enabled: false
+    required_approving_review_count: 0
     dismiss_stale_reviews_on_push: true
     require_code_owner_review: true
     require_last_push_approval: true
-    required_approving_review_count: 1
     required_review_thread_resolution: true
-  required_signatures: null
-  update: null
+    automatic_copilot_code_review_enabled: false
+    allowed_merge_methods:
+    - merge
+  non_fast_forward: null
 ```
 
 Schema:

@@ -8,6 +8,8 @@ from lintr.rules.base import RuleResult
 from lintr.rules.context import RuleContext
 from lintr.rules.gitflow import GitFlowBranchNamingRule, GitFlowDefaultBranchRule
 
+from tests.util import strip_markdown
+
 
 def create_mock_branch(name: str) -> MagicMock:
     """Create a mock branch with the given name."""
@@ -115,7 +117,7 @@ def test_gitflow_default_branch_valid():
     result = rule.check(context)
 
     assert result.result == RuleResult.PASSED
-    assert "correctly set to 'develop'" in result.message
+    assert "Default branch is develop." in strip_markdown(result.message)
 
 
 def test_gitflow_default_branch_invalid():
@@ -128,7 +130,9 @@ def test_gitflow_default_branch_invalid():
     result = rule.check(context)
 
     assert result.result == RuleResult.FAILED
-    assert "should be 'develop'" in result.message
+    assert "Default branch is main but should be develop" in strip_markdown(
+        result.message
+    )
     assert result.fix_available
 
 

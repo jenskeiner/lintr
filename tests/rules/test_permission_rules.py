@@ -20,6 +20,8 @@ from lintr.rules.general import (
     RebaseMergeDisabledRule,
 )
 
+from tests.util import strip_markdown
+
 
 def test_single_owner_rule_pass():
     """Test SingleOwnerRule passes when user is the only admin."""
@@ -372,7 +374,7 @@ def test_merge_commits_allowed_rule_pass():
 
     # Verify result
     assert result.result == RuleResult.PASSED
-    assert "Merge commits is enabled" in result.message
+    assert "Merge commits are enabled" in strip_markdown(result.message)
 
 
 def test_merge_commits_allowed_rule_fail():
@@ -390,9 +392,11 @@ def test_merge_commits_allowed_rule_fail():
 
     # Verify result
     assert result.result == RuleResult.FAILED
-    assert "Merge commits is disabled" in result.message
+    assert "Merge commits are disabled" in strip_markdown(result.message)
     assert result.fix_available
-    assert "Enable merge commits" in result.fix_description
+    assert "Enable Merge commits in repository settings." in strip_markdown(
+        result.fix_description
+    )
 
 
 def test_merge_commits_allowed_rule_fix():
@@ -411,7 +415,7 @@ def test_merge_commits_allowed_rule_fix():
 
     # Verify fix
     assert success
-    assert "Merge commits has been enabled" in message
+    assert "Merge commits has been enabled" in strip_markdown(message)
     mock_repo.edit.assert_called_once_with(allow_merge_commit=True)
 
 
@@ -451,7 +455,7 @@ def test_squash_merge_disabled_rule_pass():
 
     # Verify result
     assert result.result == RuleResult.PASSED
-    assert "Squash merging is disabled" in result.message
+    assert "Squash merging is disabled" in strip_markdown(result.message)
 
 
 def test_squash_merge_disabled_rule_fail():
@@ -469,9 +473,11 @@ def test_squash_merge_disabled_rule_fail():
 
     # Verify result
     assert result.result == RuleResult.FAILED
-    assert "Squash merging is enabled" in result.message
+    assert "Squash merging is enabled" in strip_markdown(result.message)
     assert result.fix_available
-    assert "Disable squash merging" in result.fix_description
+    assert "Disable squash merging in repository settings." in strip_markdown(
+        result.fix_description
+    )
 
 
 def test_squash_merge_disabled_rule_fix():
@@ -490,7 +496,7 @@ def test_squash_merge_disabled_rule_fix():
 
     # Verify fix
     assert success
-    assert "Squash merging has been disabled" in message
+    assert "Squash merging has been disabled" in strip_markdown(message)
     mock_repo.edit.assert_called_once_with(allow_squash_merge=False)
 
 
@@ -530,7 +536,7 @@ def test_rebase_merge_disabled_rule_pass():
 
     # Verify result
     assert result.result == RuleResult.PASSED
-    assert "Rebase merging is disabled" in result.message
+    assert "Rebase merging is disabled" in strip_markdown(result.message)
 
 
 def test_rebase_merge_disabled_rule_fail():
@@ -548,9 +554,9 @@ def test_rebase_merge_disabled_rule_fail():
 
     # Verify result
     assert result.result == RuleResult.FAILED
-    assert "Rebase merging is enabled" in result.message
+    assert "Rebase merging is enabled" in strip_markdown(result.message)
     assert result.fix_available
-    assert "Disable rebase merging" in result.fix_description
+    assert "Disable rebase merging" in strip_markdown(result.fix_description)
 
 
 def test_rebase_merge_disabled_rule_fix():
@@ -569,7 +575,7 @@ def test_rebase_merge_disabled_rule_fix():
 
     # Verify fix
     assert success
-    assert "Rebase merging has been disabled" in message
+    assert "Rebase merging has been disabled" in strip_markdown(message)
     mock_repo.edit.assert_called_once_with(allow_rebase_merge=False)
 
 
@@ -745,7 +751,9 @@ def test_develop_branch_ruleset_rule_pass(repository):
 
     # Verify result
     assert result.result == RuleResult.PASSED
-    assert "Ruleset 'develop protection' properly configured" in result.message
+    assert "Ruleset develop protection is properly configured" in strip_markdown(
+        result.message
+    )
     assert not result.fix_available
 
 
@@ -832,7 +840,7 @@ def test_develop_branch_ruleset_rule_fail_disabled(repository):
     assert result.result == RuleResult.FAILED
     assert "Ruleset must be enabled" in result.message
     assert result.fix_available
-    assert "Update ruleset 'develop protection'" in result.fix_description
+    assert "Update ruleset develop protection" in strip_markdown(result.fix_description)
 
 
 def test_develop_branch_ruleset_rule_fail_wrong_branch(repository):
@@ -862,7 +870,7 @@ def test_develop_branch_ruleset_rule_fail_wrong_branch(repository):
         in result.message
     )
     assert result.fix_available
-    assert "Update ruleset 'develop protection'" in result.fix_description
+    assert "Update ruleset develop protection" in strip_markdown(result.fix_description)
 
 
 def test_develop_branch_ruleset_rule_multiple_rulesets(repository):
@@ -921,7 +929,9 @@ def test_develop_branch_ruleset_rule_multiple_rulesets(repository):
 
     # Verify result
     assert result.result == RuleResult.PASSED
-    assert "Ruleset 'develop protection' properly configured" in result.message
+    assert "Ruleset develop protection is properly configured" in strip_markdown(
+        result.message
+    )
     assert not result.fix_available
 
 
@@ -943,7 +953,7 @@ def test_develop_branch_ruleset_rule_api_error(repository):
     assert result.result == RuleResult.FAILED
     assert "Repository rulesets not found" in result.message
     assert result.fix_available
-    assert "Create ruleset 'develop protection'" in result.fix_description
+    assert "Create ruleset develop protection" in strip_markdown(result.fix_description)
 
 
 def test_develop_branch_ruleset_rule_other_api_error(repository):
@@ -1014,7 +1024,7 @@ def test_develop_branch_ruleset_rule_fail_additional_rules(repository):
         in result.message
     )
     assert result.fix_available
-    assert "Update ruleset 'develop protection'." == result.fix_description
+    assert "Update ruleset develop protection" in strip_markdown(result.fix_description)
 
 
 def test_develop_branch_ruleset_rule_fail_multiple_branches(repository):
@@ -1119,10 +1129,12 @@ def test_develop_branch_ruleset_rule_fail_excluded_branches(repository):
 
     # Verify result
     assert result.result == RuleResult.FAILED
-    assert "Rulesset 'develop protection' not set up correctly:" in result.message
+    assert "Ruleset develop protection not set up correctly:" in strip_markdown(
+        result.message
+    )
     assert (
         "Ruleset excludes refs ['refs/heads/feature/*', 'refs/heads/hotfix/*'] but should exclude []"
-        in result.message
+        in strip_markdown(result.message)
     )
     assert result.fix_available
 
@@ -1141,7 +1153,7 @@ def test_develop_branch_ruleset_rule_fix_create(repository):
 
     # Verify result
     assert success
-    assert "Created ruleset 'develop protection'" in message
+    assert "Created ruleset develop protection" in strip_markdown(message)
 
     # Verify that create_ruleset was called with correct arguments
     repository.create_ruleset.assert_called_once()
@@ -1182,7 +1194,7 @@ def test_develop_branch_ruleset_rule_fix_update(repository):
 
     # Verify result
     assert success
-    assert "Updated ruleset 'develop protection'" in message
+    assert "Updated ruleset develop protection" in strip_markdown(message)
 
     # Verify that update was called with correct arguments
     mock_ruleset.update.assert_called_once()

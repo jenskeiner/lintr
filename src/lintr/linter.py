@@ -102,7 +102,7 @@ class Linter:
                 repository_config.rules.get(rule.rule_id) if repository_config else None
             )
             if rule_config:
-                rule = rule(type(rule._config).model_validate(rule_config))
+                rule = rule(rule._config_type_adapter.validate_python(rule_config))
             else:
                 rule = rule()
             result = None

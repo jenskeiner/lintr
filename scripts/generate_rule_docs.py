@@ -40,6 +40,7 @@ def get_rule_parameter_class(rule_cls: type[Rule]) -> type[BaseRuleConfig]:
         if (
             get_origin(base) is Rule
             and len(get_args(base)) == 1
+            and isinstance(get_args(base)[0], type)
             and issubclass(get_args(base)[0], BaseRuleConfig)
         ):
             return get_args(base)[0]
@@ -90,7 +91,7 @@ def generate_rule_doc(
     """
     output = []
 
-    # Add frontmatterg
+    # Add frontmatter
     output.append("---")
     output.append(f'title: "{rule_cls._name} ({rule_cls._id})"')
     output.append("draft: false")
@@ -148,19 +149,24 @@ def generate_rule_doc(
     output.append(f"\n{rule_cls._description}\n")
 
     # Add parameter class info if it's not the default
-    if param_cls is not BaseRuleConfig:
+    if rule_cls._configurable:
         output.append("## Configuration")
         output.append("\nExample:\n")
         output.append("```yaml")
         stream = StringIO()
-        yaml.dump(rule_cls._example.model_dump(), stream)
+        yaml.dump(
+            rule_cls._example.model_dump(exclude_default=True), stream, sort_keys=False
+        )
         output.append(stream.getvalue().strip("\n"))
         output.append("```\n")
         stream.close()
 
         output.append("Schema:\n")
         output.append("```json")
-        schema = param_cls.model_json_schema(schema_generator=MyGenerateJsonSchema)
+        # schema = param_cls.model_json_schema(schema_generator=MyGenerateJsonSchema)
+        schema = rule_cls._config_type_adapter.json_schema(
+            schema_generator=MyGenerateJsonSchema
+        )
         output.append(json.dumps(schema, indent=2))
         output.append("```\n")
 
@@ -281,7 +287,7 @@ def main():
             print(f"    Parameters: {param_cls.__name__}")
 
             # Only show schema for non-default parameter classes
-            if param_cls is not BaseRuleConfig:
+            if rule_cls._configurable:
                 schema = param_cls.model_json_schema(
                     schema_generator=MyGenerateJsonSchema
                 )

@@ -1,20 +1,18 @@
 """Rules for checking repository permission settings."""
 import abc
-from typing import Any
-
 from difflib import unified_diff
 from json import dumps
-
+from typing import Any
 
 from github.GithubException import GithubException
 from pydantic import Field
 
 from lintr.rules.base import (
+    BaseRuleConfig,
     Rule,
+    RuleCategory,
     RuleCheckResult,
     RuleResult,
-    BaseRuleConfig,
-    RuleCategory,
 )
 from lintr.rules.context import RuleContext
 
@@ -58,7 +56,7 @@ class SingleOwnerRule(Rule):
             if admin_count == 1 and authenticated_user in admin_logins:
                 return RuleCheckResult(
                     result=RuleResult.PASSED,
-                    message=f"Repository has only one admin: {authenticated_user}",
+                    message=f"Repository only has [b]{authenticated_user}[/b] as admin.",
                 )
             else:
                 other_admins = [
@@ -68,7 +66,7 @@ class SingleOwnerRule(Rule):
                     result=RuleResult.FAILED,
                     message=(
                         f"Repository has {admin_count} admins. "
-                        f"Other admins besides {authenticated_user}: {', '.join(other_admins)}"
+                        f"Other admins besides [b]{authenticated_user}[/b]: [b]{', '.join(other_admins)}[/b]"
                     ),
                     fix_available=False,
                     fix_description=(
@@ -114,13 +112,13 @@ class NoCollaboratorsRule(Rule):
             if not other_collaborators:
                 return RuleCheckResult(
                     result=RuleResult.PASSED,
-                    message="Repository has no collaborators other than the user",
+                    message=f"Repository has no collaborators other than [b]{authenticated_user}[/b].",
                     fix_available=False,
                 )
             else:
                 return RuleCheckResult(
                     result=RuleResult.FAILED,
-                    message=f"Repository has {len(other_collaborators)} other collaborators: {', '.join(other_collaborators)}",
+                    message=f"Repository has {len(other_collaborators)} other collaborators besides [b]{authenticated_user}[/b]: {', '.join(other_collaborators)}",
                     fix_available=True,
                     fix_description=f"Remove collaborators: {', '.join(other_collaborators)}",
                 )
@@ -209,14 +207,14 @@ class NoClassicBranchProtectionRule(Rule):
             if not protected_branches:
                 return RuleCheckResult(
                     result=RuleResult.PASSED,
-                    message="No classic branch protection rules found",
+                    message="No classic branch protection rules found.",
                 )
             else:
                 return RuleCheckResult(
                     result=RuleResult.FAILED,
                     message=f"Classic branch protection rules found on branches: {', '.join(protected_branches)}",
                     fix_available=True,
-                    fix_description="Remove classic branch protection rules and replace with repository rules",
+                    fix_description="Remove classic branch protection rules and replace with repository rules.",
                 )
         except GithubException as e:
             return RuleCheckResult(
@@ -413,16 +411,16 @@ class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
 
             if violations:
                 violations = [
-                    f"Rulesset '{self._config.name}' not set up correctly:"
+                    f"Ruleset [b]{self._config.name}[/b] not set up correctly:"
                 ] + [f"      - {x}" for x in violations]
 
             return RuleCheckResult(
                 result=RuleResult.PASSED if not violations else RuleResult.FAILED,
                 message="\n".join(violations)
                 if violations
-                else f"Ruleset '{self._config.name}' properly configured",
+                else f"Ruleset [b]{self._config.name}[/b] is properly configured.",
                 fix_available=bool(violations),
-                fix_description=f"Update ruleset '{self._config.name}'."
+                fix_description=f"Update ruleset [b]{self._config.name}[/b]."
                 if violations
                 else None,
             )
@@ -433,7 +431,7 @@ class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
                     result=RuleResult.FAILED,
                     message="Repository rulesets not found",
                     fix_available=True,
-                    fix_description=f"Create ruleset '{self._config.name}'.",
+                    fix_description=f"Create ruleset [b]{self._config.name}[/b].",
                 )
             raise
 
@@ -478,12 +476,12 @@ class BranchRulesetRule(Rule[BranchRulesetRuleConfig], abc.ABC):
                 ruleset.update(**ruleset_config)
                 return (
                     True,
-                    f"Updated ruleset '{self._config.name}'.",
+                    f"Updated ruleset [i]{self._config.name}[/i].",
                 )
             else:
                 # Create new ruleset
                 context.repository.create_ruleset(**ruleset_config)
-                return True, f"Created ruleset '{self._config.name}'."
+                return True, f"Created ruleset [i]{self._config.name}[/i]."
 
         except GithubException as e:
             return False, f"Failed to fix branch ruleset: {str(e)}"
